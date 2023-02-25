@@ -20,10 +20,8 @@
 require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 
 
-class SkateLegend extends Table
-{
-	function __construct( )
-	{
+class SkateLegend extends Table {
+	function __construct() {
         // Your global variables labels:
         //  Here, you can assign labels to global variables you are using for this game.
         //  You can use any number of global variables with IDs between 10 and 99.
@@ -32,18 +30,17 @@ class SkateLegend extends Table
         // Note: afterwards, you can get/set the global variables with getGameStateValue/setGameStateInitialValue/setGameStateValue
         parent::__construct();
         
-        self::initGameStateLabels( array( 
+        self::initGameStateLabels([
             //    "my_first_global_variable" => 10,
             //    "my_second_global_variable" => 11,
             //      ...
             //    "my_first_game_variant" => 100,
             //    "my_second_game_variant" => 101,
             //      ...
-        ) );        
+        ]);        
 	}
 	
-    protected function getGameName( )
-    {
+    protected function getGameName() {
 		// Used for translations and stuff. Please do not modify.
         return "skatelegend";
     }	
@@ -55,8 +52,7 @@ class SkateLegend extends Table
         In this method, you must setup the game according to the game rules, so that
         the game is ready to be played.
     */
-    protected function setupNewGame( $players, $options = array() )
-    {    
+    protected function setupNewGame($players, $options = []) {    
         // Set the colors of the players with HTML color code
         // The default below is red/green/blue/orange/brown
         // The number of colors defined here must correspond to the maximum number of players allowed for the gams
@@ -72,7 +68,7 @@ class SkateLegend extends Table
             $color = array_shift( $default_colors );
             $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."')";
         }
-        $sql .= implode( $values, ',' );
+        $sql .= implode(',', $values);
         self::DbQuery( $sql );
         self::reattributeColorsBasedOnPreferences( $players, $gameinfos['player_colors'] );
         self::reloadPlayersBasicInfos();
