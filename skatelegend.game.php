@@ -19,8 +19,20 @@
 
 require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 
+require_once('modules/php/constants.inc.php');
+require_once('modules/php/utils.php');
+require_once('modules/php/actions.php');
+require_once('modules/php/states.php');
+require_once('modules/php/args.php');
+require_once('modules/php/debug-util.php');
 
 class SkateLegend extends Table {
+    use UtilTrait;
+    use ActionTrait;
+    use StateTrait;
+    use ArgsTrait;
+    use DebugUtilTrait;
+
 	function __construct() {
         // Your global variables labels:
         //  Here, you can assign labels to global variables you are using for this game.
@@ -31,12 +43,6 @@ class SkateLegend extends Table {
         parent::__construct();
         
         self::initGameStateLabels([
-            //    "my_first_global_variable" => 10,
-            //    "my_second_global_variable" => 11,
-            //      ...
-            //    "my_first_game_variant" => 100,
-            //    "my_second_game_variant" => 101,
-            //      ...
         ]);        
 	}
 	
@@ -76,15 +82,42 @@ class SkateLegend extends Table {
         /************ Start the game initialization *****/
 
         // Init global values with their initial values
-        //self::setGameStateInitialValue( 'my_first_global_variable', 0 );
+        //self::setGameStateInitialValue(ROUND_NUMBER, 1);
         
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
-        //self::initStat( 'table', 'table_teststat1', 0 );    // Init a table statistics
-        //self::initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
+        // 10+ : rounds/turns        
+        $this->initStat('table', 'roundNumber', 1);
+        /*foreach([
+            // 10+ : rounds/turns        
+            'roundsAsFirstPlayer', 'checkedMercenaries', 'numberOfZones', 'numberOfLines', 'figuresOver6',
+            // 50+ : scoring
+            'scoreTerritoryControl', 'scoreDiscoverTiles', 'scoreObjectiveTokens',
+        ] as $name) {
+            $this->initStat('player', $name, 0);
+        }
 
-        // TODO: setup the initial game situation here
-       
+        foreach(['table', 'player'] as $type) {
+            foreach([
+                // 10+ : rounds/turns
+                'completedObjectives', 'tokensFromMissions', 'playObtained', 'moveObtained',
+                // 20+ : territories 
+                'controlledTerritories', 'tieControlTerritories', 'controlledTerritories1', 'controlledTerritories3', 'controlledTerritories5', 'controlledTerritories7',
+                // 30+ : fighters
+                'placedFighters', 'movedFighters', 'activatedFighters', 'placedMercenaries', 'playedActions',
+            ] as $name) {
+                $this->initStat($type, $name, 0);
+            }
+        }*/
+
+        /*
+        TODO SETTING UP
+        1. Take three Legendary Figure cards at random, shuffle them and place them in a face-up pile
+        on top of the TROPHY card to form the Award Deck. Place it in the center of the table.
+        2. Shuffle all 120 figure cards, deal one to each player who adds it to his or her hand, and then
+        form two equal piles, face down in the center of the table, with the remaining cards.
+        3. Place the 9 Helmet Chits in the center of the table between the two piles.
+        */
 
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
@@ -101,16 +134,24 @@ class SkateLegend extends Table {
         _ when the game starts
         _ when a player refreshes the game page (F5)
     */
-    protected function getAllDatas()
-    {
-        $result = array();
+    protected function getAllDatas() {
+        $result = [];
     
-        $current_player_id = self::getCurrentPlayerId();    // !! We must only return informations visible by this player !!
+        $currentPlayerId = self::getCurrentPlayerId();    // !! We must only return informations visible by this player !!
     
         // Get information about players
         // Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
-        $sql = "SELECT player_id id, player_score score FROM player ";
-        $result['players'] = self::getCollectionFromDb( $sql );
+        $sql = "SELECT player_id id, player_score score, player_no playerNo, player_helmets helmets, player_active active FROM player ";
+        $result['players'] = self::getCollectionFromDb($sql);
+
+        
+        foreach($result['players'] as $playerId => &$player) {
+            $player['playerNo'] = intval($player['playerNo']);
+            $player['helmets'] = intval($player['helmets']);
+            $player['active'] = boolval($player['active']);
+        }
+
+        $result['roundNumber'] = intval($this->getStat('roundNumber'));
   
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
   
@@ -127,108 +168,9 @@ class SkateLegend extends Table {
         This method is called each time we are in a game state with the "updateGameProgression" property set to true 
         (see states.inc.php)
     */
-    function getGameProgression()
-    {
-        // TODO: compute and return the game progression
-
-        return 0;
+    function getGameProgression() {
+        return (intval($this->getStat('roundNumber')) - 1) * 25;
     }
-
-
-//////////////////////////////////////////////////////////////////////////////
-//////////// Utility functions
-////////////    
-
-    /*
-        In this space, you can put any utility methods useful for your game logic
-    */
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//////////// Player actions
-//////////// 
-
-    /*
-        Each time a player is doing some game action, one of the methods below is called.
-        (note: each method below must match an input method in skatelegend.action.php)
-    */
-
-    /*
-    
-    Example:
-
-    function playCard( $card_id )
-    {
-        // Check that this is the player's turn and that it is a "possible action" at this game state (see states.inc.php)
-        self::checkAction( 'playCard' ); 
-        
-        $player_id = self::getActivePlayerId();
-        
-        // Add your game logic to play a card there 
-        ...
-        
-        // Notify all players about the card played
-        self::notifyAllPlayers( "cardPlayed", clienttranslate( '${player_name} plays ${card_name}' ), array(
-            'player_id' => $player_id,
-            'player_name' => self::getActivePlayerName(),
-            'card_name' => $card_name,
-            'card_id' => $card_id
-        ) );
-          
-    }
-    
-    */
-
-    
-//////////////////////////////////////////////////////////////////////////////
-//////////// Game state arguments
-////////////
-
-    /*
-        Here, you can create methods defined as "game state arguments" (see "args" property in states.inc.php).
-        These methods function is to return some additional information that is specific to the current
-        game state.
-    */
-
-    /*
-    
-    Example for game state "MyGameState":
-    
-    function argMyGameState()
-    {
-        // Get some values from the current game situation in database...
-    
-        // return values:
-        return array(
-            'variable1' => $value1,
-            'variable2' => $value2,
-            ...
-        );
-    }    
-    */
-
-//////////////////////////////////////////////////////////////////////////////
-//////////// Game state actions
-////////////
-
-    /*
-        Here, you can create methods defined as "game state actions" (see "action" property in states.inc.php).
-        The action method of state X is called everytime the current game state is set to X.
-    */
-    
-    /*
-    
-    Example for game state "MyGameState":
-
-    function stMyGameState()
-    {
-        // Do some stuff ...
-        
-        // (very often) go to another gamestate
-        $this->gamestate->nextState( 'some_gamestate_transition' );
-    }    
-    */
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Zombie
@@ -247,8 +189,7 @@ class SkateLegend extends Table {
         you must _never_ use getCurrentPlayerId() or getCurrentPlayerName(), otherwise it will fail with a "Not logged" error message. 
     */
 
-    function zombieTurn( $state, $active_player )
-    {
+    function zombieTurn( $state, $active_player ) {
     	$statename = $state['name'];
     	
         if ($state['type'] === "activeplayer") {
@@ -286,8 +227,7 @@ class SkateLegend extends Table {
     
     */
     
-    function upgradeTableDb( $from_version )
-    {
+    function upgradeTableDb($from_version) {
         // $from_version is the current version of this game database, in numerical form.
         // For example, if the game was running with a release of your game named "140430-1345",
         // $from_version is equal to 1404301345

@@ -1,0 +1,358 @@
+$MERMAID: 1;
+$PAIR: 2;
+$COLLECTION: 3;
+$MULTIPLIER: 4;
+
+// Pair family
+$CRAB: 1;
+$BOAT: 2;
+$FISH: 3;
+$SWIMMER: 4;
+$SHARK: 5;
+// Collection family
+$SHELL: 1;
+$OCTOPUS: 2;
+$PENGUIN: 3;
+$SAILOR: 4;
+// Multiplier family
+$LIGHTHOUSE: 1;
+$SHOAL_FISH: 2;
+$PENGUIN_COLONY: 3;
+$CAPTAIN: 4;
+
+
+/*
+ * Colors
+ */
+$DARK_BLUE: 1;
+$LIGHT_BLUE: 2;
+$BLACK: 3;
+$YELLOW: 4;
+$GREEN: 5;
+$PURPLE: 6;
+$GREY: 7;
+$LIGHT_ORANGE: 8;
+$PINK: 9;
+$ORANGE: 10;
+
+.card {
+    display: inline-block;
+    position: relative;
+    width: 149px;
+    height: 208px;
+    margin: 5px;
+    border-radius: 10px;
+    text-align: center;
+
+    &[data-side="back"] {
+        .card-sides { 
+            transform: rotateY(180deg);
+        }
+    }
+
+    &.disabled {
+      cursor: not-allowed;
+      filter: contrast(0.6);
+    }
+
+    .card-sides {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        transform-style: preserve-3d;
+        transition: transform 0.5s;
+
+        .card-side {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            transform-style: preserve-3d;      
+            -webkit-backface-visibility: hidden; /* Safari */
+            backface-visibility: hidden;
+            transform-origin: center center;
+            border-radius: 5px;
+            box-shadow: 1px 1px 2px 1px rgba(0,0,0,0.5);
+
+            &.front {
+                background-size: auto 600%;
+                background-image: url('img/cards.jpg');
+
+                &>* {
+                    pointer-events: none;
+                    user-select: none;
+                }
+            } 
+            
+            &.back {    
+                background-size: auto 100%;            
+                background-image: url('img/card-back.jpg');
+                transform: rotateY(180deg);
+            }
+        }
+    }    
+
+    &.selectable:not(.disabled) {
+        cursor: pointer;
+        &:not(.selected) {
+            animation: selectable-card-animation 1s alternate infinite ease-in-out;
+        }
+
+        .card-side {
+            box-shadow: unset;
+        }
+    }    
+
+    &.selected:not(.disabled) {
+        box-shadow: 0 0 5px 8px orange;
+
+        .card-side {
+            box-shadow: unset;
+        }
+    } 
+
+    &[data-category="#{$MERMAID}"] .front {
+        background-position-x: 0%;
+        background-position-y: 0%;
+    }
+
+    &[data-category="#{$PAIR}"] {
+        &[data-family="#{$CRAB}"] {
+            @for $index from 0 through 1 {
+                &[data-color="#{$DARK_BLUE}"][data-index="#{$index}"] .front {
+                    background-position-x: #{($index + 1) * 100% / 9};
+                    background-position-y: 0%;
+                }
+            }
+            @for $index from 0 through 1 {
+                &[data-color="#{$LIGHT_BLUE}"][data-index="#{$index}"] .front {
+                    background-position-x: #{($index + 3) * 100% / 9};
+                    background-position-y: 0%;
+                }
+            }
+            &[data-color="#{$BLACK}"][data-index="0"] .front {
+                background-position-x: #{5 * 100% / 9};
+                background-position-y: 0%;
+            }
+            @for $index from 0 through 1 {
+                &[data-color="#{$YELLOW}"][data-index="#{$index}"] .front { 
+                    background-position-x: #{($index + 6) * 100% / 9};
+                    background-position-y: 0%;
+                    
+                }
+            }
+            &[data-color="#{$GREEN}"][data-index="0"] .front {
+                background-position-x: #{8 * 100% / 9};
+                background-position-y: 0%;
+            }
+            &[data-color="#{$GREY}"][data-index="0"] .front {
+                background-position-x: #{9 * 100% / 9};
+                background-position-y: 0%;
+            }
+        }
+        &[data-family="#{$BOAT}"] {
+            @for $index from 0 through 1 {
+                &[data-color="#{$DARK_BLUE}"][data-index="#{$index}"] .front {
+                    background-position-x: #{$index * 100% / 9};
+                    background-position-y: 20%;
+                }
+            }
+            @for $index from 0 through 1 {
+                &[data-color="#{$LIGHT_BLUE}"][data-index="#{$index}"] .front {
+                    background-position-x: #{($index + 2) * 100% / 9};
+                    background-position-y: 20%;
+                }
+            }
+            @for $index from 0 through 1 {
+                &[data-color="#{$BLACK}"][data-index="#{$index}"] .front {
+                    background-position-x: #{($index + 4) * 100% / 9};
+                    background-position-y: 20%;
+                }
+            }
+            @for $index from 0 through 1 {
+                &[data-color="#{$YELLOW}"][data-index="#{$index}"] .front { 
+                    background-position-x: #{($index + 6) * 100% / 9};
+                    background-position-y: 20%;
+                }
+            }
+        }
+        &[data-family="#{$FISH}"] {
+            @for $index from 0 through 1 {
+                &[data-color="#{$DARK_BLUE}"][data-index="#{$index}"] .front {
+                    background-position-x: #{($index + 8) * 100% / 9};
+                    background-position-y: 20%;
+                }
+            }
+            &[data-color="#{$LIGHT_BLUE}"][data-index="0"] .front {
+                background-position-x: #{0 * 100% / 9};
+                background-position-y: 40%;
+            }
+            @for $index from 0 through 1 {
+                &[data-color="#{$BLACK}"][data-index="#{$index}"] .front {
+                    background-position-x: #{($index + 1) * 100% / 9};
+                    background-position-y: 40%;
+                }
+            }
+            &[data-color="#{$YELLOW}"][data-index="0"] .front {
+                background-position-x: #{3 * 100% / 9};
+                background-position-y: 40%;
+            }
+            &[data-color="#{$GREEN}"][data-index="0"] .front {
+                background-position-x: #{4 * 100% / 9};
+                background-position-y: 40%;
+            }
+        }
+        &[data-family="#{$SWIMMER}"] {
+            &[data-color="#{$DARK_BLUE}"][data-index="0"] .front {
+                background-position-x: #{5 * 100% / 9};
+                background-position-y: 40%;
+            }
+            &[data-color="#{$LIGHT_BLUE}"][data-index="0"] .front {
+                background-position-x: #{6 * 100% / 9};
+                background-position-y: 40%;
+            }
+            &[data-color="#{$BLACK}"][data-index="0"] .front {
+                background-position-x: #{7 * 100% / 9};
+                background-position-y: 40%;
+            }
+            &[data-color="#{$YELLOW}"][data-index="0"] .front {
+                background-position-x: #{8 * 100% / 9};
+                background-position-y: 40%;
+            }
+            &[data-color="#{$LIGHT_ORANGE}"][data-index="0"] .front {
+                background-position-x: #{9 * 100% / 9};
+                background-position-y: 40%;
+            }
+        }
+        &[data-family="#{$SHARK}"] {
+            &[data-color="#{$DARK_BLUE}"][data-index="0"] .front {
+                background-position-x: #{0 * 100% / 9};
+                background-position-y: 60%;
+            }
+            &[data-color="#{$LIGHT_BLUE}"][data-index="0"] .front {
+                background-position-x: #{1 * 100% / 9};
+                background-position-y: 60%;
+            }
+            &[data-color="#{$BLACK}"][data-index="0"] .front {
+                background-position-x: #{2 * 100% / 9};
+                background-position-y: 60%;
+            }
+            &[data-color="#{$GREEN}"][data-index="0"] .front {
+                background-position-x: #{3 * 100% / 9};
+                background-position-y: 60%;
+            }
+            &[data-color="#{$PURPLE}"][data-index="0"] .front {
+                background-position-x: #{4 * 100% / 9};
+                background-position-y: 60%;
+            }
+        }
+    }
+    
+    &[data-category="#{$COLLECTION}"] {
+        &[data-family="#{$SHELL}"] {
+            &[data-color="#{$DARK_BLUE}"][data-index="0"] .front {
+                background-position-x: #{5 * 100% / 9};
+                background-position-y: 60%;
+            }
+            &[data-color="#{$LIGHT_BLUE}"][data-index="0"] .front {
+                background-position-x: #{6 * 100% / 9};
+                background-position-y: 60%;
+            }
+            &[data-color="#{$BLACK}"][data-index="0"] .front {
+                background-position-x: #{7 * 100% / 9};
+                background-position-y: 60%;
+            }
+            &[data-color="#{$YELLOW}"][data-index="0"] .front {
+                background-position-x: #{8 * 100% / 9};
+                background-position-y: 60%;
+            }
+            &[data-color="#{$GREEN}"][data-index="0"] .front {
+                background-position-x: #{9 * 100% / 9};
+                background-position-y: 60%;
+            }
+            &[data-color="#{$GREY}"][data-index="0"] .front {
+                background-position-x: #{0 * 100% / 9};
+                background-position-y: 80%;
+            }
+        }
+        &[data-family="#{$OCTOPUS}"] {
+            &[data-color="#{$LIGHT_BLUE}"][data-index="0"] .front {
+                background-position-x: #{1 * 100% / 9};
+                background-position-y: 80%;
+            }
+            &[data-color="#{$YELLOW}"][data-index="0"] .front {
+                background-position-x: #{2 * 100% / 9};
+                background-position-y: 80%;
+            }
+            &[data-color="#{$GREEN}"][data-index="0"] .front {
+                background-position-x: #{3 * 100% / 9};
+                background-position-y: 80%;
+            }
+            &[data-color="#{$PURPLE}"][data-index="0"] .front {
+                background-position-x: #{4 * 100% / 9};
+                background-position-y: 80%;
+            }
+            &[data-color="#{$GREY}"][data-index="0"] .front {
+                background-position-x: #{5 * 100% / 9};
+                background-position-y: 80%;
+            }
+        }
+        &[data-family="#{$PENGUIN}"] {
+            &[data-color="#{$PURPLE}"][data-index="0"] .front {
+                background-position-x: #{6 * 100% / 9};
+                background-position-y: 80%;
+            }
+            &[data-color="#{$LIGHT_ORANGE}"][data-index="0"] .front {
+                background-position-x: #{7 * 100% / 9};
+                background-position-y: 80%;
+            }
+            &[data-color="#{$PINK}"][data-index="0"] .front {
+                background-position-x: #{8 * 100% / 9};
+                background-position-y: 80%;
+            }
+        }
+        &[data-family="#{$SAILOR}"] {
+            &[data-color="#{$PINK}"][data-index="0"] .front {
+                background-position-x: #{9 * 100% / 9};
+                background-position-y: 80%;
+            }
+            &[data-color="#{$ORANGE}"][data-index="0"] .front {
+                background-position-x: #{0 * 100% / 9};
+                background-position-y: 100%;
+            }
+        }
+    }
+    
+    &[data-category="#{$MULTIPLIER}"] {
+        &[data-family="#{$LIGHTHOUSE}"] .front {
+            background-position-x: #{1 * 100% / 9};
+            background-position-y: 100%;
+        }
+        &[data-family="#{$SHOAL_FISH}"] .front {
+            background-position-x: #{2 * 100% / 9};
+            background-position-y: 100%;
+        }
+        &[data-family="#{$PENGUIN_COLONY}"] .front {
+            background-position-x: #{3 * 100% / 9};
+            background-position-y: 100%;
+        }
+        &[data-family="#{$CAPTAIN}"] .front {
+            background-position-x: #{4 * 100% / 9};
+            background-position-y: 100%;
+        }
+    }
+}
+
+@keyframes selectable-card-animation {
+    0% { 
+      //background: var(--background-lighter);
+      box-shadow: 0 0 3px 2px #FFFFFF;
+    }
+    100% { 
+      //background: var(--background-darker);
+      box-shadow: 0 0 5px 3px #FFFFFF;
+    }
+  }

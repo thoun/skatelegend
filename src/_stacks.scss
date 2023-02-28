@@ -1,0 +1,118 @@
+#table-center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center; 
+    border: 2px solid #60c2cb;
+    padding: 5px; 
+    border-radius: 15px;
+    background: #60c2cb66;
+    min-width: 505px;
+
+    #deck-and-discards {
+        display: flex;
+        justify-content: center;
+        align-items: center;        
+
+        #deck {
+            display: inline-block;
+            position: relative;
+            width: 149px;
+            height: 208px;
+            margin: 5px;
+            border-radius: 10px;
+            background-image: url('img/card-back.jpg');
+            background-size: auto 100%;
+            box-shadow: 3px 3px 0px 0px #333, 5px 5px 3px black;
+
+            &.selectable {
+                cursor: pointer;
+                animation: selectable-card-animation 1s alternate infinite ease-in-out;
+            }  
+
+            &.hidden {
+                background: #60c2cb66;
+                box-shadow: 5px 5px 3px #60c2cb66;
+            }
+        }
+
+        .discard-stack {
+            display: inline-block;
+            position: relative;
+            width: 159px;
+            height: 218px;
+            margin: 5px;
+            border-radius: 10px;
+            border: 1px solid white;
+            background-color: #FFFFFF66;
+        }
+    }
+
+    #pick {
+        position: relative;
+        background-color: #60c2cb;
+        border-radius: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 350px;
+        height: 230px;
+        margin-top: 10px;
+        transition: background-color 0.5s;
+    
+        &[data-visible="false"] {
+            background-color: transparent;
+
+            &::before {
+                border-color: transparent;
+            }
+        }
+
+        &::before {
+            transition: border-color 0.5s;
+            top: -12px;
+            border-width: 0 12px 12px 12px;
+            border-color: #60c2cb transparent;
+            border-style: solid;
+            content: '';
+            display: block;
+            left: 7px;
+            position: absolute;
+            width: 0;
+        }
+    }
+}
+
+#discard-pick {
+    background: #FFFFFF66;
+    display: flex;
+    justify-content: center;
+    align-items: center;  
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+    padding: 5px;
+
+    &[data-visible="false"] {
+        display: none;
+    }
+}
+
+.cards-stack {
+    position: relative;
+
+    .card {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    .pile-counter {
+        position: absolute;
+        bottom: -18px;
+        right: 0;
+        left: 0;
+        font-size: 80%;
+        text-align: center;
+        color: lightcyan;
+    }
+}
