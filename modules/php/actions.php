@@ -11,10 +11,16 @@ trait ActionTrait {
         (note: each method below must match an input method in nicodemus.action.php)
     */
 
-    public function activatePlanning() {
-        $this->checkAction('activatePlanning'); 
+    public function continue() {
+        $this->checkAction('continue'); 
 
-        $this->gamestate->nextState('activate');
+        $this->gamestate->nextState('continue');
+    }
+
+    public function stop() {
+        $this->checkAction('stop'); 
+
+        $this->gamestate->nextState('stop');
     }
 
     public function passPlanning() {

@@ -53,10 +53,10 @@ These cards will give him points at the end of the game.
     }
 
     function stNextPlayer() {
-        if ($this->checkPlayerElimination()) {
+        /*if ($this->checkPlayerElimination()) {
             $this->gamestate->jumpToState(ST_END_GAME); // TODO
             return;
-        }
+        }*/
 
         $playerId = intval($this->getActivePlayerId());
 
