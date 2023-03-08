@@ -87,7 +87,7 @@ class SkateLegend extends Table {
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
         // 10+ : rounds/turns        
-        $this->initStat('table', 'roundNumber', 1);
+        $this->initStat('table', 'roundNumber', 0);
         /*foreach([
             // 10+ : rounds/turns        
             'roundsAsFirstPlayer', 'checkedMercenaries', 'numberOfZones', 'numberOfLines', 'figuresOver6',
@@ -110,14 +110,8 @@ class SkateLegend extends Table {
             }
         }*/
 
-        /*
-        TODO SETTING UP
-        1. Take three Legendary Figure cards at random, shuffle them and place them in a face-up pile
-        on top of the TROPHY card to form the Award Deck. Place it in the center of the table.
-        2. Shuffle all 120 figure cards, deal one to each player who adds it to his or her hand, and then
-        form two equal piles, face down in the center of the table, with the remaining cards.
-        3. Place the 9 Helmet Chits in the center of the table between the two piles.
-        */
+
+        $this->setupCards($players);
 
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
@@ -151,9 +145,8 @@ class SkateLegend extends Table {
             $player['active'] = boolval($player['active']);
         }
 
-        $result['roundNumber'] = intval($this->getStat('roundNumber'));
-  
-        // TODO: Gather all information about current game situation (visible by player $current_player_id).
+        $result['roundNumber'] = intval($this->getStat('roundNumber')) + 1;
+        $result['remainingHelmets'] = $this->getRemainingHelmets();
   
         return $result;
     }
@@ -169,7 +162,7 @@ class SkateLegend extends Table {
         (see states.inc.php)
     */
     function getGameProgression() {
-        return (intval($this->getStat('roundNumber')) - 1) * 25;
+        return intval($this->getStat('roundNumber')) * 25;
     }
 
 //////////////////////////////////////////////////////////////////////////////

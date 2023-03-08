@@ -84,16 +84,12 @@ trait UtilTrait {
         return self::getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $playerId");
     }
 
-    function getPlayerChecks(int $playerId) {
-        return intval(self::getUniqueValueFromDB("SELECT checks FROM player WHERE player_id = $playerId"));
+    function getPlayerHelmets(int $playerId) {
+        return intval(self::getUniqueValueFromDB("SELECT player_helmets FROM player WHERE player_id = $playerId"));
     }
 
-    function getFirstPlayerId() {
-        return intval(self::getGameStateValue(FIRST_PLAYER));
-    }
-
-    function getOpponentId(int $playerId) {
-        return intval(self::getUniqueValueFromDB("SELECT player_id FROM player WHERE player_id <> $playerId"));
+    function getRemainingHelmets() {
+        return 9 - intval(self::getUniqueValueFromDB("SELECT sum(player_helmets) FROM player"));
     }
 
     function getPlayerScore(int $playerId) {
@@ -112,50 +108,6 @@ trait UtilTrait {
         ] + $args);
     }
 
-    function getScenarioId() {
-        return intval($this->getGameStateValue(SCENARIO_OPTION));
-    }
-
-    function getScenario() {
-    return $this->SCENARIOS[$this->getScenarioId()];
-    }
-    
-    function getOpMax(int $type) {
-        return $type > 3 ? 4 : 3;
-    }
-    
-    function getValue(int $val1, int $val2, int $type) {        
-        $value = 0;
-        switch($type)
-        {
-            case 1:
-                $value = min($val1, $val2);
-                break;
-            case 2:
-                $value = max($val1, $val2);
-                break;
-            case 3:
-                $value = abs($val1-$val2);
-                break;
-            case 4:
-                $value = $val1+$val2;
-                break;
-            case 5:
-                $value = $val1*$val2;
-                break;
-        }
-        return $value;
-    }
-
-    function getSeasonName(int $lumens) {
-        switch ($lumens) {
-            case 1: return clienttranslate('Winter');
-            case 3: return clienttranslate('Autumn');
-            case 5: return clienttranslate('Summer');
-            case 7: return clienttranslate('Spring');
-        }
-    }
-
     function getCardById(int $id) {
         $sql = "SELECT * FROM `card` WHERE `card_id` = $id";
         $dbResults = $this->getCollectionFromDb($sql);
@@ -163,13 +115,10 @@ trait UtilTrait {
         return count($cards) > 0 ? $cards[0] : null;
     }
 
-    function getCardsByLocation(string $location, /*int|null*/ $location_arg = null, /*int|null*/ $playerId = null, /*int|null*/ $type = null, /*int|null*/ $subType = null) {
+    function getCardsByLocation(string $location, /*int|null*/ $location_arg = null, /*int|null*/ $type = null, /*int|null*/ $subType = null) {
         $sql = "SELECT * FROM `card` WHERE `card_location` = '$location'";
         if ($location_arg !== null) {
             $sql .= " AND `card_location_arg` = $location_arg";
-        }
-        if ($playerId !== null) {
-            $sql .= " AND `player_id` = $playerId";
         }
         if ($type !== null) {
             $sql .= " AND `card_type` = $type";
@@ -183,7 +132,17 @@ trait UtilTrait {
     }
 
     function setupCards(array $players) {
-        foreach($players as $playerId => $player) {
+        
+        /* TODO 
+        1. Take three Legendary Figure cards at random, shuffle them and place them in a face-up pile
+        on top of the TROPHY card to form the Award Deck. Place it in the center of the table.
+        */
+        /* TODO 
+        2. Shuffle all 120 figure cards, deal one to each player who adds it to his or her hand, and then
+        form two equal piles, face down in the center of the table, with the remaining cards.
+        */
+
+        /*foreach($players as $playerId => $player) {
             $cards = [];
             foreach ($this->CARDS as $subType => $cardType) {
                 if ($cardType->type === 1) {
@@ -202,94 +161,7 @@ trait UtilTrait {
             }
         }
         $this->cards->createCards($cards, 'bag0');
-        $this->cards->shuffle('bag0');
-    }
-
-    function getDiscoverTileById(int $id) {
-        $sql = "SELECT * FROM `discover_tile` WHERE `card_id` = $id";
-        $dbResults = $this->getCollectionFromDb($sql);
-        $cards = array_map(fn($dbCard) => new DiscoverTile($dbCard), array_values($dbResults));
-        return count($cards) > 0 ? $cards[0] : null;
-    }
-
-    function getDiscoverTilesByLocation(string $location, /*int|null*/ $location_arg = null, /*bool|null*/ $visible = null, /*int|null*/ $type = null, /*int|null*/ $subType = null) {
-        $sql = "SELECT * FROM `discover_tile` WHERE `card_location` = '$location'";
-        if ($location_arg !== null) {
-            $sql .= " AND `card_location_arg` = $location_arg";
-        }
-        if ($visible !== null) {
-            $sql .= " AND `visible` = ".($visible ? 'true' : 'false');
-        }
-        if ($type !== null) {
-            $sql .= " AND `card_type` = $type";
-        }
-        if ($subType !== null) {
-            $sql .= " AND `card_type_arg` = $subType";
-        }
-        $sql .= " ORDER BY `card_location_arg`";
-        $dbResults = $this->getCollectionFromDb($sql);
-        return array_map(fn($dbCard) => new DiscoverTile($dbCard), array_values($dbResults));
-    }
-
-    function setupDiscoverTiles() {
-        foreach ($this->DISCOVER_TILES as $tile) {
-            $cards[] = [ 'type' => $tile->type, 'type_arg' => $tile->power, 'nbr' => $tile->number ];
-        }
-        $this->discoverTiles->createCards($cards, 'deck');
-        $this->discoverTiles->shuffle('deck');
-    }
-
-    function getObjectiveTokenFromDb(/*array|null*/ $dbCard) {
-        if ($dbCard == null) {
-            return null;
-        }
-        return new ObjectiveToken($dbCard);
-    }
-
-    function getObjectiveTokensFromDb(array $dbCards) {
-        return array_map(fn($dbCard) => $this->getObjectiveTokenFromDb($dbCard), array_values($dbCards));
-    }
-
-    function setupObjectiveTokens() {
-        for ($i=3;$i<=5;$i++) {
-            $cards[] = [ 'type' => $i, 'type_arg' => null, 'nbr' => 7 ];
-        }
-        $this->objectiveTokens->createCards($cards, 'deck');
-        $this->objectiveTokens->shuffle('deck');
-    }
-
-    function initScenario(array $players) {
-        $scenario = $this->getScenario();
-        $playersIdsByPlayerColor = [];
-        $territoriesWithFighters = [];
-        foreach($players as $playerId => $player) {
-            $playersIdsByPlayerColor[$player['player_color']] = intval($playerId);
-        }
-
-        
-        // initial fighters
-        foreach ($scenario->initialFighters as $territoryId => $playerFighters) {
-            foreach ($playerFighters as $playerColor => $fightersSubType) {
-                foreach($fightersSubType as $fighterSubType) {
-                    $playerId = $playersIdsByPlayerColor[$playerColor];
-                    $cards = $this->getCardsByLocation('bag'.$playerId, null, null, null, $fighterSubType);
-                    $this->cards->moveCard($cards[0]->id, 'territory', $territoryId);
-                    $territoriesWithFighters[] = $territoryId;
-                }
-            }
-        }
-
-        // discover tiles
-        foreach ($scenario->battlefieldsIds as $battlefieldId) {
-            foreach ($this->BATTLEFIELDS[$battlefieldId]->territories as $territory) {
-                if (!in_array($territory->id, $territoriesWithFighters)) {
-                    $this->discoverTiles->pickCardForLocation('deck', 'territory', $territory->id);
-                }
-            }
-        }
-
-        // initiative marker
-        $this->setGameStateValue(INITIATIVE_MARKER_TERRITORY, $scenario->initiative);
+        $this->cards->shuffle('bag0');*/
     }
 
     function initPlayersCards(array $players) {

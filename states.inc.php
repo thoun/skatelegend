@@ -96,7 +96,8 @@ $playerActionsGameStates = [
         "type" => "activeplayer",    
         "args" => "argPlayCard",
         "possibleactions" => [ 
-            "playCard",
+            "playCardFromHand",
+            "playCardFromDeck",
         ],
         "transitions" => [
             "next" => ST_NEXT_PLAYER,

@@ -1029,7 +1029,6 @@ var CardsManager = /** @class */ (function (_super) {
             }
         }) || this;
         _this.game = game;
-        _this.EVOLUTION_CARDS_TYPES = game.gamedatas.EVOLUTION_CARDS_TYPES;
         return _this;
     }
     CardsManager.prototype.placeHelmetOnCard = function (card, playerId) {
@@ -1080,7 +1079,6 @@ var CardsManager = /** @class */ (function (_super) {
 var isDebug = window.location.host == 'studio.boardgamearena.com' || window.location.hash.indexOf('debug') > -1;
 ;
 var log = isDebug ? console.log.bind(window.console) : function () { };
-var CATEGORY_ORDER = [null, 4, 1, 2, 3];
 var PlayerTable = /** @class */ (function () {
     function PlayerTable(game, player) {
         this.game = game;
@@ -1156,13 +1154,17 @@ var PlayerTable = /** @class */ (function () {
         this.addCards(cards, 'table', from);
     };
     PlayerTable.prototype.cleanTable = function () {
-        var _this = this;
-        var cards = __spreadArray(__spreadArray([], Array.from(this.handCardsDiv.getElementsByClassName('card')), true), Array.from(this.tableCardsDiv.getElementsByClassName('card')), true);
-        cards.forEach(function (cardDiv) { return _this.game.cards.createMoveOrUpdateCard({
+        /*const cards = [
+            ...Array.from(this.handCardsDiv.getElementsByClassName('card')) as HTMLDivElement[],
+            ...Array.from(this.tableCardsDiv.getElementsByClassName('card')) as HTMLDivElement[],
+        ];
+        
+        cards.forEach(cardDiv => this.game.cards.createMoveOrUpdateCard({
             id: Number(cardDiv.dataset.id),
-        }, "deck"); });
-        setTimeout(function () { return cards.forEach(function (cardDiv) { return _this.game.cards.removeCard(cardDiv); }); }, 500);
-        this.game.updateTableHeight();
+        } as any, `deck`));
+
+        setTimeout(() => cards.forEach(cardDiv => this.game.cards.removeCard(cardDiv)), 500);
+        this.game.updateTableHeight();*/
     };
     PlayerTable.prototype.setHandPoints = function (cardsPoints) {
         this.cardsPointsCounter.toValue(cardsPoints);
@@ -1205,12 +1207,11 @@ var PlayerTable = /** @class */ (function () {
         });
     };
     PlayerTable.prototype.addCards = function (cards, to, from) {
-        var _this = this;
-        cards.forEach(function (card) {
-            _this.game.cards.createMoveOrUpdateCard(card, "player-table-".concat(_this.playerId, "-").concat(to, "-cards"), false, from);
-            document.getElementById("card-".concat(card.id)).style.order = '' + (CATEGORY_ORDER[card.category] * 100 + card.family * 10 + card.color);
+        /*cards.forEach(card => {
+            this.game.cards.createMoveOrUpdateCard(card, `player-table-${this.playerId}-${to}-cards`, false, from);
+            document.getElementById(`card-${card.id}`).style.order = ''+(CATEGORY_ORDER[card.category]*100 + card.family * 10 + card.color);
         });
-        this.game.updateTableHeight();
+        this.game.updateTableHeight();*/
     };
     return PlayerTable;
 }());
@@ -1257,9 +1258,9 @@ var SkateLegend = /** @class */ (function () {
             },*/
             // onDimensionsChange: (newZoom) => this.onTableCenterSizeChange(newZoom),
         });
-        /*TODO this.roundNumberCounter = new ebg.counter();
-        this.roundNumberCounter.create(`round-number-counter`);
-        this.roundNumberCounter.setValue(this.gamedatas.roundNumber);*/
+        this.roundNumberCounter = new ebg.counter();
+        this.roundNumberCounter.create("round-number-counter");
+        this.roundNumberCounter.setValue(this.gamedatas.roundNumber);
         this.setupNotifications();
         this.setupPreferences();
         this.addHelp();
@@ -1423,41 +1424,10 @@ var SkateLegend = /** @class */ (function () {
         if (this.isCurrentPlayerActive()) {
             switch (stateName) {
                 case 'chooseContinue':
+                    var chooseContinueArgs_1 = args;
                     this.addActionButton("continue_button", _("Continue"), function () { return _this.continue(); });
-                    this.addActionButton("stop_button", _("Stop"), function () { return _this.stop(); });
-                    /*const playCardsArgs = args as EnteringChooseContinueArgs;
-                    (this as any).addActionButton(`playCards_button`, _("Play selected cards"), () => this.playSelectedCards());
-                    if (playCardsArgs.hasFourMermaids) {
-                        (this as any).addActionButton(`endGameWithMermaids_button`, _("Play the four Mermaids"), () => this.endGameWithMermaids(), null, true, 'red');
-                    }
-                    (this as any).addActionButton(`endTurn_button`, _("End turn"), () => this.endTurn());
-                    if (playCardsArgs.canCallEndRound) {
-                        (this as any).addActionButton(`endRound_button`, _('End round') + ' ("' + _('LAST CHANCE') + '")', () => this.endRound(), null, null, 'red');
-                        (this as any).addActionButton(`immediateEndRound_button`, _('End round') + ' ("' + _('STOP') + '")', () => this.immediateEndRound(), null, null, 'red');
-
-                        this.setTooltip(`endRound_button`, `${_("Say <strong>LAST CHANCE</strong> if you are willing to take the bet of having the most points at the end of the round. The other players each take a final turn (take a card + play cards) which they complete by revealing their hand, which is now protected from attacks. Then, all players count the points on their cards (in their hand and in front of them).")}<br><br>
-                        ${_("If your hand is higher or equal to that of your opponents, bet won! You score the points for your cards + the color bonus (1 point per card of the color they have the most of). Your opponents only score their color bonus.")}<br><br>
-                        ${_("If your score is less than that of at least one opponent, bet lost! You score only the color bonus. Your opponents score points for their cards.")}`);
-                        this.setTooltip(`immediateEndRound_button`, _("Say <strong>STOP</strong> if you do not want to take a risk. All players reveal their hands and immediately score the points on their cards (in their hand and in front of them)."));
-                    }
-                    dojo.addClass(`playCards_button`, `disabled`);
-                    /*if (!playCardsArgs.canCallEndRound) {
-                        dojo.addClass(`endRound_button`, `disabled`);
-                        dojo.addClass(`immediateEndRound_button`, `disabled`);
-                    }*/
-                    /*if (!playCardsArgs.canDoAction) {
-                        this.startActionTimer('endTurn_button', ACTION_TIMER_DURATION + Math.round(3 * Math.random()));
-                    }*/
+                    this.addActionButton("stop_button", _("Stop"), function () { return _this.stop(chooseContinueArgs_1.shouldNotStop); });
                     break;
-                /*case 'chooseOpponent':
-                    const chooseOpponentArgs = args as EnteringChooseOpponentArgs;
-        
-                    chooseOpponentArgs.playersIds.forEach(playerId => {
-                        const player = this.getPlayer(playerId);
-                        (this as any).addActionButton(`choosePlayer${playerId}-button`, player.name, () => this.chooseOpponent(playerId));
-                        document.getElementById(`choosePlayer${playerId}-button`).style.border = `3px solid #${player.color}`;
-                    });
-                    break;*/
             }
         }
     };
@@ -1697,11 +1667,31 @@ var SkateLegend = /** @class */ (function () {
         }
         this.takeAction('continue');
     };
-    SkateLegend.prototype.stop = function () {
+    SkateLegend.prototype.stop = function (warning) {
+        var _this = this;
         if (!this.checkAction('stop')) {
             return;
         }
+        if (warning) {
+            this.confirmationDialog(_("Are you sure you want to stop here? There is no risk if you continue the sequence."), function () { return _this.stop(false); });
+        }
         this.takeAction('stop');
+    };
+    SkateLegend.prototype.playCardFromHand = function (id) {
+        if (!this.checkAction('playCardFromHand')) {
+            return;
+        }
+        this.takeAction('playCardFromHand', {
+            id: id
+        });
+    };
+    SkateLegend.prototype.playCardFromDeck = function (number) {
+        if (!this.checkAction('playCardFromDeck')) {
+            return;
+        }
+        this.takeAction('playCardFromDeck', {
+            number: number
+        });
     };
     SkateLegend.prototype.takeAction = function (action, data) {
         data = data || {};
@@ -1758,7 +1748,7 @@ var SkateLegend = /** @class */ (function () {
         );*/
     };
     SkateLegend.prototype.notif_betResult = function (notif) {
-        this.getPlayerTable(notif.args.playerId).showAnnouncementBetResult(notif.args.result);
+        //this.getPlayerTable(notif.args.playerId).showAnnouncementBetResult(notif.args.result);
     };
     /* This enable to inject translatable styled things to logs or action bar */
     /* @Override */

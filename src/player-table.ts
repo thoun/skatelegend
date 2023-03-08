@@ -1,8 +1,6 @@
 const isDebug = window.location.host == 'studio.boardgamearena.com' || window.location.hash.indexOf('debug') > -1;;
 const log = isDebug ? console.log.bind(window.console) : function () { };
 
-const CATEGORY_ORDER = [null, 4, 1, 2, 3];
-
 class PlayerTable {
     public playerId: number;
 
@@ -77,7 +75,7 @@ class PlayerTable {
     }
 
     public cleanTable(): void {
-        const cards = [
+        /*const cards = [
             ...Array.from(this.handCardsDiv.getElementsByClassName('card')) as HTMLDivElement[],
             ...Array.from(this.tableCardsDiv.getElementsByClassName('card')) as HTMLDivElement[],
         ];
@@ -87,7 +85,7 @@ class PlayerTable {
         } as any, `deck`));
 
         setTimeout(() => cards.forEach(cardDiv => this.game.cards.removeCard(cardDiv)), 500);
-        this.game.updateTableHeight();
+        this.game.updateTableHeight();*/
     }
     
     public setHandPoints(cardsPoints: number) {
@@ -131,10 +129,10 @@ class PlayerTable {
     }
     
     private addCards(cards: Card[], to: 'hand' | 'table', from?: string) {
-        cards.forEach(card => {
+        /*cards.forEach(card => {
             this.game.cards.createMoveOrUpdateCard(card, `player-table-${this.playerId}-${to}-cards`, false, from);
             document.getElementById(`card-${card.id}`).style.order = ''+(CATEGORY_ORDER[card.category]*100 + card.family * 10 + card.color);
         });
-        this.game.updateTableHeight();
+        this.game.updateTableHeight();*/
     }
 }

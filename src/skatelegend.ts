@@ -65,9 +65,9 @@ class SkateLegend implements SkateLegendGame {
             // onDimensionsChange: (newZoom) => this.onTableCenterSizeChange(newZoom),
         });
 
-        /*TODO this.roundNumberCounter = new ebg.counter();
+        this.roundNumberCounter = new ebg.counter();
         this.roundNumberCounter.create(`round-number-counter`);
-        this.roundNumberCounter.setValue(this.gamedatas.roundNumber);*/
+        this.roundNumberCounter.setValue(this.gamedatas.roundNumber);
 
         this.setupNotifications();
         this.setupPreferences();
@@ -245,42 +245,10 @@ class SkateLegend implements SkateLegendGame {
         if ((this as any).isCurrentPlayerActive()) {
             switch (stateName) {
                 case 'chooseContinue':
+                    const chooseContinueArgs = args as EnteringChooseContinueArgs;
                     (this as any).addActionButton(`continue_button`, _("Continue"), () => this.continue());
-                    (this as any).addActionButton(`stop_button`, _("Stop"), () => this.stop());
-                    /*const playCardsArgs = args as EnteringChooseContinueArgs;
-                    (this as any).addActionButton(`playCards_button`, _("Play selected cards"), () => this.playSelectedCards());
-                    if (playCardsArgs.hasFourMermaids) {
-                        (this as any).addActionButton(`endGameWithMermaids_button`, _("Play the four Mermaids"), () => this.endGameWithMermaids(), null, true, 'red');
-                    }
-                    (this as any).addActionButton(`endTurn_button`, _("End turn"), () => this.endTurn());
-                    if (playCardsArgs.canCallEndRound) {
-                        (this as any).addActionButton(`endRound_button`, _('End round') + ' ("' + _('LAST CHANCE') + '")', () => this.endRound(), null, null, 'red');
-                        (this as any).addActionButton(`immediateEndRound_button`, _('End round') + ' ("' + _('STOP') + '")', () => this.immediateEndRound(), null, null, 'red');
-
-                        this.setTooltip(`endRound_button`, `${_("Say <strong>LAST CHANCE</strong> if you are willing to take the bet of having the most points at the end of the round. The other players each take a final turn (take a card + play cards) which they complete by revealing their hand, which is now protected from attacks. Then, all players count the points on their cards (in their hand and in front of them).")}<br><br>
-                        ${_("If your hand is higher or equal to that of your opponents, bet won! You score the points for your cards + the color bonus (1 point per card of the color they have the most of). Your opponents only score their color bonus.")}<br><br>
-                        ${_("If your score is less than that of at least one opponent, bet lost! You score only the color bonus. Your opponents score points for their cards.")}`);
-                        this.setTooltip(`immediateEndRound_button`, _("Say <strong>STOP</strong> if you do not want to take a risk. All players reveal their hands and immediately score the points on their cards (in their hand and in front of them)."));
-                    }
-                    dojo.addClass(`playCards_button`, `disabled`);
-                    /*if (!playCardsArgs.canCallEndRound) {
-                        dojo.addClass(`endRound_button`, `disabled`);
-                        dojo.addClass(`immediateEndRound_button`, `disabled`);
-                    }*/
-                    
-                    /*if (!playCardsArgs.canDoAction) {
-                        this.startActionTimer('endTurn_button', ACTION_TIMER_DURATION + Math.round(3 * Math.random()));
-                    }*/
+                    (this as any).addActionButton(`stop_button`, _("Stop"), () => this.stop(chooseContinueArgs.shouldNotStop));
                     break;
-                /*case 'chooseOpponent':
-                    const chooseOpponentArgs = args as EnteringChooseOpponentArgs;
-        
-                    chooseOpponentArgs.playersIds.forEach(playerId => {
-                        const player = this.getPlayer(playerId);
-                        (this as any).addActionButton(`choosePlayer${playerId}-button`, player.name, () => this.chooseOpponent(playerId));
-                        document.getElementById(`choosePlayer${playerId}-button`).style.border = `3px solid #${player.color}`;
-                    });
-                    break;*/
             }
         }
     }
@@ -557,12 +525,39 @@ class SkateLegend implements SkateLegendGame {
         this.takeAction('continue');
     }
 
-    public stop() { // TODO warning if no danger to lose ?
+    public stop(warning: boolean) {
         if(!(this as any).checkAction('stop')) {
             return;
         }
 
+        if (warning) {
+            (this as any).confirmationDialog(
+                _("Are you sure you want to stop here? There is no risk if you continue the sequence."), 
+                () => this.stop(false)
+            );
+        }
+
         this.takeAction('stop');
+    }
+  	
+    public playCardFromHand(id: number) {
+        if(!(this as any).checkAction('playCardFromHand')) {
+            return;
+        }
+
+        this.takeAction('playCardFromHand', {
+            id
+        });
+    }
+  	
+    public playCardFromDeck(number: number) {
+        if(!(this as any).checkAction('playCardFromDeck')) {
+            return;
+        }
+
+        this.takeAction('playCardFromDeck', {
+            number
+        });
     }
 
     public takeAction(action: string, data?: any) {
@@ -625,7 +620,7 @@ class SkateLegend implements SkateLegendGame {
     }
 
     notif_betResult(notif: Notif<NotifBetResultArgs>) {
-        this.getPlayerTable(notif.args.playerId).showAnnouncementBetResult(notif.args.result);
+        //this.getPlayerTable(notif.args.playerId).showAnnouncementBetResult(notif.args.result);
     }
 
 

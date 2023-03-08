@@ -85,7 +85,7 @@ These cards will give him points at the end of the game.
     function stEndRound() {
         $this->incStat(1, 'roundNumber');
 
-        $lastRound = intval($this->getStat('roundNumber')) > 4;
+        $lastRound = intval($this->getStat('roundNumber')) >= 4;
 
         $this->gamestate->nextState($lastRound ? 'endScore' : 'newRound');
     }

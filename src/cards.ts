@@ -36,7 +36,6 @@ class CardsManager extends CardManager<Card> {
                 }*/
             }
         });
-        this.EVOLUTION_CARDS_TYPES = (game as any).gamedatas.EVOLUTION_CARDS_TYPES;
     }
 
     public placeHelmetOnCard(card: Card, playerId: number) {

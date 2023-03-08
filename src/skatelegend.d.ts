@@ -50,9 +50,8 @@ interface SkateLegendGame extends Game {
 
     updateTableHeight(): void;
     setTooltip(id: string, html: string): void;
-    takeCardsFromDeck(): void;
-    onCardClick(card: Card): void;
-    onDiscardPileClick(discardNumber: number): void;
+    playCardFromHand(id: number): void;
+    playCardFromDeck(number: number): void;
 }
 
 interface EnteringChooseContinueArgs {

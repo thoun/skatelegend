@@ -23,13 +23,21 @@ trait ActionTrait {
         $this->gamestate->nextState('stop');
     }
 
-    public function passPlanning() {
-        $this->checkAction('passPlanning'); 
+    
+  	
+    public function playCardFromHand(int $id) {
+        $this->checkAction('playCardFromHand'); 
+
+        $this->gamestate->nextState('pass');
+    }
+    
+    public function playCardFromDeck(int $number) {
+        $this->checkAction('playCardFromDeck'); 
 
         $this->gamestate->nextState('pass');
     }
 
-    public function chooseDiceFaces(int $die1, int $die2) {
+    /*public function chooseDiceFaces(int $die1, int $die2) {
         $this->checkAction('chooseDiceFaces'); 
         
         if ($die1 < 0 || $die1 > 5 || $die2 < 1 || $die2 > 6) {
@@ -348,7 +356,7 @@ trait ActionTrait {
                 throw new BgaUserException("Only Baveux can move from a green territory");
             }
         }
-        */
+        *_/
 
         $this->setGameStateValue(PLAYER_SELECTED_FIGHTER, $id);
         $this->setGameStateValue(PLAYER_CURRENT_MOVE, MOVE_MOVE);
@@ -394,7 +402,7 @@ trait ActionTrait {
         }
         if (!$fighter->power || $fighter->power === POWER_MUDSHELL) {
             throw new BgaUserException("This fighter has no activable power");
-        }*/
+        }*_/
 
         if ($fighter->type === 20) {
             $this->applyAction($fighter);
@@ -737,5 +745,5 @@ trait ActionTrait {
         $this->checkAction('pass');
 
         $this->gamestate->nextState('nextPlayer');
-    }
+    }*/
 }

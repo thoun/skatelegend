@@ -49,6 +49,26 @@
 
       self::ajaxResponse();
     }
+  	
+    public function playCardFromHand() {
+      self::setAjaxMode();
+
+      $id = self::getArg("id", AT_posint, true);
+
+      $this->game->playCardFromHand($id);
+
+      self::ajaxResponse();
+    }
+  	
+    public function playCardFromDeck() {
+      self::setAjaxMode();
+
+      $number = self::getArg("number", AT_posint, true);
+
+      $this->game->playCardFromDeck($number);
+
+      self::ajaxResponse();
+    }
 
   }
   
