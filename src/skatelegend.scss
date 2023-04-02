@@ -1,0 +1,106 @@
+@import '../node_modules/bga-zoom/bga-zoom';
+@import 'cards';
+@import 'stacks';
+@import 'playerboards';
+@import 'player-table';
+@import 'help';
+
+/* make space between buttons on touch devices */
+@media (hover: none) {
+  #page-title .action-button.bgabutton, #page-title .bgabutton {
+    margin-bottom: 8px;
+    margin-top: 8px;
+  }
+}
+
+html, .mode_3d #game_play_area_background {
+  background: url('img/background.jpg');
+}
+
+#zoom-wrapper {
+  position: relative;
+
+  #zoom-controls {
+    position: absolute;
+    top: 0;
+    right: 0;
+
+    button {
+      width: 40px;
+      height: 40px;
+      background: url('img/zoom.svg');
+      background-size: auto 220%;
+
+      &:not(.disabled) {
+        cursor: pointer;
+      }
+
+      &.disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+    }
+
+    #zoom-in {
+      background-position: 6% 94%;
+    }
+    #zoom-out {
+      background-position: 82% 94%;
+    }
+  }
+
+  #full-table {
+    position: relative;
+    transform-origin: left top;
+
+    #centered-table {
+      display: flex;
+      justify-content: center;
+    }
+
+    #tables-and-center {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: start;
+      gap: 20px;
+
+      #tables {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+    }
+  }
+}
+
+@media (max-width: 1165px) { 
+  #tables-and-center {
+    flex-wrap: wrap;
+  }
+}
+
+.log p /*.replay_last_move_button*/, .hidden-log-action {
+  display: none !important;
+}
+
+.title-bar-call {
+  background: #8B0000;
+  color: white;
+  padding: 5px 8px;
+  margin-left: 8px;
+  border-radius: 8px;
+  animation: title-bar-call-animation 1s alternate infinite ease-in-out;
+}
+
+@keyframes title-bar-call-animation {
+  0% { 
+    box-shadow: 0 0 6px 2px #8B0000;
+  }
+  100% { 
+    box-shadow: 0 0 6px 2px #8B000088;
+  }
+}

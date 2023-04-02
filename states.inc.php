@@ -46,66 +46,135 @@
    _ updateGameProgression: when specified, the game progression is updated (=> call to your getGameProgression
                             method).
 */
+require_once("modules/php/constants.inc.php");
 
-//    !! It is not a good idea to modify this file when a game is running !!
-
- 
-$machinestates = array(
+$basicGameStates = [
 
     // The initial state. Please do not modify.
-    1 => array(
+    ST_BGA_GAME_SETUP => [
         "name" => "gameSetup",
-        "description" => "",
+        "description" => clienttranslate("Game setup"),
         "type" => "manager",
         "action" => "stGameSetup",
-        "transitions" => array( "" => 2 )
-    ),
-    
-    // Note: ID=2 => your first state
-
-    2 => array(
-    		"name" => "playerTurn",
-    		"description" => clienttranslate('${actplayer} must play a card or pass'),
-    		"descriptionmyturn" => clienttranslate('${you} must play a card or pass'),
-    		"type" => "activeplayer",
-    		"possibleactions" => array( "playCard", "pass" ),
-    		"transitions" => array( "playCard" => 2, "pass" => 2 )
-    ),
-    
-/*
-    Examples:
-    
-    2 => array(
-        "name" => "nextPlayer",
-        "description" => '',
-        "type" => "game",
-        "action" => "stNextPlayer",
-        "updateGameProgression" => true,   
-        "transitions" => array( "endGame" => 99, "nextPlayer" => 10 )
-    ),
-    
-    10 => array(
-        "name" => "playerTurn",
-        "description" => clienttranslate('${actplayer} must play a card or pass'),
-        "descriptionmyturn" => clienttranslate('${you} must play a card or pass'),
-        "type" => "activeplayer",
-        "possibleactions" => array( "playCard", "pass" ),
-        "transitions" => array( "playCard" => 2, "pass" => 2 )
-    ), 
-
-*/    
+        "transitions" => [ "" => ST_NEW_ROUND ]
+    ],
    
     // Final state.
-    // Please do not modify (and do not overload action/args methods).
-    99 => array(
+    // Please do not modify.
+    ST_END_GAME => [
         "name" => "gameEnd",
         "description" => clienttranslate("End of game"),
         "type" => "manager",
         "action" => "stGameEnd",
-        "args" => "argGameEnd"
-    )
+        "args" => "argGameEnd",
+    ],
+];
 
-);
+$playerActionsGameStates = [
+
+    ST_PLAYER_CHOOSE_CONTINUE => [
+        "name" => "chooseContinue",
+        "description" => clienttranslate('${actplayer} must choose to continue or stop the sequence'),
+        "descriptionmyturn" => clienttranslate('${you} must choose to continue or stop the sequence'),
+        "type" => "activeplayer",
+        "args" => "argChooseContinue",
+        "action" => "stChooseContinue",
+        "possibleactions" => [ 
+            "continue",
+            "stop"
+        ],
+        "transitions" => [
+            "continue" => ST_PLAYER_PLAY_CARD,
+            "stop" => ST_STOP,
+        ]
+    ],
+
+    ST_PLAYER_PLAY_CARD => [
+        "name" => "playCard",
+        "description" => clienttranslate('${actplayer} must play a card'),
+        "descriptionmyturn" => clienttranslate('${you} must play a card'),
+        "type" => "activeplayer",    
+        "args" => "argPlayCard",
+        "possibleactions" => [ 
+            "playCardFromHand",
+            "playCardFromDeck",
+        ],
+        "transitions" => [
+            "next" => ST_NEXT_PLAYER,
+            "fall" => ST_FALL,
+            "playAgain" => ST_PLAYER_CHOOSE_CONTINUE,
+        ],
+    ],
+];
+
+$gameGameStates = [
+
+    ST_NEW_ROUND => [
+        "name" => "newRound",
+        "description" => "",
+        "type" => "game",
+        "action" => "stNewRound",
+        "updateGameProgression" => true,
+        "transitions" => [
+            "next" => ST_PLAYER_CHOOSE_CONTINUE,
+        ],
+    ],
+
+    ST_STOP => [
+        "name" => "stop",
+        "description" => "",
+        "type" => "game",
+        "action" => "stStop",
+        "transitions" => [
+            "next" => ST_NEXT_PLAYER,
+        ],
+    ],
+
+    ST_FALL => [
+        "name" => "fall",
+        "description" => "",
+        "type" => "game",
+        "action" => "stFall",
+        "transitions" => [
+            "next" => ST_NEXT_PLAYER,
+        ],
+    ],
+
+    ST_NEXT_PLAYER => [
+        "name" => "nextPlayer",
+        "description" => "",
+        "type" => "game",
+        "action" => "stNextPlayer",
+        "transitions" => [
+            "nextPlayer" => ST_PLAYER_CHOOSE_CONTINUE,
+            "endRound" => ST_END_ROUND,
+        ],
+    ],
+
+    ST_END_ROUND => [
+        "name" => "endRound",
+        "description" => "",
+        "type" => "game",
+        "action" => "stEndRound",
+        "updateGameProgression" => true,
+        "transitions" => [
+            "newRound" => ST_NEW_ROUND,
+            "endScore" => ST_END_SCORE,
+        ],
+    ],
+
+    ST_END_SCORE => [
+        "name" => "endScore",
+        "description" => "",
+        "type" => "game",
+        "action" => "stEndScore",
+        "transitions" => [
+            "endGame" => ST_END_GAME,
+        ],
+    ],
+];
+ 
+$machinestates = $basicGameStates + $playerActionsGameStates + $gameGameStates;
 
 
 

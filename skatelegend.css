@@ -1,72 +1,592 @@
-/**
- *------
- * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel Colin <ecolin@boardgamearena.com>
- * SkateLegend implementation : © <Your name here> <Your email address here>
- *
- * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
- * See http://en.boardgamearena.com/#!doc/Studio for more information.
- * -----
- *
- * skatelegend.css
- *
- * SkateLegend stylesheet
- *
- */
+#bga-zoom-wrapper {
+  position: relative;
+}
 
-/*
-    This is the CSS stylesheet of your game User Interface.
-    
-    Styles defined on this file will be applied to the HTML elements you define in your
-    HTML template (skatelegend_skatelegend.tpl), and to HTML elements you create dynamically
-    (in skatelegend.js).
-    
-    Usually, you are using CSS to:
-    
-    1°) define the overall layout of your game
-        (ex: place the board on the top left, place player's hand beside, place the deck on the right, ...).
+#bga-zoom-wrapper .bga-zoom-inner {
+  transform-origin: left top;
+}
 
-    2°) create your CSS-sprites:
-        All images of your games should be gathered into a small number of image files. Then, using
-        background-image and background-position CSS properties, you create HTML blocks that can 
-        display these images correctly (see example below).
-    
-    3°) ... anything else:
-        It is really easy to add and remove CSS classes dynamically from your Javascript with
-        dojo.addClass and dojo.removeClass. It is also easy to check if an element has a class
-        (dojo.hasClass) or to get all elements with a specific class (dojo.query). This is why,
-        very often, using CSS classes for the logic of your user interface allow you to do complex
-        thing easily.
-        
-        
-     Note: on the production platform, this file will be compressed and comments will be removed.
-           Consequently, don't hesitate to put as many comments as necessary.
-*/
+#bga-zoom-wrapper .bga-zoom-inner[data-smooth=true] {
+  transition: transform 0.5s;
+}
 
+#bga-zoom-wrapper #bga-zoom-controls {
+  position: absolute;
+  top: 0;
+}
 
-/* Note: you must not use any @import directive */
+#bga-zoom-wrapper #bga-zoom-controls[data-position=top-left] {
+  left: 0;
+}
 
+#bga-zoom-wrapper #bga-zoom-controls[data-position=top-right] {
+  right: 0;
+}
 
-/********* You can start writing your CSS below this line: **********/
+#bga-zoom-wrapper #bga-zoom-controls button {
+  border: 0;
+}
 
+#bga-zoom-wrapper #bga-zoom-controls button:not(.disabled) {
+  cursor: pointer;
+}
 
-/*
-    Example of CSS sprites (a black token and a white token, 20x20px each, embedded in the same "tokens.png" 40x20px image):
+#bga-zoom-wrapper #bga-zoom-controls button.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
 
-    .white_token {
-        background-image: url('img/tokens.png');
-        background-position: 0px 0px;
-    }
-    .black_token {
-        background-image: url('img/tokens.png');
-        background-position: -20px 0px;
-    }
-    .token {
-        width: 20px;
-        height: 20px;
-        background-repeat: none;
-    }
-*/
+#bga-zoom-wrapper #bga-zoom-controls .bga-zoom-out-icon {
+  width: 40px;
+  height: 40px;
+  background: url('data:image/svg+xml;utf8,<svg width="100%" height="100%" viewBox="65 0 70 70" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;"><g><g transform="matrix(1,0,0,1,-4.97116,-76.2244)"><path d="M118,118C122.1,113.8 124.3,108.7 124.3,102.8C124.3,96.8 122.1,91.8 118,87.6C113.8,83.4 108.7,81.3 102.8,81.3C96.8,81.3 91.8,83.4 87.6,87.6C83.3,91.8 81.3,96.8 81.3,102.8C81.3,108.7 83.3,113.8 87.6,118C91.8,122.2 96.8,124.3 102.8,124.3C108.7,124.3 113.8,122.2 118,118" style="fill:none;fill-rule:nonzero;stroke:black;stroke-width:7px;"/></g><g transform="matrix(1,0,0,1,-4.97116,-76.2244)"><path d="M118,118L132.3,132.3" style="fill:none;fill-rule:nonzero;stroke:black;stroke-width:7px;"/></g><g transform="matrix(1,0,0,1,-4.97116,-76.2244)"><path d="M114.5,102.1L90.8,102.1" style="fill:none;fill-rule:nonzero;stroke:black;stroke-width:7px;"/></g></g></svg>');
+}
 
+#bga-zoom-wrapper #bga-zoom-controls .bga-zoom-in-icon {
+  width: 40px;
+  height: 40px;
+  background: url('data:image/svg+xml;utf8,<svg width="100%" height="100%" viewBox="0 0 70 70" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;"><g><g transform="matrix(1,0,0,1,-7.91703,-76.2244)"><path d="M23.8,102.1L35.7,102.1" style="fill:none;fill-rule:nonzero;stroke:black;stroke-width:7px;"/></g><g transform="matrix(1,0,0,1,-7.91703,-76.2244)"><path d="M35.7,102.1L47.5,102.1" style="fill:none;fill-rule:nonzero;stroke:black;stroke-width:7px;"/></g><g transform="matrix(1,0,0,1,-7.91703,-76.2244)"><path d="M35.7,102.1L35.7,90.3" style="fill:none;fill-rule:nonzero;stroke:black;stroke-width:7px;"/></g><g transform="matrix(1,0,0,1,-7.91703,-76.2244)"><path d="M51,118C55.2,113.8 57.3,108.7 57.3,102.8C57.3,96.8 55.2,91.8 51,87.6C46.8,83.4 41.7,81.3 35.8,81.3C29.9,81.3 24.8,83.4 20.6,87.6C16.4,91.8 14.3,96.8 14.3,102.8C14.3,108.7 16.4,113.8 20.6,118C24.8,122.2 29.9,124.3 35.8,124.3C41.7,124.3 46.8,122.2 51,118" style="fill:none;fill-rule:nonzero;stroke:black;stroke-width:7px;"/></g><g transform="matrix(1,0,0,1,-7.91703,-76.2244)"><path d="M35.7,113.9L35.7,102.1" style="fill:none;fill-rule:nonzero;stroke:black;stroke-width:7px;"/></g><g transform="matrix(1,0,0,1,-7.91703,-76.2244)"><path d="M65.3,132.3L51,118" style="fill:none;fill-rule:nonzero;stroke:black;stroke-width:7px;"/></g></g></svg>');
+}
 
+#bga-zoom-wrapper #bga-zoom-controls[data-color=white] .bga-zoom-out-icon {
+  width: 40px;
+  height: 40px;
+  background: url('data:image/svg+xml;utf8,<svg width="100%" height="100%" viewBox="65 0 70 70" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;"><g><g transform="matrix(1,0,0,1,-4.97116,-76.2244)"><path d="M118,118C122.1,113.8 124.3,108.7 124.3,102.8C124.3,96.8 122.1,91.8 118,87.6C113.8,83.4 108.7,81.3 102.8,81.3C96.8,81.3 91.8,83.4 87.6,87.6C83.3,91.8 81.3,96.8 81.3,102.8C81.3,108.7 83.3,113.8 87.6,118C91.8,122.2 96.8,124.3 102.8,124.3C108.7,124.3 113.8,122.2 118,118" style="fill:none;fill-rule:nonzero;stroke:white;stroke-width:7px;"/></g><g transform="matrix(1,0,0,1,-4.97116,-76.2244)"><path d="M118,118L132.3,132.3" style="fill:none;fill-rule:nonzero;stroke:white;stroke-width:7px;"/></g><g transform="matrix(1,0,0,1,-4.97116,-76.2244)"><path d="M114.5,102.1L90.8,102.1" style="fill:none;fill-rule:nonzero;stroke:white;stroke-width:7px;"/></g></g></svg>');
+}
 
+#bga-zoom-wrapper #bga-zoom-controls[data-color=white] .bga-zoom-in-icon {
+  width: 40px;
+  height: 40px;
+  background: url('data:image/svg+xml;utf8,<svg width="100%" height="100%" viewBox="0 0 70 70" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;"><g><g transform="matrix(1,0,0,1,-7.91703,-76.2244)"><path d="M23.8,102.1L35.7,102.1" style="fill:none;fill-rule:nonzero;stroke:white;stroke-width:7px;"/></g><g transform="matrix(1,0,0,1,-7.91703,-76.2244)"><path d="M35.7,102.1L47.5,102.1" style="fill:none;fill-rule:nonzero;stroke:white;stroke-width:7px;"/></g><g transform="matrix(1,0,0,1,-7.91703,-76.2244)"><path d="M35.7,102.1L35.7,90.3" style="fill:none;fill-rule:nonzero;stroke:white;stroke-width:7px;"/></g><g transform="matrix(1,0,0,1,-7.91703,-76.2244)"><path d="M51,118C55.2,113.8 57.3,108.7 57.3,102.8C57.3,96.8 55.2,91.8 51,87.6C46.8,83.4 41.7,81.3 35.8,81.3C29.9,81.3 24.8,83.4 20.6,87.6C16.4,91.8 14.3,96.8 14.3,102.8C14.3,108.7 16.4,113.8 20.6,118C24.8,122.2 29.9,124.3 35.8,124.3C41.7,124.3 46.8,122.2 51,118" style="fill:none;fill-rule:nonzero;stroke:white;stroke-width:7px;"/></g><g transform="matrix(1,0,0,1,-7.91703,-76.2244)"><path d="M35.7,113.9L35.7,102.1" style="fill:none;fill-rule:nonzero;stroke:white;stroke-width:7px;"/></g><g transform="matrix(1,0,0,1,-7.91703,-76.2244)"><path d="M65.3,132.3L51,118" style="fill:none;fill-rule:nonzero;stroke:white;stroke-width:7px;"/></g></g></svg>');
+}
 
+.card {
+  display: inline-block;
+  position: relative;
+  width: 140px;
+  height: 280px;
+  margin: 5px;
+  border-radius: 5px;
+}
+.card.disabled {
+  cursor: not-allowed;
+  filter: contrast(0.6);
+}
+.card .card-sides .card-side {
+  background-size: auto 100%;
+  border-radius: 5px;
+}
+.card .card-sides .card-side > * {
+  pointer-events: none;
+  user-select: none;
+}
+.card.selectable:not(.disabled) {
+  cursor: pointer;
+}
+.card.selectable:not(.disabled):not(.selected) {
+  animation: selectable-card-animation 1s alternate infinite ease-in-out;
+}
+.card.selectable:not(.disabled) .card-side {
+  box-shadow: unset;
+}
+.card.selected:not(.disabled) {
+  box-shadow: 0 0 5px 8px #e273f5;
+}
+.card.selected:not(.disabled) .card-side {
+  box-shadow: unset;
+}
+.card[data-type="1"] {
+  background-image: url("img/cards.jpg");
+}
+.card[data-type="1"][data-type-arg="1"] .front {
+  background-position-x: 9.0909090909%;
+}
+.card[data-type="1"][data-type-arg="2"] .front {
+  background-position-x: 18.1818181818%;
+}
+.card[data-type="1"][data-type-arg="3"] .front {
+  background-position-x: 27.2727272727%;
+}
+.card[data-type="1"][data-type-arg="4"] .front {
+  background-position-x: 36.3636363636%;
+}
+.card[data-type="1"][data-type-arg="5"] .front {
+  background-position-x: 45.4545454545%;
+}
+.card[data-type="1"][data-type-arg="6"] .front {
+  background-position-x: 54.5454545455%;
+}
+.card[data-type="1"][data-type-arg="7"] .front {
+  background-position-x: 63.6363636364%;
+}
+.card[data-type="1"][data-type-arg="8"] .front {
+  background-position-x: 72.7272727273%;
+}
+.card[data-type="1"][data-type-arg="9"] .front {
+  background-position-x: 81.8181818182%;
+}
+.card[data-type="1"][data-type-arg="10"] .front {
+  background-position-x: 90.9090909091%;
+}
+.card[data-type="1"][data-type-arg="11"] .front {
+  background-position-x: 100%;
+}
+.card[data-type="2"] {
+  background-image: url("img/cards-legend.jpg");
+}
+.card[data-type="2"][data-type-arg="1"] .front {
+  background-position-x: 10%;
+}
+.card[data-type="2"][data-type-arg="2"] .front {
+  background-position-x: 20%;
+}
+.card[data-type="2"][data-type-arg="3"] .front {
+  background-position-x: 30%;
+}
+.card[data-type="2"][data-type-arg="4"] .front {
+  background-position-x: 40%;
+}
+.card[data-type="2"][data-type-arg="5"] .front {
+  background-position-x: 50%;
+}
+.card[data-type="2"][data-type-arg="6"] .front {
+  background-position-x: 60%;
+}
+.card[data-type="2"][data-type-arg="7"] .front {
+  background-position-x: 70%;
+}
+.card[data-type="2"][data-type-arg="8"] .front {
+  background-position-x: 80%;
+}
+.card[data-type="2"][data-type-arg="9"] .front {
+  background-position-x: 90%;
+}
+.card[data-type="2"][data-type-arg="10"] .front {
+  background-position-x: 100%;
+}
+
+@keyframes selectable-card-animation {
+  0% {
+    box-shadow: 0 0 3px 2px #FFFFFF;
+  }
+  100% {
+    box-shadow: 0 0 5px 3px #FFFFFF;
+  }
+}
+#table-center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid #60c2cb;
+  padding: 5px;
+  border-radius: 15px;
+  background: rgba(96, 194, 203, 0.4);
+  min-width: 505px;
+}
+#table-center #deck-and-discards {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#table-center #deck-and-discards #deck {
+  display: inline-block;
+  position: relative;
+  width: 149px;
+  height: 208px;
+  margin: 5px;
+  border-radius: 10px;
+  background-image: url("img/card-back.jpg");
+  background-size: auto 100%;
+  box-shadow: 3px 3px 0px 0px #333, 5px 5px 3px black;
+}
+#table-center #deck-and-discards #deck.selectable {
+  cursor: pointer;
+  animation: selectable-card-animation 1s alternate infinite ease-in-out;
+}
+#table-center #deck-and-discards #deck.hidden {
+  background: rgba(96, 194, 203, 0.4);
+  box-shadow: 5px 5px 3px rgba(96, 194, 203, 0.4);
+}
+#table-center #deck-and-discards .discard-stack {
+  display: inline-block;
+  position: relative;
+  width: 159px;
+  height: 218px;
+  margin: 5px;
+  border-radius: 10px;
+  border: 1px solid white;
+  background-color: rgba(255, 255, 255, 0.4);
+}
+#table-center #pick {
+  position: relative;
+  background-color: #60c2cb;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 350px;
+  height: 230px;
+  margin-top: 10px;
+  transition: background-color 0.5s;
+}
+#table-center #pick[data-visible=false] {
+  background-color: transparent;
+}
+#table-center #pick[data-visible=false]::before {
+  border-color: transparent;
+}
+#table-center #pick::before {
+  transition: border-color 0.5s;
+  top: -12px;
+  border-width: 0 12px 12px 12px;
+  border-color: #60c2cb transparent;
+  border-style: solid;
+  content: "";
+  display: block;
+  left: 7px;
+  position: absolute;
+  width: 0;
+}
+
+#discard-pick {
+  background: rgba(255, 255, 255, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  padding: 5px;
+}
+#discard-pick[data-visible=false] {
+  display: none;
+}
+
+.cards-stack {
+  position: relative;
+}
+.cards-stack .card {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.cards-stack .pile-counter {
+  position: absolute;
+  bottom: -18px;
+  right: 0;
+  left: 0;
+  font-size: 80%;
+  text-align: center;
+  color: lightcyan;
+}
+
+.player-board {
+  background-color: white;
+}
+.player-board.spectator-mode * {
+  background: white !important;
+}
+
+.end-game-points {
+  font-size: 80%;
+}
+
+.counters {
+  display: flex;
+  align-items: center;
+  margin: 5px 0;
+}
+.counters .icon {
+  margin-right: 5px;
+}
+
+.player-hand-card {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background-image: url("img/cards.svg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  vertical-align: bottom;
+}
+
+.player-table {
+  width: 650px;
+  position: relative;
+  background: rgba(255, 255, 255, 0.4);
+  border: 2px solid white;
+  border-radius: 15px;
+}
+.player-table .name-wrapper {
+  position: relative;
+  display: flex;
+  background: rgba(255, 255, 255, 0.6666666667);
+  padding: 5px;
+  justify-content: center;
+  align-items: center;
+}
+.player-table .name-wrapper .name {
+  font-size: 20pt;
+  font-weight: bold;
+}
+.player-table .name-wrapper .bubble-wrapper {
+  position: absolute;
+  bottom: 110%;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  pointer-events: none;
+}
+.player-table .name-wrapper .bubble-wrapper .discussion_bubble {
+  position: unset;
+  white-space: nowrap;
+  display: unset;
+  opacity: 0;
+  transition: opacity 0.5s;
+  bottom: 110%;
+}
+.player-table .name-wrapper .bubble-wrapper .discussion_bubble[data-visible=true] {
+  opacity: 1;
+}
+.player-table .name-wrapper .bubble-wrapper .discussion_bubble .bubble-score {
+  margin-top: 8px;
+}
+.player-table .name-wrapper .bubble-wrapper .discussion_bubble::after {
+  left: calc(50% - 15px);
+}
+.player-table .name-wrapper .counter {
+  margin-left: 8px;
+}
+.player-table .cards {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  min-height: 218px;
+}
+.player-table .cards.hand[data-current-player=false] {
+  min-height: 45px;
+  max-height: 45px;
+  overflow: hidden;
+}
+.player-table .cards.hand[data-current-player=false] .card:not(:first-child) {
+  margin-left: -120px;
+}
+.player-table .cards.hand[data-can-steal=true] .card {
+  cursor: pointer;
+  animation: selectable-card-animation 1s alternate infinite ease-in-out;
+}
+
+#skatelegend-help-button {
+  position: fixed;
+  bottom: 12px;
+  left: 5px;
+  width: 50px;
+  height: 50px;
+  background: #60c2cb;
+  font-weight: bold;
+  color: white;
+  border-radius: 25px;
+  box-shadow: 3px 5px 5px 0px rgb(0, 0, 0);
+  cursor: pointer;
+  z-index: 949;
+  font-size: 28pt;
+}
+
+#color-help-button {
+  position: fixed;
+  bottom: 12px;
+  left: 65px;
+  width: 50px;
+  height: 50px;
+  border-radius: 25px;
+  box-shadow: 3px 5px 5px 0px rgb(0, 0, 0);
+  cursor: pointer;
+  z-index: 949;
+  overflow: hidden;
+  background-size: contain;
+  transition: width 0.5s, height 0.5s, border-radius 0.5s, background-image 0.5s;
+}
+#color-help-button .label {
+  position: absolute;
+  color: white;
+  font-size: 10pt;
+  opacity: 0;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 69px;
+  height: 42px;
+  word-break: break-word;
+}
+#color-help-button .label[data-row="0"] {
+  top: 11px;
+}
+#color-help-button .label[data-row="1"] {
+  top: 60.8px;
+}
+#color-help-button .label[data-row="2"] {
+  top: 110.6px;
+}
+#color-help-button .label[data-row="3"] {
+  top: 160.4px;
+}
+#color-help-button .label[data-row="4"] {
+  top: 210.2px;
+}
+#color-help-button .label[data-row="5"] {
+  top: 260px;
+}
+#color-help-button .label[data-column="0"] {
+  left: 38px;
+}
+#color-help-button .label[data-column="1"] {
+  left: 143px;
+}
+#color-help-button[data-folded=true] {
+  background-image: url("img/logo-coloradd.svg");
+}
+#color-help-button[data-folded=false] {
+  background-image: url("img/color-legend.jpg");
+  width: 223px;
+  height: 312px;
+  border-radius: 10px;
+}
+#color-help-button[data-folded=false] .label {
+  opacity: 1;
+}
+
+/* we show help button if user has no mouse ( = no tooltips) */
+@media (hover: hover) {
+  #skatelegend-help-button, #color-help-button {
+    bottom: 5px;
+  }
+}
+#popin_skatelegendHelpDialog_contents {
+  max-width: 100vw;
+  overflow-x: auto;
+}
+
+#popin_skatelegendHelpDialog {
+  background: white;
+  background-repeat: repeat;
+  max-width: 100vw;
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+#help-popin {
+  width: 520px;
+  max-width: 35rem;
+  max-height: calc(80vh - 80px);
+  overflow: auto;
+}
+#help-popin h1 {
+  color: #63c5cf;
+  font-size: 18px;
+  margin: 8px 0;
+}
+#help-popin .help-section {
+  color: white;
+  background-color: #63c5cf;
+  border-radius: 8px;
+  padding: 5px;
+  margin: 3px 0;
+  display: flex;
+}
+#help-popin .help-section > div:not(:first-child) {
+  margin-left: 5px;
+}
+#help-popin .help-section > div:not(:first-child):not([id]) {
+  flex: 1;
+  margin-left: 5px;
+}
+
+/* make space between buttons on touch devices */
+@media (hover: none) {
+  #page-title .action-button.bgabutton, #page-title .bgabutton {
+    margin-bottom: 8px;
+    margin-top: 8px;
+  }
+}
+html, .mode_3d #game_play_area_background {
+  background: url("img/background.jpg");
+}
+
+#zoom-wrapper {
+  position: relative;
+}
+#zoom-wrapper #zoom-controls {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+#zoom-wrapper #zoom-controls button {
+  width: 40px;
+  height: 40px;
+  background: url("img/zoom.svg");
+  background-size: auto 220%;
+}
+#zoom-wrapper #zoom-controls button:not(.disabled) {
+  cursor: pointer;
+}
+#zoom-wrapper #zoom-controls button.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+#zoom-wrapper #zoom-controls #zoom-in {
+  background-position: 6% 94%;
+}
+#zoom-wrapper #zoom-controls #zoom-out {
+  background-position: 82% 94%;
+}
+#zoom-wrapper #full-table {
+  position: relative;
+  transform-origin: left top;
+}
+#zoom-wrapper #full-table #centered-table {
+  display: flex;
+  justify-content: center;
+}
+#zoom-wrapper #full-table #tables-and-center {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: start;
+  gap: 20px;
+}
+#zoom-wrapper #full-table #tables-and-center #tables {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+@media (max-width: 1165px) {
+  #tables-and-center {
+    flex-wrap: wrap;
+  }
+}
+.log p, .hidden-log-action {
+  display: none !important;
+}
+
+.title-bar-call {
+  background: #8B0000;
+  color: white;
+  padding: 5px 8px;
+  margin-left: 8px;
+  border-radius: 8px;
+  animation: title-bar-call-animation 1s alternate infinite ease-in-out;
+}
+
+@keyframes title-bar-call-animation {
+  0% {
+    box-shadow: 0 0 6px 2px #8B0000;
+  }
+  100% {
+    box-shadow: 0 0 6px 2px rgba(139, 0, 0, 0.5333333333);
+  }
+}

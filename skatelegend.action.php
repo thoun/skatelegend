@@ -22,46 +22,53 @@
  */
   
   
-  class action_skatelegend extends APP_GameAction
-  { 
+  class action_skatelegend extends APP_GameAction { 
     // Constructor: please do not modify
-   	public function __default()
-  	{
-  	    if( self::isArg( 'notifwindow') )
-  	    {
+   	public function __default() {
+  	    if( self::isArg( 'notifwindow') ) {
             $this->view = "common_notifwindow";
   	        $this->viewArgs['table'] = self::getArg( "table", AT_posint, true );
-  	    }
-  	    else
-  	    {
+  	    } else {
             $this->view = "skatelegend_skatelegend";
             self::trace( "Complete reinitialization of board game" );
       }
   	} 
-  	
-  	// TODO: defines your action entry points there
 
+    public function continue() {
+      self::setAjaxMode();
 
-    /*
-    
-    Example:
-  	
-    public function myAction()
-    {
-        self::setAjaxMode();     
+      $this->game->continue();
 
-        // Retrieve arguments
-        // Note: these arguments correspond to what has been sent through the javascript "ajaxcall" method
-        $arg1 = self::getArg( "myArgument1", AT_posint, true );
-        $arg2 = self::getArg( "myArgument2", AT_posint, true );
-
-        // Then, call the appropriate method in your game logic, like "playCard" or "myAction"
-        $this->game->myAction( $arg1, $arg2 );
-
-        self::ajaxResponse( );
+      self::ajaxResponse();
     }
-    
-    */
+
+    public function stop() {
+      self::setAjaxMode();
+
+      $this->game->stop();
+
+      self::ajaxResponse();
+    }
+  	
+    public function playCardFromHand() {
+      self::setAjaxMode();
+
+      $id = self::getArg("id", AT_posint, true);
+
+      $this->game->playCardFromHand($id);
+
+      self::ajaxResponse();
+    }
+  	
+    public function playCardFromDeck() {
+      self::setAjaxMode();
+
+      $number = self::getArg("number", AT_posint, true);
+
+      $this->game->playCardFromDeck($number);
+
+      self::ajaxResponse();
+    }
 
   }
   
