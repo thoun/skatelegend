@@ -1,6 +1,25 @@
 <?php
 
 /*
+ * Powers
+ */
+define('POWER_FLIP_DECK', 10);
+define('POWER_PLAY_AGAIN', 21);
+define('POWER_PLAY_AGAIN_TWICE', 22);
+define('POWER_PICK_CARD', 31);
+define('POWER_PICK_CARD_TWICE', 32);
+
+/*
+ * Conditions
+ */
+define('CONDITION_EQUAL', 1);
+define('CONDITION_DANGER', 2);
+define('CONDITION_YELLOW_GREEN', 3);
+define('CONDITION_CARDS', 4);
+define('CONDITION_DIFFERENT', 5);
+define('CONDITION_RED', 6);
+
+/*
  * Colors
  */
 define('GRAY', 0);

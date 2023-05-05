@@ -369,11 +369,6 @@ class SkateLegend implements SkateLegendGame {
         const table = new PlayerTable(this, gamedatas.players[playerId]);
         this.playersTables.push(table);
     }
-
-    private updateDisabledPlayCards() {
-        this.getCurrentPlayerTable()?.updateDisabledPlayCards(this.selectedCards, this.gamedatas.gamestate.args.playableDuoCards);        
-        document.getElementById(`playCards_button`)?.classList.toggle(`disabled`, this.selectedCards.length != 2);
-    }
     
     public onCardClick(card: Card): void {
         const cardDiv = document.getElementById(`card-${card.id}`);

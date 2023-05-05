@@ -5,14 +5,16 @@ class CardType {
     public int $color;
     public int $wheels;
     public bool $danger = false;
-    public /* int | null*/ $power; // 1: cards, 2: +, 3: replay
+    public /* int | null*/ $power;
+    public /* array | null*/ $condition;
   
-    public function __construct(int $number, int $color, int $wheels, bool $danger = false, /* int | null*/ $power = null) {
+    public function __construct(int $number, int $color, int $wheels, bool $danger = false, /* int | null*/ $power = null, /* array | null*/ $condition = null) {
         $this->number = $number;
         $this->color = $color;
         $this->wheels = $wheels;
         $this->danger = $danger;
         $this->power = $power;
+        $this->condition = $condition;
     } 
 }
 
@@ -34,6 +36,7 @@ class Card extends CardType {
             $this->wheels = $CARDS_TYPE[$this->type][$this->typeArg]->wheels;
             $this->power = $CARDS_TYPE[$this->type][$this->typeArg]->power;
             $this->danger = $CARDS_TYPE[$this->type][$this->typeArg]->danger;
+            $this->condition = $CARDS_TYPE[$this->type][$this->typeArg]->condition;
         }
     } 
 

@@ -189,6 +189,105 @@ var ZoomManager = /** @class */ (function () {
     };
     return ZoomManager;
 }());
+/**
+ * Linear slide of the card from origin to destination.
+ *
+ * @param element the element to animate. The element should be attached to the destination element before the animation starts.
+ * @param settings an `AnimationSettings` object
+ * @returns a promise when animation ends
+ */
+function slideAnimation(element, settings) {
+    var promise = new Promise(function (success) {
+        var _a, _b, _c, _d, _e;
+        // should be checked at the beginning of every animation
+        if (!shouldAnimate(settings)) {
+            success(false);
+            return promise;
+        }
+        var _f = getDeltaCoordinates(element, settings), x = _f.x, y = _f.y;
+        var duration = (_a = settings === null || settings === void 0 ? void 0 : settings.duration) !== null && _a !== void 0 ? _a : 500;
+        var originalZIndex = element.style.zIndex;
+        var originalTransition = element.style.transition;
+        element.style.zIndex = "".concat((_b = settings === null || settings === void 0 ? void 0 : settings.zIndex) !== null && _b !== void 0 ? _b : 10);
+        element.style.transition = null;
+        element.offsetHeight;
+        element.style.transform = "translate(".concat(-x, "px, ").concat(-y, "px) rotate(").concat((_c = settings === null || settings === void 0 ? void 0 : settings.rotationDelta) !== null && _c !== void 0 ? _c : 0, "deg)");
+        (_d = settings.animationStart) === null || _d === void 0 ? void 0 : _d.call(settings, element);
+        var timeoutId = null;
+        var cleanOnTransitionEnd = function () {
+            var _a;
+            element.style.zIndex = originalZIndex;
+            element.style.transition = originalTransition;
+            (_a = settings.animationEnd) === null || _a === void 0 ? void 0 : _a.call(settings, element);
+            success(true);
+            element.removeEventListener('transitioncancel', cleanOnTransitionEnd);
+            element.removeEventListener('transitionend', cleanOnTransitionEnd);
+            document.removeEventListener('visibilitychange', cleanOnTransitionEnd);
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+        };
+        var cleanOnTransitionCancel = function () {
+            var _a;
+            element.style.transition = "";
+            element.offsetHeight;
+            element.style.transform = (_a = settings === null || settings === void 0 ? void 0 : settings.finalTransform) !== null && _a !== void 0 ? _a : null;
+            element.offsetHeight;
+            cleanOnTransitionEnd();
+        };
+        element.addEventListener('transitioncancel', cleanOnTransitionCancel);
+        element.addEventListener('transitionend', cleanOnTransitionEnd);
+        document.addEventListener('visibilitychange', cleanOnTransitionCancel);
+        element.offsetHeight;
+        element.style.transition = "transform ".concat(duration, "ms linear");
+        element.offsetHeight;
+        element.style.transform = (_e = settings === null || settings === void 0 ? void 0 : settings.finalTransform) !== null && _e !== void 0 ? _e : null;
+        // safety in case transitionend and transitioncancel are not called
+        timeoutId = setTimeout(cleanOnTransitionEnd, duration + 100);
+    });
+    return promise;
+}
+function shouldAnimate(settings) {
+    var _a;
+    return document.visibilityState !== 'hidden' && !((_a = settings === null || settings === void 0 ? void 0 : settings.game) === null || _a === void 0 ? void 0 : _a.instantaneousMode);
+}
+/**
+ * Return the x and y delta, based on the animation settings;
+ *
+ * @param settings an `AnimationSettings` object
+ * @returns a promise when animation ends
+ */
+function getDeltaCoordinates(element, settings) {
+    var _a;
+    if (!settings.fromDelta && !settings.fromRect && !settings.fromElement) {
+        throw new Error("[bga-animation] fromDelta, fromRect or fromElement need to be set");
+    }
+    var x = 0;
+    var y = 0;
+    if (settings.fromDelta) {
+        x = settings.fromDelta.x;
+        y = settings.fromDelta.y;
+    }
+    else {
+        var originBR = (_a = settings.fromRect) !== null && _a !== void 0 ? _a : settings.fromElement.getBoundingClientRect();
+        // TODO make it an option ?
+        var originalTransform = element.style.transform;
+        element.style.transform = '';
+        var destinationBR = element.getBoundingClientRect();
+        element.style.transform = originalTransform;
+        x = (destinationBR.left + destinationBR.right) / 2 - (originBR.left + originBR.right) / 2;
+        y = (destinationBR.top + destinationBR.bottom) / 2 - (originBR.top + originBR.bottom) / 2;
+    }
+    if (settings.scale) {
+        x /= settings.scale;
+        y /= settings.scale;
+    }
+    return { x: x, y: y };
+}
+function logAnimation(element, settings) {
+    console.log(element, element.getBoundingClientRect(), element.style.transform, settings);
+    return Promise.resolve(false);
+}
 var __assign = (this && this.__assign) || function () {
     __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -200,6 +299,82 @@ var __assign = (this && this.__assign) || function () {
     };
     return __assign.apply(this, arguments);
 };
+var AnimationManager = /** @class */ (function () {
+    /**
+     * @param game the BGA game class, usually it will be `this`
+     * @param settings: a `AnimationManagerSettings` object
+     */
+    function AnimationManager(game, settings) {
+        this.game = game;
+        this.settings = settings;
+        this.zoomManager = settings === null || settings === void 0 ? void 0 : settings.zoomManager;
+    }
+    /**
+     * Attach an element to a parent, then play animation from element's origin to its new position.
+     *
+     * @param element the element to animate
+     * @param toElement the destination parent
+     * @param fn the animation function
+     * @param settings the animation settings
+     * @returns a promise when animation ends
+     */
+    AnimationManager.prototype.attachWithAnimation = function (element, toElement, fn, settings) {
+        var _a, _b, _c, _d, _e, _f;
+        var fromRect = element.getBoundingClientRect();
+        toElement.appendChild(element);
+        (_a = settings === null || settings === void 0 ? void 0 : settings.afterAttach) === null || _a === void 0 ? void 0 : _a.call(settings, element, toElement);
+        return (_f = fn(element, __assign(__assign({ duration: (_c = (_b = this.settings) === null || _b === void 0 ? void 0 : _b.duration) !== null && _c !== void 0 ? _c : 500, scale: (_e = (_d = this.zoomManager) === null || _d === void 0 ? void 0 : _d.zoom) !== null && _e !== void 0 ? _e : undefined }, settings !== null && settings !== void 0 ? settings : {}), { game: this.game, fromRect: fromRect }))) !== null && _f !== void 0 ? _f : Promise.resolve(false);
+    };
+    /**
+     * Attach an element to a parent with a slide animation.
+     *
+     * @param card the card informations
+     */
+    AnimationManager.prototype.attachWithSlideAnimation = function (element, toElement, settings) {
+        return this.attachWithAnimation(element, toElement, slideAnimation, settings);
+    };
+    /**
+     * Attach an element to a parent with a slide animation.
+     *
+     * @param card the card informations
+     */
+    AnimationManager.prototype.attachWithShowToScreenAnimation = function (element, toElement, settingsOrSettingsArray) {
+        var _this = this;
+        var cumulatedAnimation = function (element, settings) { return cumulatedAnimations(element, [
+            showScreenCenterAnimation,
+            pauseAnimation,
+            function (element) { return _this.attachWithSlideAnimation(element, toElement); },
+        ], settingsOrSettingsArray); };
+        return this.attachWithAnimation(element, toElement, cumulatedAnimation, null);
+    };
+    /**
+     * Slide from an element.
+     *
+     * @param element the element to animate
+     * @param fromElement the origin element
+     * @param settings the animation settings
+     * @returns a promise when animation ends
+     */
+    AnimationManager.prototype.slideFromElement = function (element, fromElement, settings) {
+        var _a, _b, _c, _d, _e;
+        return (_e = slideAnimation(element, __assign(__assign({ duration: (_b = (_a = this.settings) === null || _a === void 0 ? void 0 : _a.duration) !== null && _b !== void 0 ? _b : 500, scale: (_d = (_c = this.zoomManager) === null || _c === void 0 ? void 0 : _c.zoom) !== null && _d !== void 0 ? _d : undefined }, settings !== null && settings !== void 0 ? settings : {}), { game: this.game, fromElement: fromElement }))) !== null && _e !== void 0 ? _e : Promise.resolve(false);
+    };
+    AnimationManager.prototype.getZoomManager = function () {
+        return this.zoomManager;
+    };
+    /**
+     * Set the zoom manager, to get the scale of the current game.
+     *
+     * @param zoomManager the zoom manager
+     */
+    AnimationManager.prototype.setZoomManager = function (zoomManager) {
+        this.zoomManager = zoomManager;
+    };
+    AnimationManager.prototype.getSettings = function () {
+        return this.settings;
+    };
+    return AnimationManager;
+}());
 /**
  * The abstract stock. It shouldn't be used directly, use stocks that extends it.
  */
@@ -793,6 +968,48 @@ var SlotStock = /** @class */ (function (_super) {
     };
     return SlotStock;
 }(LineStock));
+/**
+ * A stock to make cards disappear (to automatically remove discarded cards, or to represent a bag)
+ */
+var VoidStock = /** @class */ (function (_super) {
+    __extends(VoidStock, _super);
+    /**
+     * @param manager the card manager
+     * @param element the stock element (should be an empty HTML Element)
+     */
+    function VoidStock(manager, element) {
+        var _this = _super.call(this, manager, element) || this;
+        _this.manager = manager;
+        _this.element = element;
+        element.classList.add('void-stock');
+        return _this;
+    }
+    /**
+     * Add a card to the stock.
+     *
+     * @param card the card to add
+     * @param animation a `CardAnimation` object
+     * @param settings a `AddCardSettings` object
+     * @returns the promise when the animation is done (true if it was animated, false if it wasn't)
+     */
+    VoidStock.prototype.addCard = function (card, animation, settings) {
+        var _this = this;
+        var promise = _super.prototype.addCard.call(this, card, animation, settings);
+        // center the element
+        var cardElement = this.getCardElement(card);
+        cardElement.style.left = "".concat((this.element.clientWidth - cardElement.clientWidth) / 2, "px");
+        cardElement.style.top = "".concat((this.element.clientHeight - cardElement.clientHeight) / 2, "px");
+        if (!promise) {
+            console.warn("VoidStock.addCard didn't return a Promise");
+            promise = Promise.resolve(false);
+        }
+        return promise.then(function (result) {
+            _this.removeCard(card);
+            return result;
+        });
+    };
+    return VoidStock;
+}(CardStock));
 var HiddenDeck = /** @class */ (function (_super) {
     __extends(HiddenDeck, _super);
     function HiddenDeck(manager, element, settings) {
@@ -1052,139 +1269,104 @@ var CardsManager = /** @class */ (function (_super) {
 var isDebug = window.location.host == 'studio.boardgamearena.com' || window.location.hash.indexOf('debug') > -1;
 ;
 var log = isDebug ? console.log.bind(window.console) : function () { };
+var BONE = 5;
 var PlayerTable = /** @class */ (function () {
     function PlayerTable(game, player) {
+        var _this = this;
         this.game = game;
-        /*this.playerId = Number(player.id);
+        this.playerId = Number(player.id);
         this.currentPlayer = this.playerId == this.game.getPlayerId();
-
-        let html = `
-        <div id="player-table-${this.playerId}" class="player-table">
-            <div id="player-table-${this.playerId}-hand-cards" class="hand cards" data-player-id="${this.playerId}" data-current-player="${this.currentPlayer.toString()}" data-my-hand="${this.currentPlayer.toString()}"></div>
-            <div class="name-wrapper">
-                <span class="name" style="color: #${player.color};">${player.name}</span>
-                <div class="bubble-wrapper">
-                    <div id="player-table-${this.playerId}-discussion-bubble" class="discussion_bubble" data-visible="false"></div>
-                </div>
-        `;
+        var html = "\n        <div id=\"player-table-".concat(this.playerId, "\" class=\"player-table\" style=\"--player-color: #").concat(player.color, ";\">\n            <div id=\"player-table-").concat(this.playerId, "-name\" class=\"name-wrapper\">").concat(player.name, "</div>\n        ");
         if (this.currentPlayer) {
-            html += `<span class="counter">
-                    (${_('Cards points:')}&nbsp;<span id="cards-points-counter"></span>)
-                </span>`;
+            html += "\n            <div class=\"block-with-text hand-wrapper\">\n                <div class=\"block-label\">".concat(_('Your hand'), "</div>\n                <div id=\"player-table-").concat(this.playerId, "-hand\" class=\"hand cards\"></div>\n            </div>");
         }
-        html += `</div>
-            <div id="player-table-${this.playerId}-table-cards" class="table cards">
-            </div>
-        </div>
-        `;
+        html += "\n            <div class=\"visible-cards\">\n                <div id=\"player-table-".concat(this.playerId, "-played\" class=\"cards\">\n                    <div class=\"chief-and-tokens\">\n                        <div id=\"player-table-").concat(this.playerId, "-tokens-free\" class=\"tokens-free\"></div>\n                        <div id=\"player-table-").concat(this.playerId, "-chief\" class=\"chief-card\">\n                            <div id=\"player-table-").concat(this.playerId, "-tokens-chief\" class=\"tokens-chief\"></div>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        </div>\n        ");
         dojo.place(html, document.getElementById('tables'));
-
         if (this.currentPlayer) {
-            this.cardsPointsCounter = new ebg.counter();
-            this.cardsPointsCounter.create(`cards-points-counter`);
-            this.cardsPointsCounter.setValue(player.cardsPoints);
-        }
-
-        this.addCardsToHand(player.handCards);
-        this.addCardsToTable(player.tableCards);
-
-        if (player.endCall) {
-            const args = {
-                announcement: player.endCall.announcement,
-                result: player.endCall.betResult,
+            var handDiv = document.getElementById("player-table-".concat(this.playerId, "-hand"));
+            this.hand = new LineStock(this.game.cardsManager, handDiv, {
+                sort: function (a, b) { return a.number - b.number; },
+            });
+            this.hand.onCardClick = function (card) {
+                //if (handDiv.classList.contains('selectable')) {
+                _this.game.onHandCardClick(card);
+                //this.hand.getCards().forEach(c => this.hand.getCardElement(c).classList.toggle('selected', c.id == card.id));
+                //}
             };
-            (this.game as any).format_string_recursive('log', args);
-            this.showAnnouncement(args.announcement);
-            this.showAnnouncementPoints(player.endCall.cardsPoints);
-            if (player.endCall.betResult) {
-                this.showAnnouncementBetResult(args.result);
-            }
-        } else if (player.endRoundPoints) {
-            this.showAnnouncementPoints(player.endRoundPoints.cardsPoints);
+            this.hand.addCards(player.hand);
         }
-        if (player.scoringDetail) {
-            this.showScoreDetails(player.scoringDetail);
-        }*/
-    }
-    Object.defineProperty(PlayerTable.prototype, "handCardsDiv", {
-        get: function () {
-            return document.getElementById("player-table-".concat(this.playerId, "-hand-cards"));
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(PlayerTable.prototype, "tableCardsDiv", {
-        get: function () {
-            return document.getElementById("player-table-".concat(this.playerId, "-table-cards"));
-        },
-        enumerable: false,
-        configurable: true
-    });
-    PlayerTable.prototype.addCardsToHand = function (cards, from) {
-        this.addCards(cards, 'hand', from);
-    };
-    PlayerTable.prototype.addCardsToTable = function (cards, from) {
-        this.addCards(cards, 'table', from);
-    };
-    PlayerTable.prototype.cleanTable = function () {
-        /*const cards = [
-            ...Array.from(this.handCardsDiv.getElementsByClassName('card')) as HTMLDivElement[],
-            ...Array.from(this.tableCardsDiv.getElementsByClassName('card')) as HTMLDivElement[],
-        ];
-        
-        cards.forEach(cardDiv => this.game.cards.createMoveOrUpdateCard({
-            id: Number(cardDiv.dataset.id),
-        } as any, `deck`));
-
-        setTimeout(() => cards.forEach(cardDiv => this.game.cards.removeCard(cardDiv)), 500);
-        this.game.updateTableHeight();*/
-    };
-    PlayerTable.prototype.setHandPoints = function (cardsPoints) {
-        this.cardsPointsCounter.toValue(cardsPoints);
-    };
-    PlayerTable.prototype.setSelectable = function (selectable) {
-        var cards = Array.from(this.handCardsDiv.getElementsByClassName('card'));
-        if (selectable) {
-            cards.forEach(function (card) { return card.classList.add('selectable'); });
+        this.voidStock = new VoidStock(this.game.cardsManager, document.getElementById("player-table-".concat(this.playerId, "-name")));
+        this.chief = new LineStock(this.game.chiefsManager, document.getElementById("player-table-".concat(this.playerId, "-chief")));
+        this.chief.addCard(player.chief);
+        this.played = new LineStock(this.game.cardsManager, document.getElementById("player-table-".concat(this.playerId, "-played")), {
+            center: false,
+        });
+        this.played.addCards(player.played);
+        this.tokensFree = new LineStock(this.game.tokensManager, document.getElementById("player-table-".concat(this.playerId, "-tokens-free")), {
+            center: false,
+            sort: function (a, b) { return a.type - b.type; },
+        });
+        this.tokensFree.onSelectionChange = function (selection, lastChange) { return _this.game.onTokenSelectionChange(selection); };
+        this.tokensChief = new SlotStock(this.game.tokensManager, document.getElementById("player-table-".concat(this.playerId, "-tokens-chief")), {
+            gap: "".concat(this.game.getChieftainOption() == 2 ? 15 : 4, "px"),
+            direction: 'column',
+            slotsIds: this.game.getChieftainOption() == 2 ? [0, 1, 2] : [0, 1, 2, 3],
+        });
+        if (this.playerId == this.game.getActivePlayerId()) {
+            this.tokensFree.addCards(player.tokens);
         }
         else {
-            cards.forEach(function (card) { return card.classList.remove('selectable', 'selected', 'disabled'); });
+            player.tokens.forEach(function (token, index) { return _this.tokensChief.addCard(token, undefined, { slot: index }); });
         }
+    }
+    PlayerTable.prototype.freeResources = function () {
+        this.tokensFree.addCards(this.tokensChief.getCards());
     };
-    PlayerTable.prototype.updateDisabledPlayCards = function (selectedCards, playableDuoCardFamilies) {
-        if (!this.game.isCurrentPlayerActive()) {
-            return;
-        }
-        var cards = Array.from(this.handCardsDiv.getElementsByClassName('card'));
-        cards.forEach(function (card) {
-            var disabled = false;
-            if (card.dataset.category != '2') {
-                disabled = true;
-            }
-            else {
-                if (playableDuoCardFamilies.includes(Number(card.dataset.family))) {
-                    if (selectedCards.length >= 2) {
-                        disabled = !selectedCards.includes(Number(card.dataset.id));
-                    }
-                    else if (selectedCards.length == 1) {
-                        var family = Number(document.getElementById("card-".concat(selectedCards[0])).dataset.family);
-                        var authorizedFamily = '' + (family >= 4 ? 9 - family : family);
-                        disabled = Number(card.dataset.id) != selectedCards[0] && card.dataset.family != authorizedFamily;
-                    }
-                }
-                else {
-                    disabled = true;
-                }
-            }
-            card.classList.toggle('disabled', disabled);
+    PlayerTable.prototype.setCardsSelectable = function (selectable, selectableCards) {
+        var _this = this;
+        if (selectableCards === void 0) { selectableCards = null; }
+        this.hand.setSelectionMode(selectable ? 'single' : 'none');
+        this.hand.getCards().forEach(function (card) {
+            var element = _this.hand.getCardElement(card);
+            var disabled = selectable && selectableCards != null && !selectableCards.some(function (s) { return s.id == card.id; });
+            element.classList.toggle('disabled', disabled);
+            element.classList.toggle('selectable', selectable && !disabled);
         });
     };
-    PlayerTable.prototype.addCards = function (cards, to, from) {
-        /*cards.forEach(card => {
-            this.game.cards.createMoveOrUpdateCard(card, `player-table-${this.playerId}-${to}-cards`, false, from);
-            document.getElementById(`card-${card.id}`).style.order = ''+(CATEGORY_ORDER[card.category]*100 + card.family * 10 + card.color);
+    PlayerTable.prototype.setFreeTokensSelectable = function (selectable) {
+        this.tokensFree.setSelectionMode(selectable ? 'multiple' : 'none');
+    };
+    PlayerTable.prototype.getTokenOfType = function (type) {
+        return this.tokensFree.getCards().find(function (card) { return card.type == type; });
+    };
+    PlayerTable.prototype.setStoreButtons = function (activated) {
+        if (activated) {
+            document.getElementById("player-table-".concat(this.playerId)).classList.add('can-store');
+            this.game.cardsManager.updateStorageButtons();
+        }
+        else {
+            document.getElementById("player-table-".concat(this.playerId)).classList.remove('can-store');
+        }
+    };
+    PlayerTable.prototype.storeToken = function (cardId, token) {
+        this.game.cardsManager.prestoreToken(cardId, token);
+        this.game.cardsManager.updateStorageButtons();
+    };
+    PlayerTable.prototype.unstoreToken = function (token) {
+        this.tokensFree.addCard(token);
+        this.game.cardsManager.updateStorageButtons();
+    };
+    PlayerTable.prototype.confirmStoreTokens = function (tokens) {
+        var _this = this;
+        Object.entries(tokens).forEach(function (entry) {
+            return _this.game.cardsManager.confirmStoreToken(Number(entry[0]), entry[1]);
         });
-        this.game.updateTableHeight();*/
+        this.setStoreButtons(false);
+    };
+    PlayerTable.prototype.cancelLastMoves = function (cards, tokens) {
+        var _a;
+        (_a = this.hand) === null || _a === void 0 ? void 0 : _a.addCards(cards);
+        this.tokensFree.addCards(tokens);
     };
     return PlayerTable;
 }());
@@ -1494,11 +1676,6 @@ var SkateLegend = /** @class */ (function () {
     SkateLegend.prototype.createPlayerTable = function (gamedatas, playerId) {
         var table = new PlayerTable(this, gamedatas.players[playerId]);
         this.playersTables.push(table);
-    };
-    SkateLegend.prototype.updateDisabledPlayCards = function () {
-        var _a, _b;
-        (_a = this.getCurrentPlayerTable()) === null || _a === void 0 ? void 0 : _a.updateDisabledPlayCards(this.selectedCards, this.gamedatas.gamestate.args.playableDuoCards);
-        (_b = document.getElementById("playCards_button")) === null || _b === void 0 ? void 0 : _b.classList.toggle("disabled", this.selectedCards.length != 2);
     };
     SkateLegend.prototype.onCardClick = function (card) {
         var cardDiv = document.getElementById("card-".concat(card.id));
