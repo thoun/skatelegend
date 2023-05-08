@@ -72,7 +72,7 @@ class SkateLegend extends Table {
         // Create players
         // Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.
         $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES ";
-        $values = array();
+        $values = [];
         foreach( $players as $player_id => $player )
         {
             $color = array_shift( $default_colors );
@@ -120,6 +120,9 @@ class SkateLegend extends Table {
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
 
+        // TODO TEMP
+        $this->debugSetup();
+
         /************ End of the game initialization *****/
     }
 
@@ -139,7 +142,7 @@ class SkateLegend extends Table {
     
         // Get information about players
         // Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
-        $sql = "SELECT player_id id, player_score score, player_no playerNo, player_helmets helmets, player_active active FROM player ";
+        $sql = "SELECT player_id id, player_score score, player_no playerNo, player_helmets helmets, player_active active, player_helmet_card_id helmetCardId FROM player ";
         $result['players'] = self::getCollectionFromDb($sql);
 
         
@@ -147,9 +150,11 @@ class SkateLegend extends Table {
             $player['playerNo'] = intval($player['playerNo']);
             $player['helmets'] = intval($player['helmets']);
             $player['active'] = boolval($player['active']);
+            $player['helmetCardId'] = intval($player['helmetCardId']) == -1 ? null : intval($player['helmetCardId']);
             
             $player['played'] = $this->getCardsByLocation('played'.$playerId);
             $player['handCount'] = intval($this->cards->countCardInLocation('hand', $playerId));
+            $player['scoredCount'] = intval($this->cards->countCardInLocation('scored', $playerId));
 
             if ($currentPlayerId == $playerId) {
                 $player['hand'] = $this->getCardsByLocation('hand', $playerId);

@@ -111,8 +111,7 @@ $playerActionsGameStates = [
         "name" => "playHelmet",
         "description" => clienttranslate('${actplayer} can play a helmet'),
         "descriptionmyturn" => clienttranslate('${you} can play a helmet'),
-        "type" => "activeplayer",    
-        "args" => "argPlayCard",
+        "type" => "activeplayer",
         "possibleactions" => [ 
             "playHelmet",
             "skipHelmet",

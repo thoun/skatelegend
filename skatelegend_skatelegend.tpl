@@ -1,9 +1,10 @@
 {OVERALL_GAME_HEADER}
 
 <div id="table">
+    <div id="round-counter-row">
+        <div id="round-counter-block"><span id="round-counter"></span> / 4</div>
+    </div>
     <div id="centered-table">
-        <div><span id="round-number-counter"></span> / 4</div>
-        <div id="discard-pick" data-visible="false"></div>
         <div id="centered-table">
             <div id="tables-and-center">
                 <div id="table-center">

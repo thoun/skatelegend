@@ -70,6 +70,21 @@
       self::ajaxResponse();
     }
 
+    public function playHelmet() {
+      self::setAjaxMode();
+
+      $this->game->playHelmet();
+
+      self::ajaxResponse();
+    }
+
+    public function skipHelmet() {
+      self::setAjaxMode();
+
+      $this->game->skipHelmet();
+
+      self::ajaxResponse();
+    }
+
   }
   
-

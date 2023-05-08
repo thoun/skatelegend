@@ -37,4 +37,11 @@ class TableCenter {
         });
         this.game.cardsManager.flipCard(card);
     }
+    
+    public updateLegendDeck(newCard: Card, newCount: number) {
+        if (newCard) {
+            this.legendDeck.addCard(newCard);
+        }
+        this.legendDeck.setCardNumber(newCount);
+    }
 }

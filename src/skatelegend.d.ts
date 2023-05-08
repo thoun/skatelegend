@@ -13,9 +13,12 @@ interface SkateLegendPlayer extends Player {
     playerNo: number;
     active: boolean;
     helmets: number;
+    helmetCardId: number | null;
 
     hand?: Card[];
     played: Card[];
+    handCount: number;
+    scoredCount: number;
 }
 
 interface SkateLegendGamedatas {
@@ -89,3 +92,22 @@ interface NotifFallArgs {
 interface NotifCloseSequenceArgs {
     playerId: number;
 } 
+
+// newRound
+interface NotifNewRoundArgs {
+    roundNumber: number;
+}
+
+// addHelmet
+interface NotifAddHelmetArgs {
+    playerId: number;
+    card: Card;
+}
+
+// takeTrophyCard / discardTrophyCard
+interface NotifTakeTrophyCardArgs {
+    playerId: number;
+    card: Card;
+    newCount: number;
+    newCard: Card | null;
+}

@@ -51,4 +51,21 @@ trait ActionTrait {
         $card = $this->getCardFromDb($this->cards->getCardOnTop('deck'.$deckId));
         $this->playCard($playerId, $card, false);
     }
+
+    public function playHelmet() {
+        $this->checkAction('playHelmet'); 
+        
+        $playerId = intval($this->getActivePlayerId());
+        $card = $this->getCardFromDb($this->cards->getCardOnTop('played'.$playerId));
+        $this->addHelmet($playerId, $card);
+        $this->afterPlayHelmet($playerId, $card);
+    }
+
+    public function skipHelmet() {
+        $this->checkAction('skipHelmet'); 
+        
+        $playerId = intval($this->getActivePlayerId());
+        $card = $this->getCardFromDb($this->cards->getCardOnTop('played'.$playerId));
+        $this->afterPlayHelmet($playerId, $card);
+    }
 }

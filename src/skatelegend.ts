@@ -18,9 +18,11 @@ class SkateLegend implements SkateLegendGame {
     private gamedatas: SkateLegendGamedatas;
     private tableCenter: TableCenter;
     private playersTables: PlayerTable[] = [];
-    private selectedCards: number[];
+    private handCounters: Counter[] = [];
+    private playedCounters: Counter[] = [];
+    private scoredCounters: Counter[] = [];
     private helmetCounters: Counter[] = [];
-    private roundNumberCounter: Counter;
+    private roundCounter: Counter;
     
     private TOOLTIP_DELAY = document.body.classList.contains('touch-device') ? 1500 : undefined;
 
@@ -67,9 +69,10 @@ class SkateLegend implements SkateLegendGame {
             // onDimensionsChange: (newZoom) => this.onTableCenterSizeChange(newZoom),
         });
 
-        this.roundNumberCounter = new ebg.counter();
-        this.roundNumberCounter.create(`round-number-counter`);
-        this.roundNumberCounter.setValue(this.gamedatas.roundNumber);
+        document.getElementById(`round-counter`).insertAdjacentHTML('beforebegin', _("Round number:") + ' ');
+        this.roundCounter = new ebg.counter();
+        this.roundCounter.create(`round-counter`);
+        this.roundCounter.setValue(gamedatas.roundNumber);
 
         this.setupNotifications();
         this.setupPreferences();
@@ -254,6 +257,10 @@ class SkateLegend implements SkateLegendGame {
                         document.getElementById(`stop_button`).classList.add('disabled');
                     }
                     break;
+                case 'playHelmet':
+                    (this as any).addActionButton(`playHelmet_button`, _("Add helmet on last card"), () => this.playHelmet());
+                    (this as any).addActionButton(`skipHelmet_button`, _("Skip"), () => this.skipHelmet());
+                    break;
             }
         }
     }
@@ -343,12 +350,44 @@ class SkateLegend implements SkateLegendGame {
     private createPlayerPanels(gamedatas: SkateLegendGamedatas) {
 
         Object.values(gamedatas.players).forEach(player => {
-            const playerId = Number(player.id);   
+            const playerId = Number(player.id);  
+             
 
-            // hand cards counter
+            // hand + scored cards counter
+            dojo.place(`<div class="counters">
+                <div id="playerhand-counter-wrapper-${player.id}" class="playerhand-counter">
+                    <div class="player-hand-card"></div> 
+                    <span id="playerhand-counter-${player.id}"></span>
+                </div>
+                <div id="played-counter-wrapper-${player.id}" class="played-counter">
+                    <div class="player-played-card"></div> 
+                    <span id="played-counter-${player.id}"></span>
+                </div>
+                <div id="scored-counter-wrapper-${player.id}" class="scored-counter">
+                    <div class="player-scored-card"></div> 
+                    <span id="scored-counter-${player.id}"></span>
+                </div>
+            </div>`, `player_board_${player.id}`);
+
+            const handCounter = new ebg.counter();
+            handCounter.create(`playerhand-counter-${playerId}`);
+            handCounter.setValue(player.handCount);
+            this.handCounters[playerId] = handCounter;
+
+            const playedCounter = new ebg.counter();
+            playedCounter.create(`played-counter-${playerId}`);
+            playedCounter.setValue(player.played.length);
+            this.playedCounters[playerId] = playedCounter;
+
+            const scoredCounter = new ebg.counter();
+            scoredCounter.create(`scored-counter-${playerId}`);
+            scoredCounter.setValue(player.scoredCount);
+            this.scoredCounters[playerId] = scoredCounter; 
+
+            // helmets counter
             dojo.place(`<div class="counters">
                 <div id="player-helmets-counter-wrapper-${player.id}" class="player-helmets-counter">
-                    <div class="player-hand-card"></div> 
+                    <div class="player-helmets"></div> 
                     <span id="player-helmets-counter-${player.id}"></span>
                 </div>
             </div>`, `player_board_${player.id}`);
@@ -357,9 +396,15 @@ class SkateLegend implements SkateLegendGame {
             helmetCounter.create(`player-helmets-counter-${playerId}`);
             helmetCounter.setValue(player.helmets);
             this.helmetCounters[playerId] = helmetCounter;
+
+            this.setPlayerActive(playerId, player.active);
         });
 
         this.setTooltipToClass('player-helmets-counter', _('Number of helmets'));
+    }
+    
+    public setPlayerActive(playerId: number, active: boolean): void {
+        document.getElementById(`overall_player_board_${playerId}`).classList.toggle('inactive', !active);
     }
 
     private createPlayerTables(gamedatas: SkateLegendGamedatas) {
@@ -561,6 +606,22 @@ class SkateLegend implements SkateLegendGame {
         });
     }
 
+    public playHelmet() {
+        if(!(this as any).checkAction('playHelmet')) {
+            return;
+        }
+
+        this.takeAction('playHelmet');
+    }
+
+    public skipHelmet() {
+        if(!(this as any).checkAction('skipHelmet')) {
+            return;
+        }
+
+        this.takeAction('skipHelmet');
+    }
+
     public takeAction(action: string, data?: any) {
         data = data || {};
         data.lock = true;
@@ -588,6 +649,10 @@ class SkateLegend implements SkateLegendGame {
             ['discardedLegendCard', ANIMATION_MS],
             ['fall', ANIMATION_MS],
             ['closeSequence', ANIMATION_MS],
+            ['newRound', ANIMATION_MS],
+            ['addHelmet', ANIMATION_MS],
+            ['takeTrophyCard', ANIMATION_MS],
+            ['discardTrophyCard', ANIMATION_MS],
         ];
     
         notifs.forEach((notif) => {
@@ -612,21 +677,62 @@ class SkateLegend implements SkateLegendGame {
         playerTable.played.addCard(notif.args.card, {
             fromElement: currentPlayer || fromDeck ? undefined : document.getElementById(`player-table-${playerId}-name`)
         });
-        // TODO this.handCounters[playerId].toValue(notif.args.newCount);
+        if (!fromDeck) { // from hand
+            this.handCounters[playerId].incValue(-1);
+        }
+        this.playedCounters[playerId].incValue(1);
     }
 
     notif_discardedLegendCard(notif: Notif<NotifDiscardedLegendCardArgs>) {
-        this.getPlayerTable(notif.args.playerId).discardLegendCard(notif.args.card);
+        const playerId = notif.args.playerId;
+        this.getPlayerTable(playerId).discardLegendCard(notif.args.card);
+        this.playedCounters[playerId].incValue(-1);
     }
 
     notif_fall(notif: Notif<NotifFallArgs>) {
         const playerId = notif.args.playerId;
         this.getPlayerTable(playerId).fall();
         this.helmetCounters[playerId].incValue(1);
+        this.setPlayerActive(playerId, false);
+        this.playedCounters[playerId].toValue(0);
     }
 
     notif_closeSequence(notif: Notif<NotifCloseSequenceArgs>) {
-        this.getPlayerTable(notif.args.playerId).closeSequence();
+        const playerId = notif.args.playerId;
+        this.getPlayerTable(playerId).closeSequence();
+        this.setPlayerActive(playerId, false);
+        this.playedCounters[playerId].toValue(0);
+    }
+
+    notif_newRound(notif: Notif<NotifNewRoundArgs>) {
+        this.roundCounter.toValue(notif.args.roundNumber);
+        Object.keys(this.gamedatas.players).forEach(id => {
+            const playerId = Number(id);
+            this.setPlayerActive(playerId, true);
+        });
+    }
+
+    notif_addHelmet(notif: Notif<NotifAddHelmetArgs>) {
+        const playerId = notif.args.playerId;
+        this.getPlayerTable(playerId).addHelmet(notif.args.card);
+        this.setPlayerActive(playerId, false);
+        this.helmetCounters[playerId].incValue(-1);
+    }
+
+    notif_takeTrophyCard(notif: Notif<NotifTakeTrophyCardArgs>) {
+        const playerId = notif.args.playerId;
+        const currentPlayer = this.getPlayerId() == playerId;
+        if (currentPlayer) {
+            this.getPlayerTable(playerId).hand.addCard(notif.args.card);
+        } else {
+            this.tableCenter.legendDeck.removeCard(notif.args.card);
+        }
+        this.tableCenter.updateLegendDeck(notif.args.newCard, notif.args.newCount);
+    }
+
+    notif_discardTrophyCard(notif: Notif<NotifTakeTrophyCardArgs>) {
+        this.tableCenter.legendDeck.removeCard(notif.args.card);
+        this.tableCenter.updateLegendDeck(notif.args.newCard, notif.args.newCount);
     }
 
     /* This enable to inject translatable styled things to logs or action bar */

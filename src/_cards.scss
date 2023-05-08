@@ -21,6 +21,12 @@
                 pointer-events: none;
                 user-select: none;
             }
+
+            &.front {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
         }
     }    
 
@@ -60,6 +66,16 @@
                 background-position-x: #{($i) * 100% / 10};
             }
         }
+    }
+
+    .helmet {
+        display: inline-block;
+        width: 64px;
+        height: 64px;
+        background-image: url('img/helmet.png');
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center center;
     }
 }
 

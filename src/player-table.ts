@@ -48,6 +48,10 @@ class PlayerTable {
             center: false,
         });
         this.played.addCards(player.played);
+
+        if (player.helmetCardId) {
+            this.addHelmet(this.played.getCards().find(card => card.id == player.helmetCardId));
+        }
     }
     
     public discardLegendCard(card: Card) {
@@ -60,5 +64,9 @@ class PlayerTable {
 
     public closeSequence() {
         this.played.removeAll();
+    }
+    
+    public addHelmet(card: Card) {
+        this.played.getCardElement(card).querySelector('.front').insertAdjacentHTML('beforeend', `<div class="helmet"></div>`);
     }
 }

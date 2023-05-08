@@ -9,6 +9,7 @@
   margin: 5px;
   font-size: 16pt;
   color: white;
+  box-sizing: border-box;
 
   .name-wrapper {
     color: var(--player-color);
@@ -18,7 +19,6 @@
     justify-content: center;
     align-items: center;
     font-size: 20pt;
-    font-family: 'komika parch';
   }
   
   .block-with-text {

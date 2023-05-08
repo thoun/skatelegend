@@ -231,13 +231,20 @@ trait UtilTrait {
         }
 
         $helmets = $this->getPlayerHelmets($playerId);
+        if ($helmets > 0 && intval(self::getUniqueValueFromDB("SELECT player_helmet_card_id = -1 FROM player WHERE player_id = $playerId")) != -1) {
+            $helmets = 0; // can't play a helmet, already played one this round
+        }
 
         /*$this->incStat(1, 'playedCards');
         $this->incStat(1, 'playedCards', $playerId);
         $this->incStat(1, 'playedCards'.$card->cardType);
         $this->incStat(1, 'playedCards'.$card->cardType, $playerId);*/
 
-        $this->gamestate->nextState($helmets > 0 ? 'helmet' : 'next');
+        if ($helmets > 0) {
+            $this->gamestate->nextState('helmet');
+        } else {
+            $this->afterPlayHelmet($playerId, $card);
+        }
     }
 
     function getSequenceCardsByColor(array $sequence) {
@@ -352,4 +359,37 @@ trait UtilTrait {
             'points' => $wheels,
         ]);
     }
+
+    function addHelmet(int $playerId, Card $card) {
+        self::DbQuery("update player set player_helmet_card_id = $card->id, player_helmets = player_helmets - 1 WHERE player_id = $playerId");
+
+        self::notifyAllPlayers('addHelmet', clienttranslate('${player_name} adds a helmet on the last played card'), [
+            'playerId' => $playerId,
+            'player_name' => $this->getPlayerName($playerId),
+            'card' => $card,
+        ]);
+    }
+
+    function afterPlayHelmet(int $playerId, Card $card) {
+        // TODO handle powers
+        $this->gamestate->nextState('next');
+    }
+
+    function getRemainingActivePlayersIds() {
+        return array_map(fn($dbPlayer) => intval($dbPlayer['player_id']), array_values($this->getCollectionFromDb('select player_id from player WHERE player_active = 1')));
+    }
+
+    function takeLegendCard(int $playerId) {
+        $card = $this->getCardFromDb($this->cards->getCardOnTop('decklegend'));
+        $this->cards->moveCard($card->id, 'hand', $playerId);
+
+        self::notifyAllPlayers('takeTrophyCard', clienttranslate('${player_name} takes the trophy card for being the last active player'), [
+            'playerId' => $playerId,
+            'player_name' => $this->getPlayerName($playerId),
+            'card' => $card,
+            'newCount' => intval($this->cards->countCardInLocation('decklegend')),
+            'newCard' => $this->getCardFromDb($this->cards->getCardOnTop('decklegend')),
+        ]);
+    }
+    
 }

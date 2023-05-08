@@ -1255,49 +1255,6 @@ var CardsManager = /** @class */ (function (_super) {
         _this.game = game;
         return _this;
     }
-    CardsManager.prototype.placeHelmetOnCard = function (card, playerId) {
-        /*const cardType = card.mimicType || card.type;
-
-        if (![28, 41].includes(cardType)) {
-            return;
-        }
-
-        const divId = this.getId(card);
-        const div = document.getElementById(divId).getElementsByClassName('front')[0] as HTMLDivElement;
-        if (!div) {
-            return;
-        }
-        const cardPlaced: CardPlacedTokens = div.dataset.placed ? JSON.parse(div.dataset.placed) : { tokens: []};
-        const placed: PlacedTokens[] = cardPlaced.tokens;
-
-
-        // remove tokens
-        for (let i = card.tokens; i < placed.length; i++) {
-            if (cardType === 28 && playerId) {
-                (this.game as any).slideToObjectAndDestroy(`${divId}-token${i}`, `energy-counter-${playerId}`);
-            } else {
-                (this.game as any).fadeOutAndDestroy(`${divId}-token${i}`);
-            }
-        }
-        placed.splice(card.tokens, placed.length - card.tokens);
-
-        // add tokens
-        for (let i = placed.length; i < card.tokens; i++) {
-            const newPlace = this.getPlaceOnCard(cardPlaced);
-
-            placed.push(newPlace);
-            let html = `<div id="${divId}-token${i}" style="left: ${newPlace.x - 16}px; top: ${newPlace.y - 16}px;" class="card-token `;
-            if (cardType === 28) {
-                html += `energy-cube cube-shape-${Math.floor(Math.random()*5)}`;
-            } else if (cardType === 41) {
-                html += `smoke-cloud token`;
-            }
-            html += `"></div>`;
-            div.insertAdjacentHTML('beforeend', html);
-        }
-
-        div.dataset.placed = JSON.stringify(cardPlaced);*/
-    };
     return CardsManager;
 }(CardManager));
 var isDebug = window.location.host == 'studio.boardgamearena.com' || window.location.hash.indexOf('debug') > -1;
@@ -1327,6 +1284,9 @@ var PlayerTable = /** @class */ (function () {
             center: false,
         });
         this.played.addCards(player.played);
+        if (player.helmetCardId) {
+            this.addHelmet(this.played.getCards().find(function (card) { return card.id == player.helmetCardId; }));
+        }
     }
     PlayerTable.prototype.discardLegendCard = function (card) {
         this.played.removeCard(card);
@@ -1336,6 +1296,9 @@ var PlayerTable = /** @class */ (function () {
     };
     PlayerTable.prototype.closeSequence = function () {
         this.played.removeAll();
+    };
+    PlayerTable.prototype.addHelmet = function (card) {
+        this.played.getCardElement(card).querySelector('.front').insertAdjacentHTML('beforeend', "<div class=\"helmet\"></div>");
     };
     return PlayerTable;
 }());
@@ -1379,6 +1342,12 @@ var TableCenter = /** @class */ (function () {
         });
         this.game.cardsManager.flipCard(card);
     };
+    TableCenter.prototype.updateLegendDeck = function (newCard, newCount) {
+        if (newCard) {
+            this.legendDeck.addCard(newCard);
+        }
+        this.legendDeck.setCardNumber(newCount);
+    };
     return TableCenter;
 }());
 var ANIMATION_MS = 500;
@@ -1387,6 +1356,9 @@ var LOCAL_STORAGE_ZOOM_KEY = 'SkateLegend-zoom';
 var SkateLegend = /** @class */ (function () {
     function SkateLegend() {
         this.playersTables = [];
+        this.handCounters = [];
+        this.playedCounters = [];
+        this.scoredCounters = [];
         this.helmetCounters = [];
         this.TOOLTIP_DELAY = document.body.classList.contains('touch-device') ? 1500 : undefined;
         /*const zoomStr = localStorage.getItem(LOCAL_STORAGE_ZOOM_KEY);
@@ -1425,9 +1397,10 @@ var SkateLegend = /** @class */ (function () {
             },*/
             // onDimensionsChange: (newZoom) => this.onTableCenterSizeChange(newZoom),
         });
-        this.roundNumberCounter = new ebg.counter();
-        this.roundNumberCounter.create("round-number-counter");
-        this.roundNumberCounter.setValue(this.gamedatas.roundNumber);
+        document.getElementById("round-counter").insertAdjacentHTML('beforebegin', _("Round number:") + ' ');
+        this.roundCounter = new ebg.counter();
+        this.roundCounter.create("round-counter");
+        this.roundCounter.setValue(gamedatas.roundNumber);
         this.setupNotifications();
         this.setupPreferences();
         this.addHelp();
@@ -1598,6 +1571,10 @@ var SkateLegend = /** @class */ (function () {
                         document.getElementById("stop_button").classList.add('disabled');
                     }
                     break;
+                case 'playHelmet':
+                    this.addActionButton("playHelmet_button", _("Add helmet on last card"), function () { return _this.playHelmet(); });
+                    this.addActionButton("skipHelmet_button", _("Skip"), function () { return _this.skipHelmet(); });
+                    break;
             }
         }
     };
@@ -1672,14 +1649,32 @@ var SkateLegend = /** @class */ (function () {
         var _this = this;
         Object.values(gamedatas.players).forEach(function (player) {
             var playerId = Number(player.id);
-            // hand cards counter
-            dojo.place("<div class=\"counters\">\n                <div id=\"player-helmets-counter-wrapper-".concat(player.id, "\" class=\"player-helmets-counter\">\n                    <div class=\"player-hand-card\"></div> \n                    <span id=\"player-helmets-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>"), "player_board_".concat(player.id));
+            // hand + scored cards counter
+            dojo.place("<div class=\"counters\">\n                <div id=\"playerhand-counter-wrapper-".concat(player.id, "\" class=\"playerhand-counter\">\n                    <div class=\"player-hand-card\"></div> \n                    <span id=\"playerhand-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"played-counter-wrapper-").concat(player.id, "\" class=\"played-counter\">\n                    <div class=\"player-played-card\"></div> \n                    <span id=\"played-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"scored-counter-wrapper-").concat(player.id, "\" class=\"scored-counter\">\n                    <div class=\"player-scored-card\"></div> \n                    <span id=\"scored-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>"), "player_board_".concat(player.id));
+            var handCounter = new ebg.counter();
+            handCounter.create("playerhand-counter-".concat(playerId));
+            handCounter.setValue(player.handCount);
+            _this.handCounters[playerId] = handCounter;
+            var playedCounter = new ebg.counter();
+            playedCounter.create("played-counter-".concat(playerId));
+            playedCounter.setValue(player.played.length);
+            _this.playedCounters[playerId] = playedCounter;
+            var scoredCounter = new ebg.counter();
+            scoredCounter.create("scored-counter-".concat(playerId));
+            scoredCounter.setValue(player.scoredCount);
+            _this.scoredCounters[playerId] = scoredCounter;
+            // helmets counter
+            dojo.place("<div class=\"counters\">\n                <div id=\"player-helmets-counter-wrapper-".concat(player.id, "\" class=\"player-helmets-counter\">\n                    <div class=\"player-helmets\"></div> \n                    <span id=\"player-helmets-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>"), "player_board_".concat(player.id));
             var helmetCounter = new ebg.counter();
             helmetCounter.create("player-helmets-counter-".concat(playerId));
             helmetCounter.setValue(player.helmets);
             _this.helmetCounters[playerId] = helmetCounter;
+            _this.setPlayerActive(playerId, player.active);
         });
         this.setTooltipToClass('player-helmets-counter', _('Number of helmets'));
+    };
+    SkateLegend.prototype.setPlayerActive = function (playerId, active) {
+        document.getElementById("overall_player_board_".concat(playerId)).classList.toggle('inactive', !active);
     };
     SkateLegend.prototype.createPlayerTables = function (gamedatas) {
         var _this = this;
@@ -1859,6 +1854,18 @@ var SkateLegend = /** @class */ (function () {
             number: number
         });
     };
+    SkateLegend.prototype.playHelmet = function () {
+        if (!this.checkAction('playHelmet')) {
+            return;
+        }
+        this.takeAction('playHelmet');
+    };
+    SkateLegend.prototype.skipHelmet = function () {
+        if (!this.checkAction('skipHelmet')) {
+            return;
+        }
+        this.takeAction('skipHelmet');
+    };
     SkateLegend.prototype.takeAction = function (action, data) {
         data = data || {};
         data.lock = true;
@@ -1884,6 +1891,10 @@ var SkateLegend = /** @class */ (function () {
             ['discardedLegendCard', ANIMATION_MS],
             ['fall', ANIMATION_MS],
             ['closeSequence', ANIMATION_MS],
+            ['newRound', ANIMATION_MS],
+            ['addHelmet', ANIMATION_MS],
+            ['takeTrophyCard', ANIMATION_MS],
+            ['discardTrophyCard', ANIMATION_MS],
         ];
         notifs.forEach(function (notif) {
             dojo.subscribe(notif[0], _this, "notif_".concat(notif[0]));
@@ -1904,18 +1915,57 @@ var SkateLegend = /** @class */ (function () {
         playerTable.played.addCard(notif.args.card, {
             fromElement: currentPlayer || fromDeck ? undefined : document.getElementById("player-table-".concat(playerId, "-name"))
         });
-        // TODO this.handCounters[playerId].toValue(notif.args.newCount);
+        if (!fromDeck) { // from hand
+            this.handCounters[playerId].incValue(-1);
+        }
+        this.playedCounters[playerId].incValue(1);
     };
     SkateLegend.prototype.notif_discardedLegendCard = function (notif) {
-        this.getPlayerTable(notif.args.playerId).discardLegendCard(notif.args.card);
+        var playerId = notif.args.playerId;
+        this.getPlayerTable(playerId).discardLegendCard(notif.args.card);
+        this.playedCounters[playerId].incValue(-1);
     };
     SkateLegend.prototype.notif_fall = function (notif) {
         var playerId = notif.args.playerId;
         this.getPlayerTable(playerId).fall();
         this.helmetCounters[playerId].incValue(1);
+        this.setPlayerActive(playerId, false);
+        this.playedCounters[playerId].toValue(0);
     };
     SkateLegend.prototype.notif_closeSequence = function (notif) {
-        this.getPlayerTable(notif.args.playerId).closeSequence();
+        var playerId = notif.args.playerId;
+        this.getPlayerTable(playerId).closeSequence();
+        this.setPlayerActive(playerId, false);
+        this.playedCounters[playerId].toValue(0);
+    };
+    SkateLegend.prototype.notif_newRound = function (notif) {
+        var _this = this;
+        this.roundCounter.toValue(notif.args.roundNumber);
+        Object.keys(this.gamedatas.players).forEach(function (id) {
+            var playerId = Number(id);
+            _this.setPlayerActive(playerId, true);
+        });
+    };
+    SkateLegend.prototype.notif_addHelmet = function (notif) {
+        var playerId = notif.args.playerId;
+        this.getPlayerTable(playerId).addHelmet(notif.args.card);
+        this.setPlayerActive(playerId, false);
+        this.helmetCounters[playerId].incValue(-1);
+    };
+    SkateLegend.prototype.notif_takeTrophyCard = function (notif) {
+        var playerId = notif.args.playerId;
+        var currentPlayer = this.getPlayerId() == playerId;
+        if (currentPlayer) {
+            this.getPlayerTable(playerId).hand.addCard(notif.args.card);
+        }
+        else {
+            this.tableCenter.legendDeck.removeCard(notif.args.card);
+        }
+        this.tableCenter.updateLegendDeck(notif.args.newCard, notif.args.newCount);
+    };
+    SkateLegend.prototype.notif_discardTrophyCard = function (notif) {
+        this.tableCenter.legendDeck.removeCard(notif.args.card);
+        this.tableCenter.updateLegendDeck(notif.args.newCard, notif.args.newCount);
     };
     /* This enable to inject translatable styled things to logs or action bar */
     /* @Override */

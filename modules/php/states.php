@@ -14,7 +14,14 @@ trait StateTrait {
     function stNewRound() {
         self::DbQuery("update player set player_active = 1 WHERE player_eliminated = 0");
 
-        // TODO probably place cards  
+        $roundNumber = intval($this->getStat('roundNumber')) + 1;
+
+        self::notifyAllPlayers('newRound', clienttranslate('Round ${round_number} / 4 starts'), [
+            'round_number' => $roundNumber, // for logs
+            'roundNumber' => $roundNumber,
+        ]);
+
+        // TODO probably place cards ?
 
         $this->gamestate->nextState('next');
     }    
@@ -28,7 +35,15 @@ trait StateTrait {
     } 
 
     function stStop() {
-        $this->closeSequence(intval($this->getActivePlayerId()), true);
+        $playerId = intval($this->getActivePlayerId());
+
+        $this->closeSequence($playerId, true);
+
+        $remainingActivePlayersIds = $this->getRemainingActivePlayersIds();
+        if (count($remainingActivePlayersIds) == 0) { 
+            // last player in 2 player-mode choses to stop
+            $this->takeLegendCard($playerId);
+        }
 
         $this->gamestate->nextState('next');
     }
@@ -46,6 +61,20 @@ trait StateTrait {
             'player_name' => $this->getPlayerName($playerId),
         ]);
 
+        $remainingActivePlayersIds = $this->getRemainingActivePlayersIds();
+        if (count($remainingActivePlayersIds) == 0) { 
+            // last player in 2 player-mode falls
+
+            $card = $this->getCardFromDb($this->cards->getCardOnTop('decklegend'));
+            $this->cards->moveCard($card->id, 'discard', 0);
+
+            self::notifyAllPlayers('discardTrophyCard', clienttranslate('The trophy card is discarded as the last active player fell'), [
+                'card' => $card,
+                'newCount' => intval($this->cards->countCardInLocation('decklegend')),
+                'newCard' => $this->getCardFromDb($this->cards->getCardOnTop('decklegend')),
+            ]);
+        }
+
         $this->gamestate->nextState('next');
     }
 
@@ -60,11 +89,14 @@ trait StateTrait {
         $this->giveExtraTime($playerId);
 
         $remainingActivePlayersToEndRound = count($this->getPlayersIds()) == 2 ? 0 : 1;
-        $remainingActivePlayersIds = array_map(fn($dbPlayer) => intval($dbPlayer['player_id']), array_values($this->getCollectionFromDb('select player_id from player WHERE player_active = 1')));
+        $remainingActivePlayersIds = $this->getRemainingActivePlayersIds();
 
         if (count($remainingActivePlayersIds) == $remainingActivePlayersToEndRound) {
             if (count($remainingActivePlayersIds) == 1) {
-                $this->closeSequence($remainingActivePlayersIds[0], false);
+                $remainingPlayerId = $remainingActivePlayersIds[0];
+                $this->gamestate->changeActivePlayer($remainingPlayerId); // will start next round
+                $this->closeSequence($remainingPlayerId, false);
+                $this->takeLegendCard($remainingPlayerId);
             }
             $this->gamestate->nextState('endRound');
         } else {

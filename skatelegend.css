@@ -262,6 +262,11 @@ body > .card {
   pointer-events: none;
   user-select: none;
 }
+.card .card-sides .card-side.front {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 .card.selectable:not(.disabled) {
   cursor: pointer;
 }
@@ -343,6 +348,15 @@ body > .card {
 .card[data-type="2"][data-type-arg="10"] .front {
   background-position-x: 100%;
 }
+.card .helmet {
+  display: inline-block;
+  width: 64px;
+  height: 64px;
+  background-image: url("img/helmet.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center center;
+}
 
 @keyframes selectable-card-animation {
   0% {
@@ -358,11 +372,18 @@ body > .card {
   gap: 10px;
 }
 
+#table-center {
+  padding: 10px;
+}
+
 .player-board {
   background-color: white;
 }
 .player-board.spectator-mode * {
   background: white !important;
+}
+.player-board.inactive {
+  background-color: #b9b9b9;
 }
 
 .end-game-points {
@@ -373,6 +394,9 @@ body > .card {
   display: flex;
   align-items: center;
   margin: 5px 0;
+}
+.counters > div {
+  flex: 1;
 }
 .counters .icon {
   margin-right: 5px;
@@ -388,6 +412,39 @@ body > .card {
   vertical-align: bottom;
 }
 
+.player-played-card {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background-image: url("img/card-line.svg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  vertical-align: middle;
+}
+
+.player-scored-card {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background-image: url("img/card-deck.svg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  vertical-align: middle;
+}
+
+.player-helmets {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background-image: url("img/helmet.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  vertical-align: middle;
+}
+
 .player-table {
   width: 100%;
   position: relative;
@@ -397,6 +454,7 @@ body > .card {
   margin: 5px;
   font-size: 16pt;
   color: white;
+  box-sizing: border-box;
 }
 .player-table .name-wrapper {
   color: var(--player-color);
@@ -406,7 +464,6 @@ body > .card {
   justify-content: center;
   align-items: center;
   font-size: 20pt;
-  font-family: "komika parch";
 }
 .player-table .block-with-text {
   display: flex;
@@ -616,6 +673,20 @@ html, .mode_3d #game_play_area_background {
   align-items: center;
   flex-wrap: wrap;
   gap: 20px;
+}
+
+#round-counter-row {
+  display: flex;
+  justify-content: center;
+}
+#round-counter-row #round-counter-block {
+  background: rgba(255, 255, 255, 0.6);
+  font-size: 120%;
+  padding: 8px 16px;
+  margin: 0 5px;
+  border-radius: 10px;
+  text-shadow: 0 0 1px black, 0 0 2px black, 0 0 3px black, 0 0 4px black;
+  color: white;
 }
 
 @media (max-width: 1165px) {
