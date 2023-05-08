@@ -48,6 +48,15 @@
 */
 require_once("modules/php/constants.inc.php");
 
+$playCardTransitions = [    
+    "helmet" => ST_PLAYER_PLAY_HELMET,
+    "pickCard" => ST_PLAYER_PICK_CARD,
+    "revealCard" => ST_PLAYER_REVEAL_DECK_CARD,
+    "next" => ST_NEXT_PLAYER,
+    "fall" => ST_FALL,
+    "playAgain" => ST_PLAYER_PLAY_CARD,
+];
+
 $basicGameStates = [
 
     // The initial state. Please do not modify.
@@ -99,12 +108,7 @@ $playerActionsGameStates = [
             "playCardFromHand",
             "playCardFromDeck",
         ],
-        "transitions" => [
-            "helmet" => ST_PLAYER_PLAY_HELMET,
-            "next" => ST_NEXT_PLAYER,
-            "fall" => ST_FALL,
-            "playAgain" => ST_PLAYER_PLAY_CARD,
-        ],
+        "transitions" => $playCardTransitions,
     ],
 
     ST_PLAYER_PLAY_HELMET => [
@@ -116,11 +120,29 @@ $playerActionsGameStates = [
             "playHelmet",
             "skipHelmet",
         ],
-        "transitions" => [
-            "next" => ST_NEXT_PLAYER,
-            "fall" => ST_FALL,
-            "playAgain" => ST_PLAYER_PLAY_CARD,
+        "transitions" => $playCardTransitions,
+    ],
+
+    ST_PLAYER_PICK_CARD => [
+        "name" => "pickCard",
+        "description" => clienttranslate('${actplayer} must pick a card from a deck'),
+        "descriptionmyturn" => clienttranslate('${you} must pick a card from a deck'),
+        "type" => "activeplayer",
+        "possibleactions" => [ 
+            "pickCard",
         ],
+        "transitions" => $playCardTransitions,
+    ],
+
+    ST_PLAYER_REVEAL_DECK_CARD => [
+        "name" => "revealDeckCard",
+        "description" => clienttranslate('${actplayer} must choose a deck to reveal its top card'),
+        "descriptionmyturn" => clienttranslate('${you} must choose a deck to reveal its top card'),
+        "type" => "activeplayer",
+        "possibleactions" => [ 
+            "revealTopDeckCard",
+        ],
+        "transitions" => $playCardTransitions,
     ],
 ];
 

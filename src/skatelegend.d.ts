@@ -42,12 +42,12 @@ interface SkateLegendGame extends Game {
     cardsManager: CardsManager;
 
     getPlayerId(): number;
+    getPlayerName(playerId: number): string;
     getPlayerColor(playerId: number): string;
 
-    updateTableHeight(): void;
     setTooltip(id: string, html: string): void;
     playCardFromHand(id: number): void;
-    playCardFromDeck(number: number): void;
+    onDeckClick(number: number): void;
 }
 
 interface EnteringChooseContinueArgs {
@@ -91,6 +91,7 @@ interface NotifFallArgs {
 // closeSequence
 interface NotifCloseSequenceArgs {
     playerId: number;
+    sequence: Card[];
 } 
 
 // newRound
@@ -108,6 +109,14 @@ interface NotifAddHelmetArgs {
 interface NotifTakeTrophyCardArgs {
     playerId: number;
     card: Card;
+    perfectLanding: boolean;
     newCount: number;
     newCard: Card | null;
+}
+
+// addCardToHand
+interface NotifAddCardToHandArgs {
+    playerId: number;
+    card: Card;
+    fromDeckNumber: number;
 }

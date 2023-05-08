@@ -41,9 +41,11 @@ define('ST_PLAYER_PLAY_CARD', 40);
 
 define('ST_PLAYER_PLAY_HELMET', 50);
 
-define('ST_FALL', 60);
+define('ST_PLAYER_PICK_CARD', 60);
+define('ST_PLAYER_REVEAL_DECK_CARD', 61);
 
 define('ST_STOP', 70);
+define('ST_FALL', 75);
 
 define('ST_NEXT_PLAYER', 80);
 
@@ -56,6 +58,8 @@ define('END_SCORE', 100);
 /*
  * Constants
  */
+define('PICK_CARDS', 'PICK_CARDS');
+define('PLAY_AGAIN', 'PLAY_AGAIN');
 
 /*
  * Global Variables

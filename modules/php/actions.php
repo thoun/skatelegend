@@ -35,7 +35,7 @@ trait ActionTrait {
             throw new BgaUserException("You can't play this card");
         }
 
-        $this->playCard($playerId, $card, false);
+        $this->playCard($playerId, $card, -1);
     }
     
     public function playCardFromDeck(int $deckId) {
@@ -45,11 +45,11 @@ trait ActionTrait {
 
         $visibleTopDecks = $this->getVisibleTopDecks();
         if (!in_array($deckId, $visibleTopDecks)) {
-            $this->makeTopDeckVisible($deckId, true);
+            $this->makeTopDeckVisible($deckId, false);
         }
 
         $card = $this->getCardFromDb($this->cards->getCardOnTop('deck'.$deckId));
-        $this->playCard($playerId, $card, false);
+        $this->playCard($playerId, $card, $deckId);
     }
 
     public function playHelmet() {
@@ -67,5 +67,34 @@ trait ActionTrait {
         $playerId = intval($this->getActivePlayerId());
         $card = $this->getCardFromDb($this->cards->getCardOnTop('played'.$playerId));
         $this->afterPlayHelmet($playerId, $card);
+    }
+  	
+    public function pickCard(int $deckId) {
+        $this->checkAction('pickCard'); 
+        
+        $playerId = intval($this->getActivePlayerId());
+
+        $card = $this->getCardFromDb($this->cards->getCardOnTop('deck'.$deckId));
+        $this->cards->moveCard($card->id, 'hand', $playerId);
+
+        self::notifyAllPlayers('addCardToHand', clienttranslate('${player_name} takes the top card from deck ${deck_number}'), [
+            'playerId' => $playerId,
+            'player_name' => $this->getPlayerName($playerId),
+            'card' => $card,
+            'fromDeckNumber' => $deckId,
+            'deck_number' => $deckId,
+        ]);
+
+        $this->cardPickedFromDeck($deckId);
+
+        $this->afterPlayPower();
+    }
+  	
+    public function revealTopDeckCard(int $deckId) {
+        $this->checkAction('revealTopDeckCard'); 
+
+        $this->makeTopDeckVisible($deckId, true);
+
+        $this->afterPlayPower();
     }
 }

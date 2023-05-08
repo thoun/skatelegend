@@ -78,11 +78,6 @@ class SkateLegend implements SkateLegendGame {
         this.setupPreferences();
         this.addHelp();
 
-        (this as any).onScreenWidthChange = () => {
-            this.updateTableHeight();
-            this.onTableCenterSizeChange();
-        };
-
         log( "Ending game setup" );
     }
 
@@ -99,24 +94,6 @@ class SkateLegend implements SkateLegendGame {
             case 'takeCards':
                 this.onEnteringTakeCards(args);
                 break;
-            /*case 'chooseCard':
-                this.onEnteringChooseCard(args.args);
-                break;
-            case 'putDiscardPile':
-                this.onEnteringPutDiscardPile(args.args);
-                break;
-            case 'playCards':
-                this.onEnteringPlayCards();
-                break;
-            case 'chooseDiscardPile':
-                this.onEnteringChooseDiscardPile();
-                break;
-            case 'chooseDiscardCard':
-                this.onEnteringChooseDiscardCard(args.args);
-                break;
-            case 'chooseOpponent':
-                this.onEnteringChooseOpponent(args.args);
-                break;*/
         }
     }
     
@@ -139,108 +116,20 @@ class SkateLegend implements SkateLegendGame {
             //this.stacks.makeDiscardSelectable(true);
         }
     }
-    
-    /*private onEnteringChooseCard(args: EnteringChooseCardArgs) {
-        this.stacks.showPickCards(true, args._private?.cards ?? args.cards);
-        if ((this as any).isCurrentPlayerActive()) {
-            setTimeout(() => this.stacks.makePickSelectable(true), 500);
-        } else {
-            this.stacks.makePickSelectable(false);
-        }        
-        this.stacks.setDeckCount(args.remainingCardsInDeck);
-    }
-    
-    private onEnteringPutDiscardPile(args: EnteringChooseCardArgs) {
-        this.stacks.showPickCards(true, args._private?.cards ?? args.cards);
-        this.stacks.makeDiscardSelectable((this as any).isCurrentPlayerActive());
-    }
-
-    private onEnteringPlayCards() {
-        this.stacks.showPickCards(false);
-        this.selectedCards = [];
-
-        this.updateDisabledPlayCards();
-    }
-    
-    private onEnteringChooseDiscardPile() {
-        this.stacks.makeDiscardSelectable((this as any).isCurrentPlayerActive());
-    }
-    
-    private onEnteringChooseDiscardCard(args: EnteringChooseCardArgs) {
-        const cards = args._private?.cards || args.cards;
-        const pickDiv = document.getElementById('discard-pick');
-        pickDiv.innerHTML = '';
-        pickDiv.dataset.visible = 'true';
-
-        cards?.forEach(card => {
-            this.cards.createMoveOrUpdateCard(card, `discard-pick`, false, 'discard'+args.discardNumber);
-            if ((this as any).isCurrentPlayerActive()) {
-                document.getElementById(`card-${card.id}`).classList.add('selectable');
-            }
-        });
-
-        this.updateTableHeight();
-    }
-    
-    private onEnteringChooseOpponent(args: EnteringChooseOpponentArgs) {
-        if ((this as any).isCurrentPlayerActive()) {
-            args.playersIds.forEach(playerId => 
-                document.getElementById(`player-table-${playerId}-hand-cards`).dataset.canSteal = 'true'
-            );
-        }
-    }*/
 
     public onLeavingState(stateName: string) {
         log( 'Leaving state: '+stateName );
 
         switch (stateName) {
-           /* case 'takeCards':
+           case 'takeCards':
                 this.onLeavingTakeCards();
-                break;
-            case 'chooseCard':
-                this.onLeavingChooseCard();
-                break;
-            case 'putDiscardPile':
-                this.onLeavingPutDiscardPile();
-                break;
-            case 'playCards':
-                this.onLeavingPlayCards();
-                break;
-            case 'chooseDiscardCard':
-                this.onLeavingChooseDiscardCard();
-                break;*/
-            case 'chooseOpponent':
-                this.onLeavingChooseOpponent();
                 break;
         }
     }
 
-   /* private onLeavingTakeCards() {
-        this.stacks.makeDeckSelectable(false);
-        this.stacks.makeDiscardSelectable(false);
-    }
-    
-    private onLeavingChooseCard() {
-        this.stacks.makePickSelectable(false);
-    }
-
-    private onLeavingPutDiscardPile() {
-        this.stacks.makeDiscardSelectable(false);
-    }
-
-    private onLeavingPlayCards() {
-        this.selectedCards = null;
-        this.getCurrentPlayerTable()?.setSelectable(false);
-    }
-
-    private onLeavingChooseDiscardCard() {
-        const pickDiv = document.getElementById('discard-pick');
-        pickDiv.dataset.visible = 'false';
-        this.updateTableHeight();
-    }*/
-
-    private onLeavingChooseOpponent() {
-        (Array.from(document.querySelectorAll('[data-can-steal]')) as HTMLElement[]).forEach(elem => elem.dataset.canSteal = 'false');
+    private onLeavingTakeCards() {
+        /*this.stacks.makeDeckSelectable(false);
+        this.stacks.makeDiscardSelectable(false);*/
     }
 
     // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
@@ -282,12 +171,12 @@ class SkateLegend implements SkateLegendGame {
         return Number((this as any).player_id);
     }
 
-    public getPlayerColor(playerId: number): string {
-        return this.gamedatas.players[playerId].color;
+    public getPlayerName(playerId: number): string {
+        return this.gamedatas.players[playerId].name;
     }
 
-    private getPlayer(playerId: number): SkateLegendPlayer {
-        return Object.values(this.gamedatas.players).find(player => Number(player.id) == playerId);
+    public getPlayerColor(playerId: number): string {
+        return this.gamedatas.players[playerId].color;
     }
 
     private getPlayerTable(playerId: number): PlayerTable {
@@ -296,26 +185,6 @@ class SkateLegend implements SkateLegendGame {
 
     private getCurrentPlayerTable(): PlayerTable | null {
         return this.playersTables.find(playerTable => playerTable.playerId === this.getPlayerId());
-    }
-
-    public updateTableHeight() {
-        // setTimeout(() => document.getElementById('zoom-wrapper').style.height = `${document.getElementById('full-table').getBoundingClientRect().height}px`, 600);
-    }
-
-    private onTableCenterSizeChange() {
-        /*const maxWidth = document.getElementById('full-table').clientWidth;
-        const tableCenterWidth = document.getElementById('table-center').clientWidth + 20;
-        const playerTableWidth = 650 + 20;
-        const tablesMaxWidth = maxWidth - tableCenterWidth;
-     
-        let width = 'unset';
-        if (tablesMaxWidth < playerTableWidth * this.gamedatas.playerorder.length) {
-            const reduced = (Math.floor(tablesMaxWidth / playerTableWidth) * playerTableWidth);
-            if (reduced > 0) {
-                width = `${reduced}px`;
-            }
-        }
-        document.getElementById('tables').style.width = width;*/
     }
 
     private setupPreferences() {
@@ -419,54 +288,6 @@ class SkateLegend implements SkateLegendGame {
         const table = new PlayerTable(this, gamedatas.players[playerId]);
         this.playersTables.push(table);
     }
-    
-    public onCardClick(card: Card): void {
-        const cardDiv = document.getElementById(`card-${card.id}`);
-        const parentDiv = cardDiv.parentElement;
-
-        if (cardDiv.classList.contains('disabled')) {
-            return;
-        }
-
-        /*switch (this.gamedatas.gamestate.name) {
-            case 'takeCards':
-                if (parentDiv.dataset.discard) {
-                    this.takeCardFromDiscard(Number(parentDiv.dataset.discard));
-                }
-                break;
-            case 'chooseCard':
-                if (parentDiv.id == 'pick') {
-                    this.chooseCard(card.id);
-                }
-                break;
-            case 'playCards':
-                if (parentDiv.dataset.myHand == `true`) {
-                    if (this.selectedCards.includes(card.id)) {
-                        this.selectedCards.splice(this.selectedCards.indexOf(card.id), 1);
-                        cardDiv.classList.remove('selected');
-                    } else {
-                        this.selectedCards.push(card.id);
-                        cardDiv.classList.add('selected');
-                    }
-                    this.updateDisabledPlayCards();
-                }
-                break;
-            case 'chooseDiscardCard':
-                if (parentDiv.id == 'discard-pick') {
-                    this.chooseDiscardCard(card.id);
-                }
-                break;
-            case 'chooseOpponent':
-                const chooseOpponentArgs = this.gamedatas.gamestate.args as EnteringChooseContinueArgs;
-                if (parentDiv.dataset.currentPlayer == 'false') {
-                    const stealPlayerId = Number(parentDiv.dataset.playerId);
-                    if (chooseOpponentArgs.playersIds.includes(stealPlayerId)) {
-                        this.chooseOpponent(stealPlayerId);
-                    }
-                }
-                break;
-        }*/
-    }
 
     private addHelp() {
         let labels = [
@@ -561,6 +382,16 @@ class SkateLegend implements SkateLegendGame {
         // multiplier
         [1, 2, 3, 4].forEach(family => this.cards.createMoveOrUpdateCard({id: 1040 + family, category: 4, family } as any, `help-multiplier-${family}`));*/
     }
+    
+    public onDeckClick(number: number): void {
+        if (this.gamedatas.gamestate.name == 'pickCard') {
+            this.pickCard(number);
+        } else if (this.gamedatas.gamestate.name == 'revealDeckCard') {
+            this.revealTopDeckCard(number);
+        } else {
+            this.playCardFromDeck(number);
+        }
+    }
 
     public continue() {
         if(!(this as any).checkAction('continue')) {
@@ -602,6 +433,26 @@ class SkateLegend implements SkateLegendGame {
         }
 
         this.takeAction('playCardFromDeck', {
+            number
+        });
+    }
+  	
+    public pickCard(number: number) {
+        if(!(this as any).checkAction('pickCard')) {
+            return;
+        }
+
+        this.takeAction('pickCard', {
+            number
+        });
+    }
+  	
+    public revealTopDeckCard(number: number) {
+        if(!(this as any).checkAction('revealTopDeckCard')) {
+            return;
+        }
+
+        this.takeAction('revealTopDeckCard', {
             number
         });
     }
@@ -653,6 +504,7 @@ class SkateLegend implements SkateLegendGame {
             ['addHelmet', ANIMATION_MS],
             ['takeTrophyCard', ANIMATION_MS],
             ['discardTrophyCard', ANIMATION_MS],
+            ['addCardToHand', ANIMATION_MS],
         ];
     
         notifs.forEach((notif) => {
@@ -702,6 +554,7 @@ class SkateLegend implements SkateLegendGame {
         this.getPlayerTable(playerId).closeSequence();
         this.setPlayerActive(playerId, false);
         this.playedCounters[playerId].toValue(0);
+        this.scoredCounters[playerId].incValue(notif.args.sequence.length);
     }
 
     notif_newRound(notif: Notif<NotifNewRoundArgs>) {
@@ -722,7 +575,7 @@ class SkateLegend implements SkateLegendGame {
     notif_takeTrophyCard(notif: Notif<NotifTakeTrophyCardArgs>) {
         const playerId = notif.args.playerId;
         const currentPlayer = this.getPlayerId() == playerId;
-        if (currentPlayer) {
+        if (currentPlayer && !notif.args.perfectLanding) {
             this.getPlayerTable(playerId).hand.addCard(notif.args.card);
         } else {
             this.tableCenter.legendDeck.removeCard(notif.args.card);
@@ -733,6 +586,18 @@ class SkateLegend implements SkateLegendGame {
     notif_discardTrophyCard(notif: Notif<NotifTakeTrophyCardArgs>) {
         this.tableCenter.legendDeck.removeCard(notif.args.card);
         this.tableCenter.updateLegendDeck(notif.args.newCard, notif.args.newCount);
+    }
+
+    notif_addCardToHand(notif: Notif<NotifAddCardToHandArgs>) {
+        const playerId = notif.args.playerId;
+        const currentPlayer = this.getPlayerId() == playerId;
+        if (currentPlayer) {
+            this.getPlayerTable(playerId).hand.addCard(notif.args.card, {
+                fromElement: document.getElementById(`deck${notif.args.fromDeckNumber}`)
+            });
+        } else {
+            // TODO if card is visible, make it invisible
+        }
     }
 
     /* This enable to inject translatable styled things to logs or action bar */

@@ -85,6 +85,25 @@
 
       self::ajaxResponse();
     }
+  	
+    public function pickCard() {
+      self::setAjaxMode();
 
+      $number = self::getArg("number", AT_posint, true);
+
+      $this->game->pickCard($number);
+
+      self::ajaxResponse();
+    }
+  	
+    public function revealTopDeckCard() {
+      self::setAjaxMode();
+
+      $number = self::getArg("number", AT_posint, true);
+
+      $this->game->revealTopDeckCard($number);
+
+      self::ajaxResponse();
+    }
   }
   

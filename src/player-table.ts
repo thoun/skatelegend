@@ -16,17 +16,22 @@ class PlayerTable {
         let html = `
         <div id="player-table-${this.playerId}" class="player-table" style="--player-color: #${player.color};">
             <div id="player-table-${this.playerId}-name" class="name-wrapper">${player.name}</div>
+            <div class="cards">
         `;
         if (this.currentPlayer) {
             html += `
-            <div class="block-with-text hand-wrapper">
-                <div class="block-label">${_('Your hand')}</div>
-                <div id="player-table-${this.playerId}-hand" class="hand cards"></div>
-            </div>`;
+                <div class="block-with-text hand-wrapper">
+                    <div class="block-label">${_('Your hand')}</div>
+                    <div id="player-table-${this.playerId}-hand" class="hand cards"></div>
+                </div>
+                <div class="separator"></div>
+                `;
         }
         html += `
-            <div class="visible-cards">
-                <div id="player-table-${this.playerId}-played" class="cards"></div>
+                <div class="block-with-text visible-cards">
+                    <div class="block-label">${this.currentPlayer ? _('Your sequence') : _('${player_name}\'s sequence').replace('${player_name}', `<span style="color: #${this.game.getPlayerColor(this.playerId)}">${this.game.getPlayerName(this.playerId)}</span>`)}</div>
+                    <div id="player-table-${this.playerId}-played" class="cards"></div>
+                </div>
             </div>
         </div>
         `;

@@ -13,10 +13,12 @@ class TableCenter {
                 height: CARD_HEIGHT,
                 cardNumber: gamedatas.decks[i].count,
             });
-            deckDiv.addEventListener('click', () => this.game.playCardFromDeck(i));
+            deckDiv.addEventListener('click', () => this.game.onDeckClick(i));
             if (gamedatas.decks[i].top) {
                 this.decks[i].setCardNumber(gamedatas.decks[i].count - 1);
-                this.decks[i].addCard(gamedatas.decks[i].top);
+                this.decks[i].addCard(gamedatas.decks[i].top, undefined, {
+                    visible: true,
+                });
             }
         }
 

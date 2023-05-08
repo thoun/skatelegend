@@ -203,7 +203,7 @@ trait UtilTrait {
         ]);
     }
 
-    function playCard(int $playerId, Card $card, bool $fromDeck) {
+    function playCard(int $playerId, Card $card, int $deckId) {
         $this->cards->moveCard($card->id, 'played'.$playerId, intval($this->cards->countCardInLocation('played'.$playerId)) - 1);
         
         $message = '';/* TODO $fromDeck ?
@@ -214,7 +214,7 @@ trait UtilTrait {
             'playerId' => $playerId,
             'player_name' => $this->getPlayerName($playerId),
             'card' => $card,
-            'fromDeck' => $fromDeck,
+            'fromDeck' => $deckId > 0,
             /*'newCount' => intval($this->cards->countCardInLocation('hand', $playerId)),
             'discardedTokens' => $tokens,
             'types' => array_map(fn($token) => $token->type, $tokens), // for logs
@@ -222,6 +222,10 @@ trait UtilTrait {
             'card_color' => $this->getCardColor($card->color), // for logs
             'card_display' => 100 * $card->color + $card->number, // for logs*/
         ]);
+
+        if ($deckId > 0) {
+            $this->cardPickedFromDeck($deckId);
+        }
 
         $sequence = $this->getCardsByLocation('played'.$playerId);
         $fall = $this->isFall($playerId, $sequence);
@@ -323,7 +327,7 @@ trait UtilTrait {
                 }
             }
         }
-        $this->cards->moveCards(array_map(fn($card) => $card->id, $cardsToDiscard), 'discard', $playerId);
+        $this->cards->moveCards(array_map(fn($card) => $card->id, $cardsToDiscard), 'discard');
         if (count($cardsToDiscard) > 0) {
             $sequence = $this->getCardsByLocation('played'.$playerId);
         }
@@ -357,6 +361,7 @@ trait UtilTrait {
             'playerId' => $playerId,
             'player_name' => $this->getPlayerName($playerId),
             'points' => $wheels,
+            'sequence' => $sequence,
         ]);
     }
 
@@ -371,7 +376,38 @@ trait UtilTrait {
     }
 
     function afterPlayHelmet(int $playerId, Card $card) {
-        // TODO handle powers
+        if (in_array($card->power, [POWER_PICK_CARD, POWER_PICK_CARD_TWICE])) {
+            $this->incGameStateValue(PICK_CARDS, $card->power == POWER_PICK_CARD_TWICE ? 2 : 1);
+        } else 
+        if ($card->power == POWER_FLIP_DECK) {
+            $visibleTopDecks = $this->getVisibleTopDecks();
+
+            if (count($visibleTopDecks) == 0) {
+                $this->gamestate->nextState('revealCard');
+                return;
+            } else if (count($visibleTopDecks) == 1) {
+                $deckId = $visibleTopDecks[0] == 1 ? 2 : 1;
+                $this->makeTopDeckVisible($deckId, true);
+            } // else nothing
+        } else if (in_array($card->power, [POWER_PLAY_AGAIN, POWER_PLAY_AGAIN_TWICE])) {
+            $this->incGameStateValue(PLAY_AGAIN, $card->power == POWER_PLAY_AGAIN_TWICE ? 2 : 1);
+        }
+
+        $this->afterPlayPower();
+    }
+
+    function afterPlayPower() {
+        if (intval($this->getGameStateValue(PICK_CARDS)) > 0) {
+            $this->incGameStateValue(PICK_CARDS, -1);
+            $this->gamestate->nextState('pickCard');
+            return;
+        }
+
+        if (intval($this->getGameStateValue(PLAY_AGAIN)) > 0) {
+            $this->incGameStateValue(PLAY_AGAIN, -1);
+            $this->gamestate->nextState('playAgain');
+            return;
+        }
         $this->gamestate->nextState('next');
     }
 
@@ -381,15 +417,44 @@ trait UtilTrait {
 
     function takeLegendCard(int $playerId) {
         $card = $this->getCardFromDb($this->cards->getCardOnTop('decklegend'));
-        $this->cards->moveCard($card->id, 'hand', $playerId);
+        $perfectLanding = $card->typeArg == 1;
+
+        $this->cards->moveCard($card->id, $perfectLanding ? 'scored' : 'hand', $playerId);
+        // TODO score right now if $perfectLanding ?
 
         self::notifyAllPlayers('takeTrophyCard', clienttranslate('${player_name} takes the trophy card for being the last active player'), [
             'playerId' => $playerId,
             'player_name' => $this->getPlayerName($playerId),
             'card' => $card,
+            'perfectLanding' => $perfectLanding,
             'newCount' => intval($this->cards->countCardInLocation('decklegend')),
             'newCard' => $this->getCardFromDb($this->cards->getCardOnTop('decklegend')),
         ]);
+    }
+
+    function cardPickedFromDeck(int $deckId) {
+        // set pile hidden if it was visible
+        $visibleTopDecks = $this->getVisibleTopDecks();
+        if (in_array($deckId, $visibleTopDecks)) {
+            $visibleTopDecks = array_values(array_filter($visibleTopDecks, fn($deck) => $deck != $deckId));
+            $this->setGlobalVariable(VISIBLE_TOP_DECKS, $visibleTopDecks);
+        }
+
+        // fill if it was empty
+        $deckLocation = 'deck'.$deckId;
+        if (intval($this->cards->countCardInLocation($deckLocation)) == 0) {
+            $otherDeckLocation = 'deck'.($deckId == 2 ? 1 : 2);
+
+            if (intval($this->cards->countCardInLocation($otherDeckLocation)) == 0) {
+                $this->cards->moveAllCardsInLocation('discard', $otherDeckLocation);
+                $this->cards->shuffle($otherDeckLocation);
+            }
+
+            $cardsToMove = $this->getCardsFromDb($this->cards->getCardsInLocation($otherDeckLocation, null, 'location_arg'));
+            $cardsIds = array_map(fn($card) => $card->id, $cardsToMove);
+            $cardsIds = array_slice($cardsIds, 0, ceil(count($cardsIds) / 2));
+            $this->cards->moveCards($cardsIds, $deckLocation);
+        }
     }
     
 }

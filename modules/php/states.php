@@ -54,7 +54,7 @@ trait StateTrait {
         self::DbQuery("update player set player_helmets = player_helmets + 1, player_helmet_card_id = -1, player_active = 0 WHERE player_id = $playerId");
 
         $sequence = $this->getCardsByLocation('played'.$playerId);
-        $this->cards->moveCards(array_map(fn($card) => $card->id, $sequence), 'discard', $playerId);
+        $this->cards->moveCards(array_map(fn($card) => $card->id, $sequence), 'discard');
 
         self::notifyAllPlayers('fall', clienttranslate('${player_name} falls! The sequence is discarded, but he gains one helmet'), [
             'playerId' => $playerId,
@@ -66,7 +66,7 @@ trait StateTrait {
             // last player in 2 player-mode falls
 
             $card = $this->getCardFromDb($this->cards->getCardOnTop('decklegend'));
-            $this->cards->moveCard($card->id, 'discard', 0);
+            $this->cards->moveCard($card->id, 'discard');
 
             self::notifyAllPlayers('discardTrophyCard', clienttranslate('The trophy card is discarded as the last active player fell'), [
                 'card' => $card,
@@ -83,6 +83,8 @@ trait StateTrait {
             $this->gamestate->jumpToState(ST_END_GAME); // TODO
             return;
         }*/
+        $this->setGameStateValue(PICK_CARDS, 0);
+        $this->setGameStateValue(PLAY_AGAIN, 0);
 
         $playerId = intval($this->getActivePlayerId());
 

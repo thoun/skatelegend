@@ -43,6 +43,8 @@ class SkateLegend extends Table {
         parent::__construct();
         
         self::initGameStateLabels([
+            PICK_CARDS => 10,
+            PLAY_AGAIN => 11,
         ]);
 		
         $this->cards = $this->getNew("module.common.deck");
@@ -86,7 +88,8 @@ class SkateLegend extends Table {
         /************ Start the game initialization *****/
 
         // Init global values with their initial values
-        //self::setGameStateInitialValue(ROUND_NUMBER, 1);
+        $this->setGameStateInitialValue(PICK_CARDS, 0);
+        $this->setGameStateInitialValue(PLAY_AGAIN, 0);
         
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
