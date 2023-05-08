@@ -31,4 +31,11 @@ CREATE TABLE IF NOT EXISTS `card` (
 
 ALTER TABLE `player` ADD `player_active` SMALLINT UNSIGNED NOT NULL DEFAULT 1;
 ALTER TABLE `player` ADD `player_helmets` SMALLINT UNSIGNED NOT NULL DEFAULT 0;
+ALTER TABLE `player` ADD `player_helmet_card_id` int NOT NULL DEFAULT -1;
+
+CREATE TABLE IF NOT EXISTS `global_variables` (
+  `name` varchar(50) NOT NULL,
+  `value` json,
+  PRIMARY KEY (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

@@ -147,8 +147,30 @@ class SkateLegend extends Table {
             $player['playerNo'] = intval($player['playerNo']);
             $player['helmets'] = intval($player['helmets']);
             $player['active'] = boolval($player['active']);
+            
+            $player['played'] = $this->getCardsByLocation('played'.$playerId);
+            $player['handCount'] = intval($this->cards->countCardInLocation('hand', $playerId));
+
+            if ($currentPlayerId == $playerId) {
+                $player['hand'] = $this->getCardsByLocation('hand', $playerId);
+            }
+        }
+        
+        $decks = [];
+        $decks[0] = [
+            'count' => intval($this->cards->countCardInLocation('decklegend')),
+            'top' => $this->getCardFromDb($this->cards->getCardOnTop('decklegend')),
+        ];
+
+        $visibleTopDecks = $this->getVisibleTopDecks();
+        for ($i = 1; $i <= 2; $i++) {
+            $decks[$i] = [
+                'count' => intval($this->cards->countCardInLocation('deck'.$i)),
+                'top' => in_array($i, $visibleTopDecks) ? $this->getCardFromDb($this->cards->getCardOnTop('deck'.$i)) : null,
+            ];
         }
 
+        $result['decks'] = $decks;
         $result['roundNumber'] = intval($this->getStat('roundNumber')) + 1;
         $result['remainingHelmets'] = $this->getRemainingHelmets();
   
@@ -192,6 +214,7 @@ class SkateLegend extends Table {
         if ($state['type'] === "activeplayer") {
             switch ($statename) {
                 default:
+                    self::DbQuery("update player set player_active = 0 WHERE player_id = $active_player");
                     $this->gamestate->nextState( "zombiePass" );
                 	break;
             }

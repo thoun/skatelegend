@@ -28,15 +28,7 @@ trait StateTrait {
     } 
 
     function stStop() {
-
-        /* TODO
-        STOP his sequence: On his turn, a player can decide to stop his chain and thus validate it. In this
-case, he does not add a card to his chain. If the player has one or more Legendary Figure cards in
-his chain, he checks if they meet their condition (if not, they are discarded). He collects the cards
-that make up his chain of events into a pile and places it next to him, discarding any HELMET
-tokens played.
-These cards will give him points at the end of the game.
-*/ 
+        $this->closeSequence(intval($this->getActivePlayerId()), true);
 
         $this->gamestate->nextState('next');
     }
@@ -44,10 +36,15 @@ These cards will give him points at the end of the game.
     function stFall() {
         $playerId = intval($this->getActivePlayerId());
 
-        /* TODO When a player falls, he takes a HELMET as compensation. In the next round, on his turn, he can
-            decide to place it on the card he has just played (only one HELMET per sequence). In this case,
-            the color of the card in question can no longer cause this player to fall.
-            */
+        self::DbQuery("update player set player_helmets = player_helmets + 1, player_helmet_card_id = -1, player_active = 0 WHERE player_id = $playerId");
+
+        $sequence = $this->getCardsByLocation('played'.$playerId);
+        $this->cards->moveCards(array_map(fn($card) => $card->id, $sequence), 'discard', $playerId);
+
+        self::notifyAllPlayers('fall', clienttranslate('${player_name} falls! The sequence is discarded, but he gains one helmet'), [
+            'playerId' => $playerId,
+            'player_name' => $this->getPlayerName($playerId),
+        ]);
 
         $this->gamestate->nextState('next');
     }
@@ -62,22 +59,20 @@ These cards will give him points at the end of the game.
 
         $this->giveExtraTime($playerId);
 
-        $isLastRemainingPlayer = false; // TODO
+        $remainingActivePlayersToEndRound = count($this->getPlayersIds()) == 2 ? 0 : 1;
+        $remainingActivePlayersIds = array_map(fn($dbPlayer) => intval($dbPlayer['player_id']), array_values($this->getCollectionFromDb('select player_id from player WHERE player_active = 1')));
 
-        if ($isLastRemainingPlayer) {
-            /* TODO
-            If this player has one or more Legendary Figure cards in his chain, he checks if they
-            meet their condition (if not they are discarded).
-            He collects the cards that make up his chain into a pile and places it next to him (these cards will
-            earn him points at the end of the game) and discards the eventual Helmet played. Then he adds the
-            visible card from the prize deck to his hand (revealing the Legendary Figure/Trophy card for the
-            next round).
-            A Legendary Figure card can be played by the player in possession of it exactly like a Figure card in
-            the next round, however, the points they earn are subject to conditions (see paragraph Legendary
-            Figure).*/
+        if (count($remainingActivePlayersIds) == $remainingActivePlayersToEndRound) {
+            if (count($remainingActivePlayersIds) == 1) {
+                $this->closeSequence($remainingActivePlayersIds[0], false);
+            }
             $this->gamestate->nextState('endRound');
         } else {
-            $this->activeNextPlayer();
+            do {
+                $playerId = intval($this->activeNextPlayer());
+                $isActive = $this->getPlayerActive($playerId);
+            } while (!$isActive);
+
             $this->gamestate->nextState('nextPlayer');
         }
     }

@@ -39,6 +39,8 @@ define('ST_PLAYER_CHOOSE_CONTINUE', 30);
 
 define('ST_PLAYER_PLAY_CARD', 40);
 
+define('ST_PLAYER_PLAY_HELMET', 50);
+
 define('ST_FALL', 60);
 
 define('ST_STOP', 70);
@@ -54,5 +56,10 @@ define('END_SCORE', 100);
 /*
  * Constants
  */
+
+/*
+ * Global Variables
+ */
+define('VISIBLE_TOP_DECKS', 'VisibleTopDecks');
 
 ?>

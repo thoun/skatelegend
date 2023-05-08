@@ -100,9 +100,27 @@ $playerActionsGameStates = [
             "playCardFromDeck",
         ],
         "transitions" => [
+            "helmet" => ST_PLAYER_PLAY_HELMET,
             "next" => ST_NEXT_PLAYER,
             "fall" => ST_FALL,
-            "playAgain" => ST_PLAYER_CHOOSE_CONTINUE,
+            "playAgain" => ST_PLAYER_PLAY_CARD,
+        ],
+    ],
+
+    ST_PLAYER_PLAY_HELMET => [
+        "name" => "playHelmet",
+        "description" => clienttranslate('${actplayer} can play a helmet'),
+        "descriptionmyturn" => clienttranslate('${you} can play a helmet'),
+        "type" => "activeplayer",    
+        "args" => "argPlayCard",
+        "possibleactions" => [ 
+            "playHelmet",
+            "skipHelmet",
+        ],
+        "transitions" => [
+            "next" => ST_NEXT_PLAYER,
+            "fall" => ST_FALL,
+            "playAgain" => ST_PLAYER_PLAY_CARD,
         ],
     ],
 ];

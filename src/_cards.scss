@@ -13,6 +13,7 @@
 
     .card-sides {
         .card-side {
+            background-image: url('img/cards.jpg');
             background-size: auto 100%;
             border-radius: 5px;
 
@@ -43,7 +44,6 @@
     }
 
     &[data-type="1"] {
-        background-image: url('img/cards.jpg');
         @for $i from 1 through 11 {
             &[data-type-arg="#{$i}"] .front {
                 background-position-x: #{($i) * 100% / 11};
@@ -52,7 +52,9 @@
     }
 
     &[data-type="2"] {
-        background-image: url('img/cards-legend.jpg');
+        .card-side {
+            background-image: url('img/cards-legend.jpg');
+        }
         @for $i from 1 through 10 {
             &[data-type-arg="#{$i}"] .front {
                 background-position-x: #{($i) * 100% / 10};

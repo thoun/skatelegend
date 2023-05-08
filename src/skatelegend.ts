@@ -11,10 +11,12 @@ const ACTION_TIMER_DURATION = 5;
 const LOCAL_STORAGE_ZOOM_KEY = 'SkateLegend-zoom';
 
 class SkateLegend implements SkateLegendGame {
+    public animationManager: AnimationManager;
     public cardsManager: CardsManager;
 
     private zoomManager: ZoomManager;
     private gamedatas: SkateLegendGamedatas;
+    private tableCenter: TableCenter;
     private playersTables: PlayerTable[] = [];
     private selectedCards: number[];
     private helmetCounters: Counter[] = [];
@@ -49,11 +51,11 @@ class SkateLegend implements SkateLegendGame {
 
         log('gamedatas', gamedatas);
 
-        //this.cards = new Cards(this);
-        //this.stacks = new Stacks(this, this.gamedatas);
+        this.animationManager = new AnimationManager(this);
+        this.cardsManager = new CardsManager(this);
+        this.tableCenter = new TableCenter(this, gamedatas);
         this.createPlayerPanels(gamedatas);
         this.createPlayerTables(gamedatas);
-
         
         this.zoomManager = new ZoomManager({
             element: document.getElementById('table'),
@@ -248,6 +250,9 @@ class SkateLegend implements SkateLegendGame {
                     const chooseContinueArgs = args as EnteringChooseContinueArgs;
                     (this as any).addActionButton(`continue_button`, _("Continue"), () => this.continue());
                     (this as any).addActionButton(`stop_button`, _("Stop"), () => this.stop(chooseContinueArgs.shouldNotStop));
+                    if (!chooseContinueArgs.canStop) {
+                        document.getElementById(`stop_button`).classList.add('disabled');
+                    }
                     break;
             }
         }
@@ -530,6 +535,7 @@ class SkateLegend implements SkateLegendGame {
                 _("Are you sure you want to stop here? There is no risk if you continue the sequence."), 
                 () => this.stop(false)
             );
+            return;
         }
 
         this.takeAction('stop');
@@ -577,47 +583,51 @@ class SkateLegend implements SkateLegendGame {
         //log( 'notifications subscriptions setup' );
 
         const notifs = [
-            ['cardInDiscardFromDeck', ANIMATION_MS],
-            ['cardInHandFromDiscard', ANIMATION_MS],
-            ['cardInHandFromDiscardCrab', ANIMATION_MS],
-            ['cardInHandFromPick', ANIMATION_MS],
-            ['cardInHandFromDeck', ANIMATION_MS],
-            ['cardInDiscardFromPick', ANIMATION_MS],
-            ['playCards', ANIMATION_MS],
-            ['stealCard', ANIMATION_MS],
-            ['revealHand', ANIMATION_MS * 2],
-            ['announceEndRound', ANIMATION_MS * 2],
-            ['betResult', ANIMATION_MS * 2],
-            ['endRound', ANIMATION_MS * 2],
-            ['score', ANIMATION_MS * 3],
-            ['newRound', 1],
-            ['updateCardsPoints', 1],
-            ['emptyDeck', 1],
+            ['flipTopDeck', ANIMATION_MS],
+            ['playCard', ANIMATION_MS],
+            ['discardedLegendCard', ANIMATION_MS],
+            ['fall', ANIMATION_MS],
+            ['closeSequence', ANIMATION_MS],
         ];
     
-        /*notifs.forEach((notif) => {
+        notifs.forEach((notif) => {
             dojo.subscribe(notif[0], this, `notif_${notif[0]}`);
             (this as any).notifqueue.setSynchronous(notif[0], notif[1]);
         });
 
-        (this as any).notifqueue.setIgnoreNotificationCheck('cardInHandFromPick', (notif: Notif<NotifCardInHandFromPickArgs>) => 
+        /*(this as any).notifqueue.setIgnoreNotificationCheck('cardInHandFromPick', (notif: Notif<NotifCardInHandFromPickArgs>) => 
             notif.args.playerId == this.getPlayerId() && !notif.args.card.category
-        );
-        (this as any).notifqueue.setIgnoreNotificationCheck('cardInHandFromDeck', (notif: Notif<NotifCardInHandFromPickArgs>) => 
-            notif.args.playerId == this.getPlayerId() && !notif.args.card.category
-        );
-        (this as any).notifqueue.setIgnoreNotificationCheck('cardInHandFromDiscardCrab', (notif: Notif<NotifCardInHandFromDiscardArgs>) => 
-            notif.args.playerId == this.getPlayerId() && !notif.args.card.category
-        );
-        (this as any).notifqueue.setIgnoreNotificationCheck('stealCard', (notif: Notif<NotifStealCardArgs>) => 
-            [notif.args.playerId, notif.args.opponentId].includes(this.getPlayerId()) && !(notif.args as any).cardName
         );*/
     }
 
-    notif_betResult(notif: Notif<NotifBetResultArgs>) {
-        //this.getPlayerTable(notif.args.playerId).showAnnouncementBetResult(notif.args.result);
+    notif_flipTopDeck(notif: Notif<NotifFlipTopDeckArgs>) {
+        this.tableCenter.flipTopDeck(notif.args.deckId, notif.args.card);
     }
 
+    notif_playCard(notif: Notif<NotifPlayCardArgs>) {
+        const playerId = notif.args.playerId;
+        const fromDeck = notif.args.fromDeck;
+        const playerTable = this.getPlayerTable(playerId);
+        const currentPlayer = this.getPlayerId() == playerId;
+        playerTable.played.addCard(notif.args.card, {
+            fromElement: currentPlayer || fromDeck ? undefined : document.getElementById(`player-table-${playerId}-name`)
+        });
+        // TODO this.handCounters[playerId].toValue(notif.args.newCount);
+    }
+
+    notif_discardedLegendCard(notif: Notif<NotifDiscardedLegendCardArgs>) {
+        this.getPlayerTable(notif.args.playerId).discardLegendCard(notif.args.card);
+    }
+
+    notif_fall(notif: Notif<NotifFallArgs>) {
+        const playerId = notif.args.playerId;
+        this.getPlayerTable(playerId).fall();
+        this.helmetCounters[playerId].incValue(1);
+    }
+
+    notif_closeSequence(notif: Notif<NotifCloseSequenceArgs>) {
+        this.getPlayerTable(notif.args.playerId).closeSequence();
+    }
 
     /* This enable to inject translatable styled things to logs or action bar */
     /* @Override */

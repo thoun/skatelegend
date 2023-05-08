@@ -376,6 +376,45 @@ var AnimationManager = /** @class */ (function () {
     return AnimationManager;
 }());
 /**
+ * Linear slide of the card from origin to destination.
+ *
+ * @param settings an `AnimationSettings` object
+ * @returns a promise when animation ends
+ */
+function stockSlideAnimation(settings) {
+    var promise = new Promise(function (success) {
+        var _a;
+        var originBR = settings.fromElement.getBoundingClientRect();
+        var destinationBR = settings.element.getBoundingClientRect();
+        var deltaX = (destinationBR.left + destinationBR.right) / 2 - (originBR.left + originBR.right) / 2;
+        var deltaY = (destinationBR.top + destinationBR.bottom) / 2 - (originBR.top + originBR.bottom) / 2;
+        settings.element.style.zIndex = '10';
+        settings.element.style.transform = "translate(".concat(-deltaX, "px, ").concat(-deltaY, "px) rotate(").concat((_a = settings.rotationDelta) !== null && _a !== void 0 ? _a : 0, "deg)");
+        var side = settings.element.dataset.side;
+        if (settings.originalSide && settings.originalSide != side) {
+            var cardSides_1 = settings.element.getElementsByClassName('card-sides')[0];
+            cardSides_1.style.transition = 'none';
+            settings.element.dataset.side = settings.originalSide;
+            setTimeout(function () {
+                cardSides_1.style.transition = null;
+                settings.element.dataset.side = side;
+            });
+        }
+        setTimeout(function () {
+            settings.element.offsetHeight;
+            settings.element.style.transition = "transform 0.5s linear";
+            settings.element.offsetHeight;
+            settings.element.style.transform = null;
+        }, 10);
+        setTimeout(function () {
+            settings.element.style.zIndex = null;
+            settings.element.style.transition = null;
+            success(true);
+        }, 600);
+    });
+    return promise;
+}
+/**
  * The abstract stock. It shouldn't be used directly, use stocks that extends it.
  */
 var CardStock = /** @class */ (function () {
@@ -518,7 +557,9 @@ var CardStock = /** @class */ (function () {
         var promise;
         this.addCardElementToParent(cardElement, settings);
         cardElement.classList.remove('selectable', 'selected', 'disabled');
-        promise = this.animationFromElement(cardElement, animation.fromStock.element, {
+        promise = this.animationFromElement({
+            element: cardElement,
+            fromElement: animation.fromStock.element,
             originalSide: animation.originalSide,
             rotationDelta: animation.rotationDelta,
             animation: animation.animation,
@@ -538,7 +579,9 @@ var CardStock = /** @class */ (function () {
         this.addCardElementToParent(cardElement, settings);
         if (animation) {
             if (animation.fromStock) {
-                promise = this.animationFromElement(cardElement, animation.fromStock.element, {
+                promise = this.animationFromElement({
+                    element: cardElement,
+                    fromElement: animation.fromStock.element,
                     originalSide: animation.originalSide,
                     rotationDelta: animation.rotationDelta,
                     animation: animation.animation,
@@ -546,7 +589,9 @@ var CardStock = /** @class */ (function () {
                 animation.fromStock.removeCard(card);
             }
             else if (animation.fromElement) {
-                promise = this.animationFromElement(cardElement, animation.fromElement, {
+                promise = this.animationFromElement({
+                    element: cardElement,
+                    fromElement: animation.fromElement,
                     originalSide: animation.originalSide,
                     rotationDelta: animation.rotationDelta,
                     animation: animation.animation,
@@ -746,24 +791,15 @@ var CardStock = /** @class */ (function () {
         }
         (_a = this.onCardClick) === null || _a === void 0 ? void 0 : _a.call(this, card);
     };
-    /**
-     * @param element The element to animate. The element is added to the destination stock before the animation starts.
-     * @param fromElement The HTMLElement to animate from.
-     */
-    CardStock.prototype.animationFromElement = function (element, fromElement, settings) {
-        var _a, _b, _c, _d, _e, _f;
-        var side = element.dataset.side;
-        if (settings.originalSide && settings.originalSide != side) {
-            var cardSides_1 = element.getElementsByClassName('card-sides')[0];
-            cardSides_1.style.transition = 'none';
-            element.dataset.side = settings.originalSide;
-            setTimeout(function () {
-                cardSides_1.style.transition = null;
-                element.dataset.side = side;
-            });
+    CardStock.prototype.animationFromElement = function (settings) {
+        var _a;
+        if (document.visibilityState !== 'hidden' && !this.manager.game.instantaneousMode) {
+            var animation = (_a = settings.animation) !== null && _a !== void 0 ? _a : stockSlideAnimation;
+            return animation(settings);
         }
-        var animation = (_a = settings.animation) !== null && _a !== void 0 ? _a : slideAnimation;
-        return (_f = animation(element, __assign(__assign({ duration: (_c = (_b = this.manager.animationManager.getSettings()) === null || _b === void 0 ? void 0 : _b.duration) !== null && _c !== void 0 ? _c : 500, scale: (_e = (_d = this.manager.animationManager.getZoomManager()) === null || _d === void 0 ? void 0 : _d.zoom) !== null && _e !== void 0 ? _e : undefined }, settings !== null && settings !== void 0 ? settings : {}), { game: this.manager.game, fromElement: fromElement }))) !== null && _f !== void 0 ? _f : Promise.resolve(false);
+        else {
+            return Promise.resolve(false);
+        }
     };
     /**
      * Set the card to its front (visible) or back (not visible) side.
@@ -1103,11 +1139,9 @@ var CardManager = /** @class */ (function () {
      * @param settings: a `CardManagerSettings` object
      */
     function CardManager(game, settings) {
-        var _a;
         this.game = game;
         this.settings = settings;
         this.stocks = [];
-        this.animationManager = (_a = settings.animationManager) !== null && _a !== void 0 ? _a : new AnimationManager(game);
     }
     CardManager.prototype.addStock = function (stock) {
         this.stocks.push(stock);
@@ -1216,7 +1250,7 @@ var CardsManager = /** @class */ (function (_super) {
                 div.dataset.typeArg = '' + card.typeArg;
             },
             setupFrontDiv: function (card, div) { },
-            setupBackDiv: function (card, div) { }
+            setupBackDiv: function (card, div) { },
         }) || this;
         _this.game = game;
         return _this;
@@ -1267,9 +1301,7 @@ var CardsManager = /** @class */ (function (_super) {
     return CardsManager;
 }(CardManager));
 var isDebug = window.location.host == 'studio.boardgamearena.com' || window.location.hash.indexOf('debug') > -1;
-;
 var log = isDebug ? console.log.bind(window.console) : function () { };
-var BONE = 5;
 var PlayerTable = /** @class */ (function () {
     function PlayerTable(game, player) {
         var _this = this;
@@ -1280,95 +1312,74 @@ var PlayerTable = /** @class */ (function () {
         if (this.currentPlayer) {
             html += "\n            <div class=\"block-with-text hand-wrapper\">\n                <div class=\"block-label\">".concat(_('Your hand'), "</div>\n                <div id=\"player-table-").concat(this.playerId, "-hand\" class=\"hand cards\"></div>\n            </div>");
         }
-        html += "\n            <div class=\"visible-cards\">\n                <div id=\"player-table-".concat(this.playerId, "-played\" class=\"cards\">\n                    <div class=\"chief-and-tokens\">\n                        <div id=\"player-table-").concat(this.playerId, "-tokens-free\" class=\"tokens-free\"></div>\n                        <div id=\"player-table-").concat(this.playerId, "-chief\" class=\"chief-card\">\n                            <div id=\"player-table-").concat(this.playerId, "-tokens-chief\" class=\"tokens-chief\"></div>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        </div>\n        ");
+        html += "\n            <div class=\"visible-cards\">\n                <div id=\"player-table-".concat(this.playerId, "-played\" class=\"cards\"></div>\n            </div>\n        </div>\n        ");
         dojo.place(html, document.getElementById('tables'));
         if (this.currentPlayer) {
             var handDiv = document.getElementById("player-table-".concat(this.playerId, "-hand"));
             this.hand = new LineStock(this.game.cardsManager, handDiv, {
-                sort: function (a, b) { return a.number - b.number; },
+                sort: function (a, b) { return b.type - a.type; },
             });
-            this.hand.onCardClick = function (card) {
-                //if (handDiv.classList.contains('selectable')) {
-                _this.game.onHandCardClick(card);
-                //this.hand.getCards().forEach(c => this.hand.getCardElement(c).classList.toggle('selected', c.id == card.id));
-                //}
-            };
+            this.hand.onCardClick = function (card) { return _this.game.playCardFromHand(card.id); };
             this.hand.addCards(player.hand);
         }
         this.voidStock = new VoidStock(this.game.cardsManager, document.getElementById("player-table-".concat(this.playerId, "-name")));
-        this.chief = new LineStock(this.game.chiefsManager, document.getElementById("player-table-".concat(this.playerId, "-chief")));
-        this.chief.addCard(player.chief);
         this.played = new LineStock(this.game.cardsManager, document.getElementById("player-table-".concat(this.playerId, "-played")), {
             center: false,
         });
         this.played.addCards(player.played);
-        this.tokensFree = new LineStock(this.game.tokensManager, document.getElementById("player-table-".concat(this.playerId, "-tokens-free")), {
-            center: false,
-            sort: function (a, b) { return a.type - b.type; },
-        });
-        this.tokensFree.onSelectionChange = function (selection, lastChange) { return _this.game.onTokenSelectionChange(selection); };
-        this.tokensChief = new SlotStock(this.game.tokensManager, document.getElementById("player-table-".concat(this.playerId, "-tokens-chief")), {
-            gap: "".concat(this.game.getChieftainOption() == 2 ? 15 : 4, "px"),
-            direction: 'column',
-            slotsIds: this.game.getChieftainOption() == 2 ? [0, 1, 2] : [0, 1, 2, 3],
-        });
-        if (this.playerId == this.game.getActivePlayerId()) {
-            this.tokensFree.addCards(player.tokens);
-        }
-        else {
-            player.tokens.forEach(function (token, index) { return _this.tokensChief.addCard(token, undefined, { slot: index }); });
-        }
     }
-    PlayerTable.prototype.freeResources = function () {
-        this.tokensFree.addCards(this.tokensChief.getCards());
+    PlayerTable.prototype.discardLegendCard = function (card) {
+        this.played.removeCard(card);
     };
-    PlayerTable.prototype.setCardsSelectable = function (selectable, selectableCards) {
-        var _this = this;
-        if (selectableCards === void 0) { selectableCards = null; }
-        this.hand.setSelectionMode(selectable ? 'single' : 'none');
-        this.hand.getCards().forEach(function (card) {
-            var element = _this.hand.getCardElement(card);
-            var disabled = selectable && selectableCards != null && !selectableCards.some(function (s) { return s.id == card.id; });
-            element.classList.toggle('disabled', disabled);
-            element.classList.toggle('selectable', selectable && !disabled);
-        });
+    PlayerTable.prototype.fall = function () {
+        this.played.removeAll();
     };
-    PlayerTable.prototype.setFreeTokensSelectable = function (selectable) {
-        this.tokensFree.setSelectionMode(selectable ? 'multiple' : 'none');
-    };
-    PlayerTable.prototype.getTokenOfType = function (type) {
-        return this.tokensFree.getCards().find(function (card) { return card.type == type; });
-    };
-    PlayerTable.prototype.setStoreButtons = function (activated) {
-        if (activated) {
-            document.getElementById("player-table-".concat(this.playerId)).classList.add('can-store');
-            this.game.cardsManager.updateStorageButtons();
-        }
-        else {
-            document.getElementById("player-table-".concat(this.playerId)).classList.remove('can-store');
-        }
-    };
-    PlayerTable.prototype.storeToken = function (cardId, token) {
-        this.game.cardsManager.prestoreToken(cardId, token);
-        this.game.cardsManager.updateStorageButtons();
-    };
-    PlayerTable.prototype.unstoreToken = function (token) {
-        this.tokensFree.addCard(token);
-        this.game.cardsManager.updateStorageButtons();
-    };
-    PlayerTable.prototype.confirmStoreTokens = function (tokens) {
-        var _this = this;
-        Object.entries(tokens).forEach(function (entry) {
-            return _this.game.cardsManager.confirmStoreToken(Number(entry[0]), entry[1]);
-        });
-        this.setStoreButtons(false);
-    };
-    PlayerTable.prototype.cancelLastMoves = function (cards, tokens) {
-        var _a;
-        (_a = this.hand) === null || _a === void 0 ? void 0 : _a.addCards(cards);
-        this.tokensFree.addCards(tokens);
+    PlayerTable.prototype.closeSequence = function () {
+        this.played.removeAll();
     };
     return PlayerTable;
+}());
+var CARD_WIDTH = 140;
+var CARD_HEIGHT = 280;
+var TableCenter = /** @class */ (function () {
+    function TableCenter(game, gamedatas) {
+        var _this = this;
+        this.game = game;
+        this.decks = [];
+        var _loop_2 = function (i) {
+            var deckDiv = document.getElementById("deck".concat(i));
+            this_1.decks[i] = new HiddenDeck(game.cardsManager, deckDiv, {
+                width: CARD_WIDTH,
+                height: CARD_HEIGHT,
+                cardNumber: gamedatas.decks[i].count,
+            });
+            deckDiv.addEventListener('click', function () { return _this.game.playCardFromDeck(i); });
+            if (gamedatas.decks[i].top) {
+                this_1.decks[i].setCardNumber(gamedatas.decks[i].count - 1);
+                this_1.decks[i].addCard(gamedatas.decks[i].top);
+            }
+        };
+        var this_1 = this;
+        for (var i = 1; i <= 2; i++) {
+            _loop_2(i);
+        }
+        this.legendDeck = new VisibleDeck(game.cardsManager, document.getElementById("rewards"), {
+            width: CARD_WIDTH,
+            height: CARD_HEIGHT,
+            cardNumber: gamedatas.decks[0].count - (gamedatas.decks[0].top ? 1 : 0),
+        });
+        if (gamedatas.decks[0].top) {
+            this.legendDeck.addCard(gamedatas.decks[0].top);
+        }
+    }
+    TableCenter.prototype.flipTopDeck = function (deckId, card) {
+        this.decks[deckId].addCard(card, undefined, {
+            visible: false,
+            autoUpdateCardNumber: false,
+        });
+        this.game.cardsManager.flipCard(card);
+    };
+    return TableCenter;
 }());
 var ANIMATION_MS = 500;
 var ACTION_TIMER_DURATION = 5;
@@ -1400,8 +1411,9 @@ var SkateLegend = /** @class */ (function () {
         log("Starting game setup");
         this.gamedatas = gamedatas;
         log('gamedatas', gamedatas);
-        //this.cards = new Cards(this);
-        //this.stacks = new Stacks(this, this.gamedatas);
+        this.animationManager = new AnimationManager(this);
+        this.cardsManager = new CardsManager(this);
+        this.tableCenter = new TableCenter(this, gamedatas);
         this.createPlayerPanels(gamedatas);
         this.createPlayerTables(gamedatas);
         this.zoomManager = new ZoomManager({
@@ -1582,6 +1594,9 @@ var SkateLegend = /** @class */ (function () {
                     var chooseContinueArgs_1 = args;
                     this.addActionButton("continue_button", _("Continue"), function () { return _this.continue(); });
                     this.addActionButton("stop_button", _("Stop"), function () { return _this.stop(chooseContinueArgs_1.shouldNotStop); });
+                    if (!chooseContinueArgs_1.canStop) {
+                        document.getElementById("stop_button").classList.add('disabled');
+                    }
                     break;
             }
         }
@@ -1824,6 +1839,7 @@ var SkateLegend = /** @class */ (function () {
         }
         if (warning) {
             this.confirmationDialog(_("Are you sure you want to stop here? There is no risk if you continue the sequence."), function () { return _this.stop(false); });
+            return;
         }
         this.takeAction('stop');
     };
@@ -1861,44 +1877,45 @@ var SkateLegend = /** @class */ (function () {
     */
     SkateLegend.prototype.setupNotifications = function () {
         //log( 'notifications subscriptions setup' );
+        var _this = this;
         var notifs = [
-            ['cardInDiscardFromDeck', ANIMATION_MS],
-            ['cardInHandFromDiscard', ANIMATION_MS],
-            ['cardInHandFromDiscardCrab', ANIMATION_MS],
-            ['cardInHandFromPick', ANIMATION_MS],
-            ['cardInHandFromDeck', ANIMATION_MS],
-            ['cardInDiscardFromPick', ANIMATION_MS],
-            ['playCards', ANIMATION_MS],
-            ['stealCard', ANIMATION_MS],
-            ['revealHand', ANIMATION_MS * 2],
-            ['announceEndRound', ANIMATION_MS * 2],
-            ['betResult', ANIMATION_MS * 2],
-            ['endRound', ANIMATION_MS * 2],
-            ['score', ANIMATION_MS * 3],
-            ['newRound', 1],
-            ['updateCardsPoints', 1],
-            ['emptyDeck', 1],
+            ['flipTopDeck', ANIMATION_MS],
+            ['playCard', ANIMATION_MS],
+            ['discardedLegendCard', ANIMATION_MS],
+            ['fall', ANIMATION_MS],
+            ['closeSequence', ANIMATION_MS],
         ];
-        /*notifs.forEach((notif) => {
-            dojo.subscribe(notif[0], this, `notif_${notif[0]}`);
-            (this as any).notifqueue.setSynchronous(notif[0], notif[1]);
+        notifs.forEach(function (notif) {
+            dojo.subscribe(notif[0], _this, "notif_".concat(notif[0]));
+            _this.notifqueue.setSynchronous(notif[0], notif[1]);
         });
-
-        (this as any).notifqueue.setIgnoreNotificationCheck('cardInHandFromPick', (notif: Notif<NotifCardInHandFromPickArgs>) =>
+        /*(this as any).notifqueue.setIgnoreNotificationCheck('cardInHandFromPick', (notif: Notif<NotifCardInHandFromPickArgs>) =>
             notif.args.playerId == this.getPlayerId() && !notif.args.card.category
-        );
-        (this as any).notifqueue.setIgnoreNotificationCheck('cardInHandFromDeck', (notif: Notif<NotifCardInHandFromPickArgs>) =>
-            notif.args.playerId == this.getPlayerId() && !notif.args.card.category
-        );
-        (this as any).notifqueue.setIgnoreNotificationCheck('cardInHandFromDiscardCrab', (notif: Notif<NotifCardInHandFromDiscardArgs>) =>
-            notif.args.playerId == this.getPlayerId() && !notif.args.card.category
-        );
-        (this as any).notifqueue.setIgnoreNotificationCheck('stealCard', (notif: Notif<NotifStealCardArgs>) =>
-            [notif.args.playerId, notif.args.opponentId].includes(this.getPlayerId()) && !(notif.args as any).cardName
         );*/
     };
-    SkateLegend.prototype.notif_betResult = function (notif) {
-        //this.getPlayerTable(notif.args.playerId).showAnnouncementBetResult(notif.args.result);
+    SkateLegend.prototype.notif_flipTopDeck = function (notif) {
+        this.tableCenter.flipTopDeck(notif.args.deckId, notif.args.card);
+    };
+    SkateLegend.prototype.notif_playCard = function (notif) {
+        var playerId = notif.args.playerId;
+        var fromDeck = notif.args.fromDeck;
+        var playerTable = this.getPlayerTable(playerId);
+        var currentPlayer = this.getPlayerId() == playerId;
+        playerTable.played.addCard(notif.args.card, {
+            fromElement: currentPlayer || fromDeck ? undefined : document.getElementById("player-table-".concat(playerId, "-name"))
+        });
+        // TODO this.handCounters[playerId].toValue(notif.args.newCount);
+    };
+    SkateLegend.prototype.notif_discardedLegendCard = function (notif) {
+        this.getPlayerTable(notif.args.playerId).discardLegendCard(notif.args.card);
+    };
+    SkateLegend.prototype.notif_fall = function (notif) {
+        var playerId = notif.args.playerId;
+        this.getPlayerTable(playerId).fall();
+        this.helmetCounters[playerId].incValue(1);
+    };
+    SkateLegend.prototype.notif_closeSequence = function (notif) {
+        this.getPlayerTable(notif.args.playerId).closeSequence();
     };
     /* This enable to inject translatable styled things to logs or action bar */
     /* @Override */

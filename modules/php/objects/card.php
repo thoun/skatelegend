@@ -26,11 +26,11 @@ class Card extends CardType {
     public int $typeArg;
 
     public function __construct($dbCard, $CARDS_TYPE) {
-        $this->id = intval($dbCard['card_id']);
-        $this->location = $dbCard['card_location'];
-        $this->locationArg = intval($dbCard['card_location_arg']);
-        $this->type = intval($dbCard['card_type']);
-        $this->typeArg = intval($dbCard['card_type_arg']);
+        $this->id = intval($dbCard['card_id'] ?? $dbCard['id']);
+        $this->location = $dbCard['card_location'] ?? $dbCard['location'];
+        $this->locationArg = intval($dbCard['card_location_arg'] ?? $dbCard['location_arg']);
+        $this->type = array_key_exists('card_type', $dbCard) || array_key_exists('type', $dbCard) ? intval($dbCard['card_type'] ?? $dbCard['type']) : null;
+        $this->typeArg = array_key_exists('card_type_arg', $dbCard) || array_key_exists('type_arg', $dbCard) ? intval($dbCard['card_type_arg'] ?? $dbCard['type_arg']) : null;
         if ($this->typeArg) {
             $this->color = $CARDS_TYPE[$this->type][$this->typeArg]->color;
             $this->wheels = $CARDS_TYPE[$this->type][$this->typeArg]->wheels;

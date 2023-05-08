@@ -14,17 +14,39 @@ trait ArgsTrait {
    
     function argChooseContinue() {
         $playerId = intval($this->getActivePlayerId());
+
+        $sequence = $this->getCardsByLocation('played'.$playerId);
+        $canStop = count($sequence) > 0;
+
+        $shouldNotStop = true;
+        if (count(array_filter($sequence, fn($card) => $card->danger)) >= 2) { 
+            $shouldNotStop = false;
+        }
+
+        $colorOfHelmet = $this->getColorOfHelmet($playerId, $sequence);
+
+        $colors = $this->getSequenceCardsByColor($sequence);
+        foreach($colors as $color => $colorCards) {
+            if ($color != $colorOfHelmet && count($colorCards) >= 2) {
+                $shouldNotStop = false;
+            }
+        }
     
         return [
-           'shouldNotStop' => true, // TODO
+           'canStop' => $canStop,
+           'shouldNotStop' => $shouldNotStop,
         ];
     }
    
     function argPlayCard() {
         $playerId = intval($this->getActivePlayerId());
+
+        $hand = $this->getCardsByLocation('hand', $playerId);
+
+        $playableCards = $hand; // TODO
     
         return [
-           'operations' => [], // TODO
+            'playableCards' => $playableCards,
         ];
     }
 } 

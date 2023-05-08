@@ -1,6 +1,7 @@
 @import '../node_modules/bga-zoom/bga-zoom';
+@import '../node_modules/bga-cards/bga-cards';
 @import 'cards';
-@import 'stacks';
+@import 'table-center';
 @import 'playerboards';
 @import 'player-table';
 @import 'help';
@@ -15,6 +16,7 @@
 
 html, .mode_3d #game_play_area_background {
   background: url('img/background.jpg');
+  background-size: cover;
 }
 
 #zoom-wrapper {
@@ -80,27 +82,5 @@ html, .mode_3d #game_play_area_background {
 @media (max-width: 1165px) { 
   #tables-and-center {
     flex-wrap: wrap;
-  }
-}
-
-.log p /*.replay_last_move_button*/, .hidden-log-action {
-  display: none !important;
-}
-
-.title-bar-call {
-  background: #8B0000;
-  color: white;
-  padding: 5px 8px;
-  margin-left: 8px;
-  border-radius: 8px;
-  animation: title-bar-call-animation 1s alternate infinite ease-in-out;
-}
-
-@keyframes title-bar-call-animation {
-  0% { 
-    box-shadow: 0 0 6px 2px #8B0000;
-  }
-  100% { 
-    box-shadow: 0 0 6px 2px #8B000088;
   }
 }

@@ -7,7 +7,8 @@ class CardsManager extends CardManager<Card> {
                 div.dataset.typeArg = ''+card.typeArg;
             },
             setupFrontDiv: (card: Card, div: HTMLElement) => {},
-            setupBackDiv: (card: Card, div: HTMLElement) => {}
+            setupBackDiv: (card: Card, div: HTMLElement) => {},
+            
         });
     }
 

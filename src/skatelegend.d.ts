@@ -13,15 +13,9 @@ interface SkateLegendPlayer extends Player {
     playerNo: number;
     active: boolean;
     helmets: number;
-    /*handCards: Card[];
-    tableCards: Card[];
-    endCall?: {
-        announcement: string;
-        cardsPoints: number;
-        betResult?: string;
-    };
-    endRoundPoints?: NotifUpdateCardsPointsArgs;
-    scoringDetail?: ScoreDetails;*/
+
+    hand?: Card[];
+    played: Card[];
 }
 
 interface SkateLegendGamedatas {
@@ -38,6 +32,7 @@ interface SkateLegendGamedatas {
 
     // Add here variables you set up in getAllDatas
     roundNumber: number;
+    decks: { [deckId: number]: { count: number; top: Card | null; } };
 }
 
 interface SkateLegendGame extends Game {
@@ -53,6 +48,7 @@ interface SkateLegendGame extends Game {
 }
 
 interface EnteringChooseContinueArgs {
+    canStop: boolean;
     shouldNotStop: boolean;
 }
 
@@ -65,63 +61,31 @@ interface EnteringChooseContinueArgs {
     remainingCardsInDeck: number;
 }*/
 
-interface NotifCardInDiscardFromDeckArgs {
-    card: Card;
-    discardId: number;
-    remainingCardsInDeck: number;
-}
-
-interface NotifCardInHandFromDiscardArgs {
-    playerId: number;
-    card: Card;
-    discardId: number;
-    newDiscardTopCard: Card | null;
-    remainingCardsInDiscard: number;
-}
-
-interface NotifCardInHandFromPickArgs {
-    playerId: number;
-    card?: Card;
-}
-
-interface NotifCardInDiscardFromPickArgs {
-    playerId: number;
-    card: Card;
-    discardId: number;
-    remainingCardsInDiscard: number;
-}
-
-interface NotifScoreArgs {
-    playerId: number;
-    newScore: number;
-    incScore: number;
-}
-
-interface NotifPlayCardsArgs {
-    playerId: number;
-    cards: Card[];
-}
-
-interface NotifRevealHandArgs extends NotifPlayCardsArgs {
-    playerPoints: number;
-}
-
-interface NotifAnnounceEndRoundArgs {
-    playerId: number;
-    announcement: string;
-}
-
-interface NotifBetResultArgs {
-    playerId: number;
-    result: string;
-}
-
-interface NotifUpdateCardsPointsArgs {
-    cardsPoints: number;
-}
-
-interface NotifStealCardArgs {
-    playerId: number;
-    opponentId: number;
+// flipTopDeck
+interface NotifFlipTopDeckArgs {
+    deckId: number;
     card: Card;
 }
+
+// playCard
+interface NotifPlayCardArgs {
+    playerId: number;
+    card: Card;
+    fromDeck: boolean;
+} 
+
+// discardedLegendCard
+interface NotifDiscardedLegendCardArgs {
+    playerId: number;
+    card: Card;
+} 
+
+// fall
+interface NotifFallArgs {
+    playerId: number;
+} 
+
+// closeSequence
+interface NotifCloseSequenceArgs {
+    playerId: number;
+} 

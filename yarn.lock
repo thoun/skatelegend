@@ -10,7 +10,7 @@ anymatch@~3.1.2:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
 
-bga-animations@thoun/bga-animations#main:
+bga-animations@thoun/bga-animations:
   version "1.0.0"
   resolved "https://codeload.github.com/thoun/bga-animations/tar.gz/7e358f7089a6954e7a641b7a5c25f97573d46fde"
 
@@ -18,7 +18,7 @@ bga-cards@thoun/bga-cards#main:
   version "1.0.0"
   resolved "https://codeload.github.com/thoun/bga-cards/tar.gz/f08ff08dacd2ec6706d7d153ccbb2649fb5ea8e3"
 
-bga-zoom@thoun/bga-zoom#main:
+bga-zoom@thoun/bga-zoom:
   version "1.0.0"
   resolved "https://codeload.github.com/thoun/bga-zoom/tar.gz/5965fff329655cafa2faba40e0647cbc4a958f60"
 
