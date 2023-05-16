@@ -9,6 +9,7 @@ const ANIMATION_MS = 500;
 const ACTION_TIMER_DURATION = 5;
 
 const LOCAL_STORAGE_ZOOM_KEY = 'SkateLegend-zoom';
+const LOCAL_STORAGE_JUMP_TO_FOLDED_KEY = 'SkateLegend-jump-to-folded';
 
 class SkateLegend implements SkateLegendGame {
     public animationManager: AnimationManager;
@@ -55,6 +56,13 @@ class SkateLegend implements SkateLegendGame {
 
         this.animationManager = new AnimationManager(this);
         this.cardsManager = new CardsManager(this);
+        new JumpToManager(this, {
+            localStorageFoldedKey: LOCAL_STORAGE_JUMP_TO_FOLDED_KEY,
+            topEntries: [
+                new JumpToEntry(_('Decks & reward'), 'table-center', { color: 'black' })
+            ],
+            entryClasses: 'round-point',
+        });
         this.tableCenter = new TableCenter(this, gamedatas);
         this.createPlayerPanels(gamedatas);
         this.createPlayerTables(gamedatas);
@@ -277,26 +285,10 @@ class SkateLegend implements SkateLegendGame {
     }
 
     private addHelp() {
-        let labels = [
-            _('Dark blue'),
-            _('Light blue'),
-            _('Black'),
-            _('Yellow'),
-            _('Green'),
-            _('White'),
-            _('Purple'),
-            _('Gray'),
-            _('Light orange'),
-            _('Pink'),
-            _('Orange'),
-        ].map((label, index) => `<span class="label" data-row="${Math.floor(index / 2)}"  data-column="${Math.floor(index % 2)}">${label}</span>`).join('');
         dojo.place(`
             <button id="skatelegend-help-button">?</button>
-            <button id="color-help-button" data-folded="true">${labels}</button>
         `, 'left-side');
         document.getElementById('skatelegend-help-button').addEventListener('click', () => this.showHelp());
-        const helpButton = document.getElementById('color-help-button');
-        helpButton.addEventListener('click', () => helpButton.dataset.folded = helpButton.dataset.folded == 'true' ? 'false' : 'true');
     }
 
     private showHelp() {

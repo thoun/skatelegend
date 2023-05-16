@@ -6,7 +6,11 @@ interface Card {
     id: number;
     type: number;
     typeArg: number;
-    //color: number;
+    color: number;
+    condition : number[] | null;
+    danger: boolean;
+    power: number;
+    wheels: number;
 }
 
 interface SkateLegendPlayer extends Player {
