@@ -59,12 +59,14 @@ class PlayerTable {
         this.played.removeCard(card);
     }
 
-    public fall() {
-        this.played.removeAll();
+    public fall(to: VoidStock<Card>) {
+        //this.played.removeAll();
+        to.addCards(this.played.getCards());
     }
 
-    public closeSequence() {
-        this.played.removeAll();
+    public closeSequence(to: VoidStock<Card>) {
+        //this.played.removeAll();
+        to.addCards(this.played.getCards());
     }
     
     public addHelmet(card: Card) {

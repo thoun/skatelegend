@@ -1344,11 +1344,13 @@ var PlayerTable = /** @class */ (function () {
     PlayerTable.prototype.discardLegendCard = function (card) {
         this.played.removeCard(card);
     };
-    PlayerTable.prototype.fall = function () {
-        this.played.removeAll();
+    PlayerTable.prototype.fall = function (to) {
+        //this.played.removeAll();
+        to.addCards(this.played.getCards());
     };
-    PlayerTable.prototype.closeSequence = function () {
-        this.played.removeAll();
+    PlayerTable.prototype.closeSequence = function (to) {
+        //this.played.removeAll();
+        to.addCards(this.played.getCards());
     };
     PlayerTable.prototype.addHelmet = function (card) {
         this.played.getCardElement(card).querySelector('.front').insertAdjacentHTML('beforeend', "<div class=\"helmet\"></div>");
@@ -1425,6 +1427,7 @@ var SkateLegend = /** @class */ (function () {
         this.playedCounters = [];
         this.scoredCounters = [];
         this.helmetCounters = [];
+        this.stopVoidStocks = [];
         this.TOOLTIP_DELAY = document.body.classList.contains('touch-device') ? 1500 : undefined;
         /*const zoomStr = localStorage.getItem(LOCAL_STORAGE_ZOOM_KEY);
         if (zoomStr) {
@@ -1472,6 +1475,7 @@ var SkateLegend = /** @class */ (function () {
         this.roundCounter = new ebg.counter();
         this.roundCounter.create("round-counter");
         this.roundCounter.setValue(gamedatas.roundNumber);
+        this.fallVoidStock = new VoidStock(this.cardsManager, document.getElementById('overall-footer'));
         this.setupNotifications();
         this.setupPreferences();
         this.addHelp();
@@ -1606,6 +1610,7 @@ var SkateLegend = /** @class */ (function () {
             helmetCounter.setValue(player.helmets);
             _this.helmetCounters[playerId] = helmetCounter;
             _this.setPlayerActive(playerId, player.active);
+            _this.stopVoidStocks[playerId] = new VoidStock(_this.cardsManager, document.getElementById("scored-counter-".concat(playerId)));
         });
         this.setTooltipToClass('player-helmets-counter', _('Number of helmets'));
     };
@@ -1792,9 +1797,9 @@ var SkateLegend = /** @class */ (function () {
             ['flipTopDeck', ANIMATION_MS],
             ['playCard', ANIMATION_MS],
             ['discardedLegendCard', ANIMATION_MS],
-            ['fall', ANIMATION_MS],
+            ['fall', ANIMATION_MS * 4],
             ['closeSequence', ANIMATION_MS],
-            ['newRound', ANIMATION_MS],
+            ['newRound', ANIMATION_MS * 3],
             ['addHelmet', ANIMATION_MS],
             ['takeTrophyCard', ANIMATION_MS],
             ['discardTrophyCard', ANIMATION_MS],
@@ -1830,15 +1835,25 @@ var SkateLegend = /** @class */ (function () {
         this.playedCounters[playerId].incValue(-1);
     };
     SkateLegend.prototype.notif_fall = function (notif) {
+        var _this = this;
         var playerId = notif.args.playerId;
-        this.getPlayerTable(playerId).fall();
-        this.helmetCounters[playerId].incValue(1);
-        this.setPlayerActive(playerId, false);
-        this.playedCounters[playerId].toValue(0);
+        var notice = document.createElement('div');
+        notice.classList.add('fall-notice');
+        notice.innerHTML = _('${player_name} falls!').replace('${player_name}', "<div style=\"color: #".concat(this.getPlayerColor(playerId), "\">").concat(this.getPlayerName(playerId), "</div>"));
+        this.animationManager.attachWithSlideAnimation(notice, document.getElementById("player-table-".concat(playerId, "-played")), {
+            duration: ANIMATION_MS * 3,
+            fromElement: document.getElementById('page-title'),
+        }).then(function () {
+            notice === null || notice === void 0 ? void 0 : notice.remove();
+            _this.getPlayerTable(playerId).fall(_this.fallVoidStock);
+            _this.helmetCounters[playerId].incValue(1);
+            _this.setPlayerActive(playerId, false);
+            _this.playedCounters[playerId].toValue(0);
+        });
     };
     SkateLegend.prototype.notif_closeSequence = function (notif) {
         var playerId = notif.args.playerId;
-        this.getPlayerTable(playerId).closeSequence();
+        this.getPlayerTable(playerId).closeSequence(this.stopVoidStocks[playerId]);
         this.setPlayerActive(playerId, false);
         this.playedCounters[playerId].toValue(0);
         this.scoredCounters[playerId].incValue(notif.args.sequence.length);

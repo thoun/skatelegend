@@ -24,6 +24,8 @@ class SkateLegend implements SkateLegendGame {
     private scoredCounters: Counter[] = [];
     private helmetCounters: Counter[] = [];
     private roundCounter: Counter;
+    private fallVoidStock: VoidStock<Card>;
+    private stopVoidStocks: VoidStock<Card>[] = [];
     
     private TOOLTIP_DELAY = document.body.classList.contains('touch-device') ? 1500 : undefined;
 
@@ -81,6 +83,8 @@ class SkateLegend implements SkateLegendGame {
         this.roundCounter = new ebg.counter();
         this.roundCounter.create(`round-counter`);
         this.roundCounter.setValue(gamedatas.roundNumber);
+
+        this.fallVoidStock = new VoidStock<Card>(this.cardsManager, document.getElementById('overall-footer'));
 
         this.setupNotifications();
         this.setupPreferences();
@@ -262,6 +266,8 @@ class SkateLegend implements SkateLegendGame {
             this.helmetCounters[playerId] = helmetCounter;
 
             this.setPlayerActive(playerId, player.active);
+
+            this.stopVoidStocks[playerId] = new VoidStock<Card>(this.cardsManager, document.getElementById(`scored-counter-${playerId}`));
         });
 
         this.setTooltipToClass('player-helmets-counter', _('Number of helmets'));
@@ -477,9 +483,9 @@ class SkateLegend implements SkateLegendGame {
             ['flipTopDeck', ANIMATION_MS],
             ['playCard', ANIMATION_MS],
             ['discardedLegendCard', ANIMATION_MS],
-            ['fall', ANIMATION_MS],
+            ['fall', ANIMATION_MS * 4],
             ['closeSequence', ANIMATION_MS],
-            ['newRound', ANIMATION_MS],
+            ['newRound', ANIMATION_MS * 3],
             ['addHelmet', ANIMATION_MS],
             ['takeTrophyCard', ANIMATION_MS],
             ['discardTrophyCard', ANIMATION_MS],
@@ -522,15 +528,30 @@ class SkateLegend implements SkateLegendGame {
 
     notif_fall(notif: Notif<NotifFallArgs>) {
         const playerId = notif.args.playerId;
-        this.getPlayerTable(playerId).fall();
-        this.helmetCounters[playerId].incValue(1);
-        this.setPlayerActive(playerId, false);
-        this.playedCounters[playerId].toValue(0);
+
+        const notice = document.createElement('div');
+        notice.classList.add('fall-notice');
+        notice.innerHTML = _('${player_name} falls!').replace('${player_name}', `<div style="color: #${this.getPlayerColor(playerId)}">${this.getPlayerName(playerId)}</div>`)
+
+        this.animationManager.attachWithSlideAnimation(
+            notice,
+            document.getElementById(`player-table-${playerId}-played`),
+            { 
+                duration: ANIMATION_MS * 3,
+                fromElement: document.getElementById('page-title'),
+            }
+        ).then(() => {
+            notice?.remove();
+            this.getPlayerTable(playerId).fall(this.fallVoidStock);
+            this.helmetCounters[playerId].incValue(1);
+            this.setPlayerActive(playerId, false);
+            this.playedCounters[playerId].toValue(0);
+        });
     }
 
     notif_closeSequence(notif: Notif<NotifCloseSequenceArgs>) {
         const playerId = notif.args.playerId;
-        this.getPlayerTable(playerId).closeSequence();
+        this.getPlayerTable(playerId).closeSequence(this.stopVoidStocks[playerId]);
         this.setPlayerActive(playerId, false);
         this.playedCounters[playerId].toValue(0);
         this.scoredCounters[playerId].incValue(notif.args.sequence.length);
