@@ -560,6 +560,7 @@ class SkateLegend implements SkateLegendGame {
             this.tableCenter.legendDeck.removeCard(notif.args.card);
         }
         this.tableCenter.updateLegendDeck(notif.args.newCard, notif.args.newCount);
+        this.handCounters[playerId].incValue(1);
     }
 
     notif_discardTrophyCard(notif: Notif<NotifTakeTrophyCardArgs>) {
@@ -577,6 +578,7 @@ class SkateLegend implements SkateLegendGame {
         } else {
             // TODO if card is visible, make it invisible
         }
+        this.handCounters[playerId].incValue(1);
     }
 
     /* This enable to inject translatable styled things to logs or action bar */
