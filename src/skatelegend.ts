@@ -91,29 +91,16 @@ class SkateLegend implements SkateLegendGame {
         log('Entering state: ' + stateName, args.args);
 
         switch (stateName) {
-            case 'takeCards':
-                this.onEnteringTakeCards(args);
+            case 'playCard':
+                this.onEnteringPlayCard();
                 break;
         }
     }
     
-    private setGamestateDescription(property: string = '') {
-        const originalState = this.gamedatas.gamestates[this.gamedatas.gamestate.id];
-        this.gamedatas.gamestate.description = `${originalState['description' + property]}`; 
-        this.gamedatas.gamestate.descriptionmyturn = `${originalState['descriptionmyturn' + property]}`;
-        (this as any).updatePageTitle();
-    }
-    
-    private onEnteringTakeCards(argsRoot: { args: EnteringChooseContinueArgs, active_player: string }) {
-        const args = argsRoot.args;
-
-        /*if (!args.canTakeFromDiscard.length) {
-            this.setGamestateDescription('NoDiscard');
-        }*/
-
+    private onEnteringPlayCard() {
         if ((this as any).isCurrentPlayerActive()) {
-            //this.stacks.makeDeckSelectable(args.canTakeFromDeck);
-            //this.stacks.makeDiscardSelectable(true);
+            this.tableCenter.makeDecksSelectable(true);
+            this.getCurrentPlayerTable()?.makeCardsSelectable(true);
         }
     }
 
@@ -121,15 +108,15 @@ class SkateLegend implements SkateLegendGame {
         log( 'Leaving state: '+stateName );
 
         switch (stateName) {
-           case 'takeCards':
-                this.onLeavingTakeCards();
+           case 'playCard':
+                this.onLeavingPlayCard();
                 break;
         }
     }
 
-    private onLeavingTakeCards() {
-        /*this.stacks.makeDeckSelectable(false);
-        this.stacks.makeDiscardSelectable(false);*/
+    private onLeavingPlayCard() {
+        this.tableCenter.makeDecksSelectable(false);
+        this.getCurrentPlayerTable()?.makeCardsSelectable(false);
     }
 
     // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the

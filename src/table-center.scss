@@ -1,7 +1,13 @@
-#table-center, #decks-and-helmets {
+#table-center {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: 50px;
+}
+
+#decks {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
 }
 
 #table-center {

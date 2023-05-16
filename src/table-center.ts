@@ -46,4 +46,10 @@ class TableCenter {
         }
         this.legendDeck.setCardNumber(newCount);
     }
+    
+    public makeDecksSelectable(selectable: boolean) {
+        for (let i=1;i<=2;i++) {
+            this.decks[i].setSelectionMode(selectable ? 'single' : 'none');
+        }
+    }
 }

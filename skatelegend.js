@@ -1265,13 +1265,10 @@ var PlayerTable = /** @class */ (function () {
         this.game = game;
         this.playerId = Number(player.id);
         this.currentPlayer = this.playerId == this.game.getPlayerId();
-        var html = "\n        <div id=\"player-table-".concat(this.playerId, "\" class=\"player-table\" style=\"--player-color: #").concat(player.color, ";\">\n            <div id=\"player-table-").concat(this.playerId, "-name\" class=\"name-wrapper\">").concat(player.name, "</div>\n            <div class=\"cards\">\n        ");
-        if (this.currentPlayer) {
-            html += "\n                <div class=\"block-with-text hand-wrapper\">\n                    <div class=\"block-label\">".concat(_('Your hand'), "</div>\n                    <div id=\"player-table-").concat(this.playerId, "-hand\" class=\"hand cards\"></div>\n                </div>\n                <div class=\"separator\"></div>\n                ");
-        }
-        html += "\n                <div class=\"block-with-text visible-cards\">\n                    <div class=\"block-label\">".concat(this.currentPlayer ? _('Your sequence') : _('${player_name}\'s sequence').replace('${player_name}', "<span style=\"color: #".concat(this.game.getPlayerColor(this.playerId), "\">").concat(this.game.getPlayerName(this.playerId), "</span>")), "</div>\n                    <div id=\"player-table-").concat(this.playerId, "-played\" class=\"cards\"></div>\n                </div>\n            </div>\n        </div>\n        ");
+        var html = "\n        <div id=\"player-table-".concat(this.playerId, "\" class=\"player-table\" style=\"--player-color: #").concat(player.color, ";\">\n            <div id=\"player-table-").concat(this.playerId, "-name\" class=\"name-wrapper\">").concat(player.name, "</div>\n            <div class=\"cards\">\n                <div class=\"block-with-text visible-cards\">\n                    <div class=\"block-label\">").concat(this.currentPlayer ? _('Your sequence') : _('${player_name}\'s sequence').replace('${player_name}', "<span style=\"color: #".concat(this.game.getPlayerColor(this.playerId), "\">").concat(this.game.getPlayerName(this.playerId), "</span>")), "</div>\n                    <div id=\"player-table-").concat(this.playerId, "-played\" class=\"cards\"></div>\n                </div>\n            </div>\n        </div>\n        ");
         dojo.place(html, document.getElementById('tables'));
         if (this.currentPlayer) {
+            document.getElementById("table").insertAdjacentHTML('afterbegin', "\n            <div class=\"block-with-text hand-wrapper cards\">\n                <div class=\"block-label\">".concat(_('Your hand'), "</div>\n                <div id=\"player-table-").concat(this.playerId, "-hand\" class=\"hand cards\"></div>\n            </div>\n            "));
             var handDiv = document.getElementById("player-table-".concat(this.playerId, "-hand"));
             this.hand = new LineStock(this.game.cardsManager, handDiv, {
                 sort: function (a, b) { return b.type - a.type; },
@@ -1299,6 +1296,10 @@ var PlayerTable = /** @class */ (function () {
     };
     PlayerTable.prototype.addHelmet = function (card) {
         this.played.getCardElement(card).querySelector('.front').insertAdjacentHTML('beforeend', "<div class=\"helmet\"></div>");
+    };
+    PlayerTable.prototype.makeCardsSelectable = function (selectable) {
+        var _a;
+        (_a = this.hand) === null || _a === void 0 ? void 0 : _a.setSelectionMode(selectable ? 'single' : 'none');
     };
     return PlayerTable;
 }());
@@ -1349,6 +1350,11 @@ var TableCenter = /** @class */ (function () {
             this.legendDeck.addCard(newCard);
         }
         this.legendDeck.setCardNumber(newCount);
+    };
+    TableCenter.prototype.makeDecksSelectable = function (selectable) {
+        for (var i = 1; i <= 2; i++) {
+            this.decks[i].setSelectionMode(selectable ? 'single' : 'none');
+        }
     };
     return TableCenter;
 }());
@@ -1415,39 +1421,30 @@ var SkateLegend = /** @class */ (function () {
     SkateLegend.prototype.onEnteringState = function (stateName, args) {
         log('Entering state: ' + stateName, args.args);
         switch (stateName) {
-            case 'takeCards':
-                this.onEnteringTakeCards(args);
+            case 'playCard':
+                this.onEnteringPlayCard();
                 break;
         }
     };
-    SkateLegend.prototype.setGamestateDescription = function (property) {
-        if (property === void 0) { property = ''; }
-        var originalState = this.gamedatas.gamestates[this.gamedatas.gamestate.id];
-        this.gamedatas.gamestate.description = "".concat(originalState['description' + property]);
-        this.gamedatas.gamestate.descriptionmyturn = "".concat(originalState['descriptionmyturn' + property]);
-        this.updatePageTitle();
-    };
-    SkateLegend.prototype.onEnteringTakeCards = function (argsRoot) {
-        var args = argsRoot.args;
-        /*if (!args.canTakeFromDiscard.length) {
-            this.setGamestateDescription('NoDiscard');
-        }*/
+    SkateLegend.prototype.onEnteringPlayCard = function () {
+        var _a;
         if (this.isCurrentPlayerActive()) {
-            //this.stacks.makeDeckSelectable(args.canTakeFromDeck);
-            //this.stacks.makeDiscardSelectable(true);
+            this.tableCenter.makeDecksSelectable(true);
+            (_a = this.getCurrentPlayerTable()) === null || _a === void 0 ? void 0 : _a.makeCardsSelectable(true);
         }
     };
     SkateLegend.prototype.onLeavingState = function (stateName) {
         log('Leaving state: ' + stateName);
         switch (stateName) {
-            case 'takeCards':
-                this.onLeavingTakeCards();
+            case 'playCard':
+                this.onLeavingPlayCard();
                 break;
         }
     };
-    SkateLegend.prototype.onLeavingTakeCards = function () {
-        /*this.stacks.makeDeckSelectable(false);
-        this.stacks.makeDiscardSelectable(false);*/
+    SkateLegend.prototype.onLeavingPlayCard = function () {
+        var _a;
+        this.tableCenter.makeDecksSelectable(false);
+        (_a = this.getCurrentPlayerTable()) === null || _a === void 0 ? void 0 : _a.makeCardsSelectable(false);
     };
     // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
     //                        action status bar (ie: the HTML links in the status bar).

@@ -17,17 +17,6 @@ class PlayerTable {
         <div id="player-table-${this.playerId}" class="player-table" style="--player-color: #${player.color};">
             <div id="player-table-${this.playerId}-name" class="name-wrapper">${player.name}</div>
             <div class="cards">
-        `;
-        if (this.currentPlayer) {
-            html += `
-                <div class="block-with-text hand-wrapper">
-                    <div class="block-label">${_('Your hand')}</div>
-                    <div id="player-table-${this.playerId}-hand" class="hand cards"></div>
-                </div>
-                <div class="separator"></div>
-                `;
-        }
-        html += `
                 <div class="block-with-text visible-cards">
                     <div class="block-label">${this.currentPlayer ? _('Your sequence') : _('${player_name}\'s sequence').replace('${player_name}', `<span style="color: #${this.game.getPlayerColor(this.playerId)}">${this.game.getPlayerName(this.playerId)}</span>`)}</div>
                     <div id="player-table-${this.playerId}-played" class="cards"></div>
@@ -38,6 +27,13 @@ class PlayerTable {
         dojo.place(html, document.getElementById('tables'));
 
         if (this.currentPlayer) {
+            document.getElementById(`table`).insertAdjacentHTML('afterbegin', `
+            <div class="block-with-text hand-wrapper cards">
+                <div class="block-label">${_('Your hand')}</div>
+                <div id="player-table-${this.playerId}-hand" class="hand cards"></div>
+            </div>
+            `)
+
             const handDiv = document.getElementById(`player-table-${this.playerId}-hand`);
             this.hand = new LineStock<Card>(this.game.cardsManager, handDiv, {
                 sort: (a: Card, b: Card) => b.type - a.type,
@@ -73,5 +69,9 @@ class PlayerTable {
     
     public addHelmet(card: Card) {
         this.played.getCardElement(card).querySelector('.front').insertAdjacentHTML('beforeend', `<div class="helmet"></div>`);
+    }
+    
+    public makeCardsSelectable(selectable: boolean) {
+        this.hand?.setSelectionMode(selectable ? 'single' : 'none');
     }
 }
