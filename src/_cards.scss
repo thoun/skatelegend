@@ -36,6 +36,29 @@
     &[data-type="2"] {
         .card-side {
             background-image: url('img/cards-legend.jpg');
+
+            overflow: hidden;
+            // shimmer animation
+            &::after {
+                position: absolute;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                opacity: 0.3;
+                background: linear-gradient(110deg, transparent 15%, #FFFFFF 50%, transparent 85%);
+                animation: shimmer 3s ease-in-out infinite;
+                content: '';
+            }
+
+            @keyframes shimmer {
+                0% {
+                    transform: translateX(-300%);
+                }
+                100% {
+                    transform: translateX(300%);
+                }
+            }
         }
         @for $i from 1 through 10 {
             &[data-type-arg="#{$i}"] .front {
@@ -62,5 +85,12 @@
         .card-side {
             box-shadow: 0 0 5px 3px #FFFFFF;
         }
+    }
+}
+
+.disabled-shimmer {
+    .card-side::after {
+        opacity: 0;
+        animation: none;
     }
 }
