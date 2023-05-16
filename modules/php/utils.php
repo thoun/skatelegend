@@ -235,8 +235,15 @@ trait UtilTrait {
         }
 
         $helmets = $this->getPlayerHelmets($playerId);
-        if ($helmets > 0 && intval(self::getUniqueValueFromDB("SELECT player_helmet_card_id = -1 FROM player WHERE player_id = $playerId")) != -1) {
+        if ($helmets > 0 && intval(self::getUniqueValueFromDB("SELECT player_helmet_card_id FROM player WHERE player_id = $playerId")) != -1) {
             $helmets = 0; // can't play a helmet, already played one this round
+        }
+
+        if ($helmets > 0) {
+            $colors = $this->getSequenceCardsByColor($sequence);
+            if (count($colors[$card->color]) < 2) {
+                $helmets = 0; // don't ask if the player doesn't have 2 cards of this color
+            }
         }
 
         /*$this->incStat(1, 'playedCards');
