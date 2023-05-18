@@ -120,24 +120,12 @@ trait StateTrait {
     }
 
     function stEndScore() {
-        $playersIds = $this->getPlayersIds();
+        $dbResults = $this->getCollectionFromDb("SELECT player_id, player_round_points FROM `player` ORDER BY player_no", true);
+        $roundScores = array_map(fn($dbResult) => json_decode($dbResult, true), $dbResults);
 
-        /* TODO $scenarioId = $this->getScenarioId();
-        $scenario = $this->getScenario();
-
-        $this->scoreMissions($playersIds, $scenario);
-        $this->scoreTerritoryControl($playersIds, $scenario);
-        $this->scoreDiscoverTiles($playersIds);
-        $this->scoreScenarioEndgameObjectives($scenarioId);
-        $this->scoreObjectiveTokens($playersIds);
-
-        // update player_score_aux
-        $initiativeMarkerControlledPlayer = $this->getTerritoryControlledPlayer(intval($this->getGameStateValue(INITIATIVE_MARKER_TERRITORY)));
-        if ($initiativeMarkerControlledPlayer !== null) {
-            $this->DbQuery("UPDATE `player` SET `player_score_aux` = 1 WHERE `player_id` = $initiativeMarkerControlledPlayer"); 
-        }
-
-        $this->endStats($playersIds);*/
+        $this->notifyAllPlayers('detailledScore', '', [
+            'roundScores' => $roundScores,
+        ]);
 
         $this->gamestate->nextState('endGame');
     }

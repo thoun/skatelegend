@@ -1,5 +1,17 @@
 {OVERALL_GAME_HEADER}
 
+<div id="score">
+    <div id="table-wrapper">
+        <table>
+            <thead>
+                <tr id="scoretr"></tr>
+            </thead>
+            <tbody id="score-table-body">
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <div id="table">
     <div id="round-counter-row">
         <div id="round-counter-block"><span id="round-counter"></span> / 4</div>

@@ -1450,6 +1450,7 @@ var SkateLegend = /** @class */ (function () {
         log("Starting game setup");
         this.gamedatas = gamedatas;
         log('gamedatas', gamedatas);
+        var endGame = Number(gamedatas.gamestate.id) >= 90; // score or end
         this.animationManager = new AnimationManager(this);
         this.cardsManager = new CardsManager(this);
         new JumpToManager(this, {
@@ -1460,7 +1461,7 @@ var SkateLegend = /** @class */ (function () {
             entryClasses: 'round-point',
         });
         this.tableCenter = new TableCenter(this, gamedatas);
-        this.createPlayerPanels(gamedatas);
+        this.createPlayerPanels(gamedatas, endGame);
         this.createPlayerTables(gamedatas);
         this.zoomManager = new ZoomManager({
             element: document.getElementById('table'),
@@ -1479,6 +1480,9 @@ var SkateLegend = /** @class */ (function () {
         this.setupNotifications();
         this.setupPreferences();
         this.addHelp();
+        if (endGame) { // score or end
+            this.onEnteringShowScore(true);
+        }
         log("Ending game setup");
     };
     ///////////////////////////////////////////////////
@@ -1492,6 +1496,9 @@ var SkateLegend = /** @class */ (function () {
             case 'playCard':
                 this.onEnteringPlayCard();
                 break;
+            case 'endScore':
+                this.onEnteringShowScore();
+                break;
         }
     };
     SkateLegend.prototype.onEnteringPlayCard = function () {
@@ -1500,6 +1507,30 @@ var SkateLegend = /** @class */ (function () {
             this.tableCenter.makeDecksSelectable(true);
             (_a = this.getCurrentPlayerTable()) === null || _a === void 0 ? void 0 : _a.makeCardsSelectable(true);
         }
+    };
+    SkateLegend.prototype.onEnteringShowScore = function (fromReload) {
+        if (fromReload === void 0) { fromReload = false; }
+        document.getElementById('score').style.display = 'flex';
+        var headers = document.getElementById('scoretr');
+        if (!headers.childElementCount) {
+            var html_1 = "\n                <th></th>";
+            [1, 2, 3, 4].forEach(function (i) {
+                html_1 += "\n                    <th id=\"th-round".concat(i, "-score\" class=\"round-score\">").concat(_("Round ${number}").replace('${number}', i), "</th>\n                ");
+            });
+            html_1 += "\n                <th id=\"th-end-score\" class=\"end-score\">".concat(_("Final score"), "</th>\n            ");
+            dojo.place(html_1, headers);
+        }
+        var players = Object.values(this.gamedatas.players);
+        players.forEach(function (player) {
+            var _a;
+            var html = "\n                <tr id=\"score".concat(player.id, "\">\n                <td class=\"player-name\" style=\"color: #").concat(player.color, "\">").concat(player.name, "</td>");
+            [1, 2, 3, 4].forEach(function (i) {
+                var _a, _b;
+                html += "\n                    <td id=\"round-score".concat(player.id, "\" class=\"round-score\">").concat((_b = (_a = player.allRoundsPoints) === null || _a === void 0 ? void 0 : _a[i - 1]) !== null && _b !== void 0 ? _b : '-', "</td>\n                ");
+            });
+            html += "\n                <td id=\"end-score".concat(player.id, "\" class=\"total\">").concat((_a = player.score) !== null && _a !== void 0 ? _a : '', "</td>\n            </tr>\n            ");
+            dojo.place(html, 'score-table-body');
+        });
     };
     SkateLegend.prototype.onLeavingState = function (stateName) {
         log('Leaving state: ' + stateName);
@@ -1585,12 +1616,12 @@ var SkateLegend = /** @class */ (function () {
         var orderedPlayers = playerIndex > 0 ? __spreadArray(__spreadArray([], players.slice(playerIndex), true), players.slice(0, playerIndex), true) : players;
         return orderedPlayers;
     };
-    SkateLegend.prototype.createPlayerPanels = function (gamedatas) {
+    SkateLegend.prototype.createPlayerPanels = function (gamedatas, endGame) {
         var _this = this;
         Object.values(gamedatas.players).forEach(function (player) {
             var playerId = Number(player.id);
-            // hand + scored cards counter
-            dojo.place("<div class=\"counters\">\n                <div id=\"playerhand-counter-wrapper-".concat(player.id, "\" class=\"playerhand-counter\">\n                    <div class=\"player-hand-card\"></div> \n                    <span id=\"playerhand-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"played-counter-wrapper-").concat(player.id, "\" class=\"played-counter\">\n                    <div class=\"player-played-card\"></div> \n                    <span id=\"played-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"scored-counter-wrapper-").concat(player.id, "\" class=\"scored-counter\">\n                    <div class=\"player-scored-card\"></div> \n                    <span id=\"scored-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>"), "player_board_".concat(player.id));
+            // hand + scored cards counter + helmets counter
+            dojo.place("<div class=\"counters\">\n                <div id=\"playerhand-counter-wrapper-".concat(player.id, "\" class=\"playerhand-counter\">\n                    <div class=\"player-hand-card\"></div> \n                    <span id=\"playerhand-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"played-counter-wrapper-").concat(player.id, "\" class=\"played-counter\">\n                    <div class=\"player-played-card\"></div> \n                    <span id=\"played-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"scored-counter-wrapper-").concat(player.id, "\" class=\"scored-counter\">\n                    <div class=\"player-scored-card\"></div> \n                    <span id=\"scored-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>\n            <div class=\"counters\">\n                <div id=\"player-helmets-counter-wrapper-").concat(player.id, "\" class=\"player-helmets-counter\">\n                    <div class=\"player-helmets\"></div> \n                    <span id=\"player-helmets-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>\n            <div id=\"round-points-").concat(player.id, "\"></div>\n            "), "player_board_".concat(player.id));
             var handCounter = new ebg.counter();
             handCounter.create("playerhand-counter-".concat(playerId));
             handCounter.setValue(player.handCount);
@@ -1603,13 +1634,16 @@ var SkateLegend = /** @class */ (function () {
             scoredCounter.create("scored-counter-".concat(playerId));
             scoredCounter.setValue(player.scoredCount);
             _this.scoredCounters[playerId] = scoredCounter;
-            // helmets counter
-            dojo.place("<div class=\"counters\">\n                <div id=\"player-helmets-counter-wrapper-".concat(player.id, "\" class=\"player-helmets-counter\">\n                    <div class=\"player-helmets\"></div> \n                    <span id=\"player-helmets-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>"), "player_board_".concat(player.id));
             var helmetCounter = new ebg.counter();
             helmetCounter.create("player-helmets-counter-".concat(playerId));
             helmetCounter.setValue(player.helmets);
             _this.helmetCounters[playerId] = helmetCounter;
-            _this.setPlayerActive(playerId, player.active);
+            if (!endGame) {
+                _this.setPlayerActive(playerId, player.active);
+            }
+            if (playerId == _this.getPlayerId() && player.roundPoints) {
+                _this.setRoundPoints(playerId, player.roundPoints);
+            }
             _this.stopVoidStocks[playerId] = new VoidStock(_this.cardsManager, document.getElementById("scored-counter-".concat(playerId)));
         });
         this.setTooltipToClass('player-helmets-counter', _('Number of helmets'));
@@ -1804,6 +1838,7 @@ var SkateLegend = /** @class */ (function () {
             ['takeTrophyCard', ANIMATION_MS],
             ['discardTrophyCard', ANIMATION_MS],
             ['addCardToHand', ANIMATION_MS],
+            ['detailledScore', ANIMATION_MS],
         ];
         notifs.forEach(function (notif) {
             dojo.subscribe(notif[0], _this, "notif_".concat(notif[0]));
@@ -1857,6 +1892,13 @@ var SkateLegend = /** @class */ (function () {
         this.setPlayerActive(playerId, false);
         this.playedCounters[playerId].toValue(0);
         this.scoredCounters[playerId].incValue(notif.args.sequence.length);
+        if (playerId == this.getPlayerId()) {
+            this.setRoundPoints(playerId, notif.args.roundPoints);
+        }
+    };
+    SkateLegend.prototype.setRoundPoints = function (playerId, roundPoints) {
+        if (roundPoints === void 0) { roundPoints = null; }
+        document.getElementById("round-points-".concat(playerId)).innerHTML = roundPoints ? _('You scored ${points} points this round').replace('${points}', roundPoints) : '';
     };
     SkateLegend.prototype.notif_newRound = function (notif) {
         var _this = this;
@@ -1865,6 +1907,7 @@ var SkateLegend = /** @class */ (function () {
             var playerId = Number(id);
             _this.setPlayerActive(playerId, true);
         });
+        this.setRoundPoints(this.getPlayerId());
     };
     SkateLegend.prototype.notif_addHelmet = function (notif) {
         var playerId = notif.args.playerId;
@@ -1900,6 +1943,23 @@ var SkateLegend = /** @class */ (function () {
             // TODO if card is visible, make it invisible
         }
         this.handCounters[playerId].incValue(1);
+    };
+    SkateLegend.prototype.setScore = function (playerId, column, score) {
+        var cell = document.getElementById("score".concat(playerId)).getElementsByTagName('td')[column];
+        cell.innerHTML = "".concat(score !== null && score !== void 0 ? score : '-');
+    };
+    SkateLegend.prototype.notif_detailledScore = function (notif) {
+        var _this = this;
+        log('notif_detailledScore', notif.args);
+        Object.entries(notif.args.roundScores).forEach(function (entry) {
+            var _a;
+            var playerId = Number(entry[0]);
+            entry[1].forEach(function (roundPoints, index) { return _this.setScore(playerId, index + 1, roundPoints); });
+            var total = entry[1].filter(function (n) { return n !== null; }).reduce(function (a, b) { return a + b; }, 0);
+            _this.setScore(playerId, 5, total);
+            (_a = _this.scoreCtrl[playerId]) === null || _a === void 0 ? void 0 : _a.toValue(total);
+            _this.setPlayerActive(playerId, true);
+        });
     };
     /* This enable to inject translatable styled things to logs or action bar */
     /* @Override */

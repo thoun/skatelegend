@@ -23,6 +23,8 @@ interface SkateLegendPlayer extends Player {
     played: Card[];
     handCount: number;
     scoredCount: number;
+    roundPoints?: number;
+    allRoundsPoints?: number[];
 }
 
 interface SkateLegendGamedatas {
@@ -96,6 +98,7 @@ interface NotifFallArgs {
 interface NotifCloseSequenceArgs {
     playerId: number;
     sequence: Card[];
+    roundPoints: number;
 } 
 
 // newRound
@@ -123,4 +126,9 @@ interface NotifAddCardToHandArgs {
     playerId: number;
     card: Card;
     fromDeckNumber: number;
+}
+
+// detailledScore
+interface NotifDetailledScoreArgs {
+    roundScores: { [playerId: number | string]: number[]};
 }

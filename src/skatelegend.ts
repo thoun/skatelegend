@@ -56,6 +56,8 @@ class SkateLegend implements SkateLegendGame {
 
         log('gamedatas', gamedatas);
 
+        const endGame = Number(gamedatas.gamestate.id) >= 90; // score or end
+
         this.animationManager = new AnimationManager(this);
         this.cardsManager = new CardsManager(this);
         new JumpToManager(this, {
@@ -66,7 +68,7 @@ class SkateLegend implements SkateLegendGame {
             entryClasses: 'round-point',
         });
         this.tableCenter = new TableCenter(this, gamedatas);
-        this.createPlayerPanels(gamedatas);
+        this.createPlayerPanels(gamedatas, endGame);
         this.createPlayerTables(gamedatas);
         
         this.zoomManager = new ZoomManager({
@@ -90,6 +92,10 @@ class SkateLegend implements SkateLegendGame {
         this.setupPreferences();
         this.addHelp();
 
+        if (endGame) { // score or end
+            this.onEnteringShowScore(true);
+        }
+
         log( "Ending game setup" );
     }
 
@@ -106,6 +112,9 @@ class SkateLegend implements SkateLegendGame {
             case 'playCard':
                 this.onEnteringPlayCard();
                 break;
+            case 'endScore':
+                this.onEnteringShowScore();
+                break;
         }
     }
     
@@ -114,6 +123,43 @@ class SkateLegend implements SkateLegendGame {
             this.tableCenter.makeDecksSelectable(true);
             this.getCurrentPlayerTable()?.makeCardsSelectable(true);
         }
+    }
+
+    onEnteringShowScore(fromReload: boolean = false) {
+        document.getElementById('score').style.display = 'flex';
+
+        const headers = document.getElementById('scoretr');
+        if (!headers.childElementCount) {
+            let html = `
+                <th></th>`;
+            [1, 2, 3, 4].forEach(i => {
+                html += `
+                    <th id="th-round${i}-score" class="round-score">${_("Round ${number}").replace('${number}', i)}</th>
+                `;
+            });
+            html += `
+                <th id="th-end-score" class="end-score">${_("Final score")}</th>
+            `;
+            dojo.place(html, headers);
+        }
+
+        const players = Object.values(this.gamedatas.players);
+
+        players.forEach(player => {
+            let html = `
+                <tr id="score${player.id}">
+                <td class="player-name" style="color: #${player.color}">${player.name}</td>`;
+            [1, 2, 3, 4].forEach(i => {
+                html += `
+                    <td id="round-score${player.id}" class="round-score">${player.allRoundsPoints?.[i - 1] ?? '-'}</td>
+                `;
+            });
+            html += `
+                <td id="end-score${player.id}" class="total">${player.score ?? ''}</td>
+            </tr>
+            `;
+            dojo.place(html, 'score-table-body');
+        });
     }
 
     public onLeavingState(stateName: string) {
@@ -215,13 +261,13 @@ class SkateLegend implements SkateLegendGame {
         return orderedPlayers;
     }
 
-    private createPlayerPanels(gamedatas: SkateLegendGamedatas) {
+    private createPlayerPanels(gamedatas: SkateLegendGamedatas, endGame: boolean) {
 
         Object.values(gamedatas.players).forEach(player => {
             const playerId = Number(player.id);  
              
 
-            // hand + scored cards counter
+            // hand + scored cards counter + helmets counter
             dojo.place(`<div class="counters">
                 <div id="playerhand-counter-wrapper-${player.id}" class="playerhand-counter">
                     <div class="player-hand-card"></div> 
@@ -235,7 +281,15 @@ class SkateLegend implements SkateLegendGame {
                     <div class="player-scored-card"></div> 
                     <span id="scored-counter-${player.id}"></span>
                 </div>
-            </div>`, `player_board_${player.id}`);
+            </div>
+            <div class="counters">
+                <div id="player-helmets-counter-wrapper-${player.id}" class="player-helmets-counter">
+                    <div class="player-helmets"></div> 
+                    <span id="player-helmets-counter-${player.id}"></span>
+                </div>
+            </div>
+            <div id="round-points-${player.id}"></div>
+            `, `player_board_${player.id}`);
 
             const handCounter = new ebg.counter();
             handCounter.create(`playerhand-counter-${playerId}`);
@@ -252,20 +306,18 @@ class SkateLegend implements SkateLegendGame {
             scoredCounter.setValue(player.scoredCount);
             this.scoredCounters[playerId] = scoredCounter; 
 
-            // helmets counter
-            dojo.place(`<div class="counters">
-                <div id="player-helmets-counter-wrapper-${player.id}" class="player-helmets-counter">
-                    <div class="player-helmets"></div> 
-                    <span id="player-helmets-counter-${player.id}"></span>
-                </div>
-            </div>`, `player_board_${player.id}`);
-
             const helmetCounter = new ebg.counter();
             helmetCounter.create(`player-helmets-counter-${playerId}`);
             helmetCounter.setValue(player.helmets);
             this.helmetCounters[playerId] = helmetCounter;
 
-            this.setPlayerActive(playerId, player.active);
+            if (!endGame) {
+                this.setPlayerActive(playerId, player.active);
+            }
+
+            if (playerId == this.getPlayerId() && player.roundPoints) {
+                this.setRoundPoints(playerId, player.roundPoints);
+            }
 
             this.stopVoidStocks[playerId] = new VoidStock<Card>(this.cardsManager, document.getElementById(`scored-counter-${playerId}`));
         });
@@ -490,6 +542,7 @@ class SkateLegend implements SkateLegendGame {
             ['takeTrophyCard', ANIMATION_MS],
             ['discardTrophyCard', ANIMATION_MS],
             ['addCardToHand', ANIMATION_MS],
+            ['detailledScore', ANIMATION_MS],
         ];
     
         notifs.forEach((notif) => {
@@ -555,6 +608,14 @@ class SkateLegend implements SkateLegendGame {
         this.setPlayerActive(playerId, false);
         this.playedCounters[playerId].toValue(0);
         this.scoredCounters[playerId].incValue(notif.args.sequence.length);
+
+        if (playerId == this.getPlayerId()) {
+            this.setRoundPoints(playerId, notif.args.roundPoints);
+        }
+    }
+    
+    private setRoundPoints(playerId: number, roundPoints: number | null = null) {
+        document.getElementById(`round-points-${playerId}`).innerHTML = roundPoints ? _('You scored ${points} points this round').replace('${points}', roundPoints) : '';
     }
 
     notif_newRound(notif: Notif<NotifNewRoundArgs>) {
@@ -563,6 +624,7 @@ class SkateLegend implements SkateLegendGame {
             const playerId = Number(id);
             this.setPlayerActive(playerId, true);
         });
+        this.setRoundPoints(this.getPlayerId());
     }
 
     notif_addHelmet(notif: Notif<NotifAddHelmetArgs>) {
@@ -600,6 +662,24 @@ class SkateLegend implements SkateLegendGame {
             // TODO if card is visible, make it invisible
         }
         this.handCounters[playerId].incValue(1);
+    }
+
+    private setScore(playerId: number | string, column: number, score: number) { // column 1 for first round ... 5 for final score
+        const cell = (document.getElementById(`score${playerId}`).getElementsByTagName('td')[column] as HTMLTableDataCellElement);
+        cell.innerHTML = `${score ?? '-'}`;
+    }
+
+    notif_detailledScore(notif: Notif<NotifDetailledScoreArgs>) {
+        log('notif_detailledScore', notif.args);
+
+        Object.entries(notif.args.roundScores).forEach(entry => {
+            const playerId = Number(entry[0]);
+            entry[1].forEach((roundPoints, index) => this.setScore(playerId, index + 1, roundPoints));
+            const total = entry[1].filter(n => n !== null).reduce((a, b) => a + b, 0);
+            this.setScore(playerId, 5, total);
+            (this as any).scoreCtrl[playerId]?.toValue(total);
+            this.setPlayerActive(playerId, true);
+        });
     }
 
     /* This enable to inject translatable styled things to logs or action bar */

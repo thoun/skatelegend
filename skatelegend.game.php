@@ -73,12 +73,11 @@ class SkateLegend extends Table {
  
         // Create players
         // Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.
-        $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES ";
+        $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar, player_round_points) VALUES ";
         $values = [];
-        foreach( $players as $player_id => $player )
-        {
+        foreach( $players as $player_id => $player ) {
             $color = array_shift( $default_colors );
-            $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."')";
+            $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."', '[null, null, null, null]')";
         }
         $sql .= implode(',', $values);
         self::DbQuery( $sql );
@@ -145,14 +144,18 @@ class SkateLegend extends Table {
     
         // Get information about players
         // Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
-        $sql = "SELECT player_id id, player_score score, player_no playerNo, player_helmets helmets, player_active active, player_helmet_card_id helmetCardId FROM player ";
+        $sql = "SELECT player_id id, player_score score, player_no playerNo, player_helmets helmets, player_active active, player_helmet_card_id helmetCardId, player_round_points allRoundsPoints FROM player ";
         $result['players'] = self::getCollectionFromDb($sql);
 
+        $roundNumber = intval($this->getStat('roundNumber'));
+        $isEndScore = intval($this->gamestate->state_id()) >= ST_END_SCORE;
         
         foreach($result['players'] as $playerId => &$player) {
+
             $player['playerNo'] = intval($player['playerNo']);
             $player['helmets'] = intval($player['helmets']);
             $player['active'] = boolval($player['active']);
+            $player['allRoundsPoints'] = json_decode($player['allRoundsPoints'], true);
             $player['helmetCardId'] = intval($player['helmetCardId']) == -1 ? null : intval($player['helmetCardId']);
             
             $player['played'] = $this->getCardsByLocation('played'.$playerId);
@@ -161,6 +164,14 @@ class SkateLegend extends Table {
 
             if ($currentPlayerId == $playerId) {
                 $player['hand'] = $this->getCardsByLocation('hand', $playerId);
+                if (!$isEndScore && !$player['active'] && $player['allRoundsPoints'][$roundNumber] !== null) {
+                    $player['roundPoints'] = $player['allRoundsPoints'][$roundNumber];
+                }
+            }
+
+            if (!$isEndScore) {
+                unset($player['score']);
+                unset($player['allRoundsPoints']);
             }
         }
         
@@ -179,7 +190,7 @@ class SkateLegend extends Table {
         }
 
         $result['decks'] = $decks;
-        $result['roundNumber'] = intval($this->getStat('roundNumber')) + 1;
+        $result['roundNumber'] = $roundNumber + 1;
         $result['remainingHelmets'] = $this->getRemainingHelmets();
   
         return $result;

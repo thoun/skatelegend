@@ -647,6 +647,50 @@ body > .card {
     transform: scale(1);
   }
 }
+#score {
+  display: none;
+  justify-content: center;
+}
+#score #table-wrapper {
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.4);
+  background-size: 100% 100%;
+}
+#score #table-wrapper table tbody tr {
+  border-top: 1px solid white;
+}
+#score #table-wrapper table td:not(:first-child), #score #table-wrapper table th:not(:first-child) {
+  border-left: 1px solid white;
+}
+#score #table-wrapper table tr {
+  height: 40px;
+}
+#score #table-wrapper table tr th {
+  text-align: center;
+  color: white;
+  text-shadow: 0px 0px 1px black, 0px 0px 2px black, 0px 0px 3px black;
+  padding: 8px;
+}
+#score #table-wrapper table tr td {
+  width: 100px;
+  text-align: center;
+}
+#score #table-wrapper table tr td:not(:first-child) {
+  font-size: 150%;
+  color: white;
+  text-shadow: 0px 0px 1px black, 0px 0px 2px black, 0px 0px 3px black;
+}
+#score #table-wrapper table tr td.player-name {
+  width: 181px;
+  font-weight: bold;
+  text-shadow: 0px 0px 1px white, 0px 0px 2px white, 0px 0px 3px white;
+  word-break: break-all;
+  font-size: 120%;
+}
+#score #table-wrapper table tr td.total {
+  font-weight: bold;
+}
+
 #skatelegend-help-button {
   position: fixed;
   bottom: 12px;

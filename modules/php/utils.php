@@ -345,7 +345,10 @@ trait UtilTrait {
         }
         $this->cards->moveCards(array_map(fn($card) => $card->id, $sequence), 'scored', $playerId);
 
-        self::DbQuery("update player set player_helmet_card_id = -1, player_active = 0, player_score = player_score + $wheels WHERE player_id = $playerId");
+        $roundPoints = json_decode($this->getUniqueValueFromDB("SELECT `player_round_points` FROM `player` where player_id = $playerId"), true);
+        $roundPoints[intval($this->getStat('roundNumber'))] = $wheels;
+
+        self::DbQuery("update player set player_helmet_card_id = -1, player_active = 0, player_score = player_score + $wheels, player_round_points = '".json_encode($roundPoints)."' WHERE player_id = $playerId");
         // TODO TOCHECK score now or at the end ?
 
         $message = $manuallyTriggered ? 
@@ -367,7 +370,8 @@ trait UtilTrait {
         self::notifyAllPlayers('closeSequence', clienttranslate('${player_name} score ${points} points with closed sequence'), [
             'playerId' => $playerId,
             'player_name' => $this->getPlayerName($playerId),
-            'points' => $wheels,
+            'points' => $wheels, // for logs
+            'roundPoints' => $wheels,
             'sequence' => $sequence,
         ]);
     }
