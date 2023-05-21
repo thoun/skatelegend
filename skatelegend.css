@@ -326,6 +326,41 @@ body > .card {
   visibility: hidden;
 }
 
+.card-stock.deck[data-empty=true] .bga-cards-deck-counter.hide-when-empty {
+  display: none;
+}
+
+.bga-cards-deck-counter {
+  --bga-cards-deck-counter-size: 20px;
+  position: absolute;
+  z-index: 1;
+  width: var(--bga-cards-deck-counter-size);
+  height: var(--bga-cards-deck-counter-size);
+  left: calc(var(--bga-cards-deck-left) - var(--bga-cards-deck-counter-size) / 2);
+  top: calc(var(--bga-cards-deck-top) - var(--bga-cards-deck-counter-size) / 2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.bga-cards-deck-counter.round {
+  color: black;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 0 2px 1px black;
+  font-size: 14px;
+}
+
+.bga-cards-deck-counter.text-shadow {
+  color: white;
+  text-shadow: 0 0 1px black, 0 0 2px black, 0 0 3px black, 0 0 4px black;
+  font-size: 20px;
+}
+
+.bga-cards-deck-counter.hidden {
+  display: none;
+}
+
 .card-stock.all-visible-deck {
   position: absolute;
   --tile-count: 1;
@@ -373,37 +408,37 @@ body > .card {
   justify-content: center;
   align-items: center;
 }
-.card[data-type="1"][data-type-arg="1"] .front {
+.card[data-type="1"] .front[data-type-arg="1"] {
   background-position-x: 9.0909090909%;
 }
-.card[data-type="1"][data-type-arg="2"] .front {
+.card[data-type="1"] .front[data-type-arg="2"] {
   background-position-x: 18.1818181818%;
 }
-.card[data-type="1"][data-type-arg="3"] .front {
+.card[data-type="1"] .front[data-type-arg="3"] {
   background-position-x: 27.2727272727%;
 }
-.card[data-type="1"][data-type-arg="4"] .front {
+.card[data-type="1"] .front[data-type-arg="4"] {
   background-position-x: 36.3636363636%;
 }
-.card[data-type="1"][data-type-arg="5"] .front {
+.card[data-type="1"] .front[data-type-arg="5"] {
   background-position-x: 45.4545454545%;
 }
-.card[data-type="1"][data-type-arg="6"] .front {
+.card[data-type="1"] .front[data-type-arg="6"] {
   background-position-x: 54.5454545455%;
 }
-.card[data-type="1"][data-type-arg="7"] .front {
+.card[data-type="1"] .front[data-type-arg="7"] {
   background-position-x: 63.6363636364%;
 }
-.card[data-type="1"][data-type-arg="8"] .front {
+.card[data-type="1"] .front[data-type-arg="8"] {
   background-position-x: 72.7272727273%;
 }
-.card[data-type="1"][data-type-arg="9"] .front {
+.card[data-type="1"] .front[data-type-arg="9"] {
   background-position-x: 81.8181818182%;
 }
-.card[data-type="1"][data-type-arg="10"] .front {
+.card[data-type="1"] .front[data-type-arg="10"] {
   background-position-x: 90.9090909091%;
 }
-.card[data-type="1"][data-type-arg="11"] .front {
+.card[data-type="1"] .front[data-type-arg="11"] {
   background-position-x: 100%;
 }
 .card[data-type="2"] .card-side {
@@ -429,34 +464,34 @@ body > .card {
     transform: translateX(300%);
   }
 }
-.card[data-type="2"][data-type-arg="1"] .front {
+.card[data-type="2"] .front[data-type-arg="1"] {
   background-position-x: 10%;
 }
-.card[data-type="2"][data-type-arg="2"] .front {
+.card[data-type="2"] .front[data-type-arg="2"] {
   background-position-x: 20%;
 }
-.card[data-type="2"][data-type-arg="3"] .front {
+.card[data-type="2"] .front[data-type-arg="3"] {
   background-position-x: 30%;
 }
-.card[data-type="2"][data-type-arg="4"] .front {
+.card[data-type="2"] .front[data-type-arg="4"] {
   background-position-x: 40%;
 }
-.card[data-type="2"][data-type-arg="5"] .front {
+.card[data-type="2"] .front[data-type-arg="5"] {
   background-position-x: 50%;
 }
-.card[data-type="2"][data-type-arg="6"] .front {
+.card[data-type="2"] .front[data-type-arg="6"] {
   background-position-x: 60%;
 }
-.card[data-type="2"][data-type-arg="7"] .front {
+.card[data-type="2"] .front[data-type-arg="7"] {
   background-position-x: 70%;
 }
-.card[data-type="2"][data-type-arg="8"] .front {
+.card[data-type="2"] .front[data-type-arg="8"] {
   background-position-x: 80%;
 }
-.card[data-type="2"][data-type-arg="9"] .front {
+.card[data-type="2"] .front[data-type-arg="9"] {
   background-position-x: 90%;
 }
-.card[data-type="2"][data-type-arg="10"] .front {
+.card[data-type="2"] .front[data-type-arg="10"] {
   background-position-x: 100%;
 }
 .card .helmet {
@@ -469,10 +504,10 @@ body > .card {
   background-position: center center;
 }
 
-.hidden-deck.selectable .card:hover {
+.deck.selectable .card:hover {
   cursor: pointer;
 }
-.hidden-deck.selectable .card:hover .card-side {
+.deck.selectable .card:hover .card-side {
   box-shadow: 0 0 5px 3px #FFFFFF;
 }
 

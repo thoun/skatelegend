@@ -41,10 +41,11 @@ interface SkateLegendGamedatas {
 
     // Add here variables you set up in getAllDatas
     roundNumber: number;
-    decks: { [deckId: number]: { count: number; top: Card | null; } };
+    decks: { [deckId: number]: { count: number; top?: Card; } };
 }
 
 interface SkateLegendGame extends Game {
+    animationManager: AnimationManager;
     cardsManager: CardsManager;
 
     getPlayerId(): number;
@@ -70,9 +71,8 @@ interface EnteringChooseContinueArgs {
     remainingCardsInDeck: number;
 }*/
 
-// flipTopDeck
+// flipCard
 interface NotifFlipTopDeckArgs {
-    deckId: number;
     card: Card;
 }
 
@@ -80,7 +80,9 @@ interface NotifFlipTopDeckArgs {
 interface NotifPlayCardArgs {
     playerId: number;
     card: Card;
-    fromDeck: boolean;
+    fromDeck: number; // 0 means hand
+    deckCount?: number;
+    deckTopCard?: Card;
 } 
 
 // discardedLegendCard
@@ -126,9 +128,17 @@ interface NotifAddCardToHandArgs {
     playerId: number;
     card: Card;
     fromDeckNumber: number;
+    deckCount: number;
+    deckTopCard?: Card;
 }
 
 // detailledScore
 interface NotifDetailledScoreArgs {
     roundScores: { [playerId: number | string]: number[]};
+}
+
+// splitDecks
+interface NotifSplitDecksArgs {
+    fromDeck: number;
+    decks: { [deckId: number]: { count: number; top?: Card; } };
 }

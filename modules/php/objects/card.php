@@ -22,8 +22,8 @@ class Card extends CardType {
     public int $id;
     public string $location;
     public int $locationArg;
-    public int $type;
-    public int $typeArg;
+    public ?int $type;
+    public ?int $typeArg;
 
     public function __construct($dbCard, $CARDS_TYPE) {
         $this->id = intval($dbCard['card_id'] ?? $dbCard['id']);
@@ -40,13 +40,16 @@ class Card extends CardType {
         }
     } 
 
-    public static function onlyId(Card $card) {
+    public static function onlyId(?Card $card) {
+        if ($card == null) {
+            return null;
+        }
+
         return new Card([
             'card_id' => $card->id,
             'card_location' => $card->location,
             'card_location_arg' => $card->locationArg,
-            'card_type' => null,
-            'card_type_arg' => null,
+            'card_type' => $card->type,
         ], null);
     }
 

@@ -83,6 +83,8 @@ trait ActionTrait {
             'card' => $card,
             'fromDeckNumber' => $deckId,
             'deck_number' => $deckId,
+            'deckCount' => intval($this->cards->countCardInLocation('deck'.$deckId)),
+            'deckTopCard' => Card::onlyId($this->getCardFromDb($this->cards->getCardOnTop('deck'.$deckId))),
         ]);
 
         $this->cardPickedFromDeck($deckId);

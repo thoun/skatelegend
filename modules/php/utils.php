@@ -120,7 +120,7 @@ trait UtilTrait {
         ] + $args);
     }
 
-    function getCardFromDb(/*array|null*/ $dbCard) {
+    function getCardFromDb(?array $dbCard) {
         if ($dbCard == null) {
             return null;
         }
@@ -197,8 +197,7 @@ trait UtilTrait {
 
         $card = $this->getCardFromDb($this->cards->getCardOnTop('deck'.$deckId));
 
-        self::notifyAllPlayers('flipTopDeck', '', [
-            'deckId' => $deckId,
+        self::notifyAllPlayers('flipCard', '', [
             'card' => $card,
         ]);
     }
@@ -209,19 +208,26 @@ trait UtilTrait {
         $message = '';/* TODO $fromDeck ?
             clienttranslate('${player_name} plays a ${card_color} ${card_type} card from their hand (paid ${types}) ${card_display}') :
             clienttranslate('${player_name} plays a ${card_color} ${card_type} card from their hand ${card_display}');*/
-        
-        self::notifyAllPlayers('playCard', $message, [
+
+        $args = [
             'playerId' => $playerId,
             'player_name' => $this->getPlayerName($playerId),
             'card' => $card,
-            'fromDeck' => $deckId > 0,
+            'fromDeck' => $deckId,
             /*'newCount' => intval($this->cards->countCardInLocation('hand', $playerId)),
             'discardedTokens' => $tokens,
             'types' => array_map(fn($token) => $token->type, $tokens), // for logs
             'card_type' => $this->getCardType($card->cardType), // for logs
             'card_color' => $this->getCardColor($card->color), // for logs
             'card_display' => 100 * $card->color + $card->number, // for logs*/
-        ]);
+        ];
+
+        if ($deckId > 0) {
+            $args['deckCount'] = intval($this->cards->countCardInLocation('deck'.$deckId));
+            $args['deckTopCard'] = Card::onlyId($this->getCardFromDb($this->cards->getCardOnTop('deck'.$deckId)));
+        }
+        
+        self::notifyAllPlayers('playCard', $message, $args);
 
         if ($deckId > 0) {
             $this->cardPickedFromDeck($deckId);
@@ -454,7 +460,8 @@ trait UtilTrait {
         // fill if it was empty
         $deckLocation = 'deck'.$deckId;
         if (intval($this->cards->countCardInLocation($deckLocation)) == 0) {
-            $otherDeckLocation = 'deck'.($deckId == 2 ? 1 : 2);
+            $otherDeckId = $deckId == 2 ? 1 : 2;
+            $otherDeckLocation = 'deck'.$otherDeckId;
 
             if (intval($this->cards->countCardInLocation($otherDeckLocation)) == 0) {
                 $this->cards->moveAllCardsInLocation('discard', $otherDeckLocation);
@@ -465,6 +472,20 @@ trait UtilTrait {
             $cardsIds = array_map(fn($card) => $card->id, $cardsToMove);
             $cardsIds = array_slice($cardsIds, 0, ceil(count($cardsIds) / 2));
             $this->cards->moveCards($cardsIds, $deckLocation);
+
+            $decks = [];
+            $visibleTopDecks = $this->getVisibleTopDecks();
+            for ($i = 1; $i <= 2; $i++) {
+                $topDeckCard = $this->getCardFromDb($this->cards->getCardOnTop('deck'.$i));
+                $decks[$i] = [
+                    'count' => intval($this->cards->countCardInLocation('deck'.$i)),
+                    'top' => in_array($i, $visibleTopDecks) ? $topDeckCard : Card::onlyId($topDeckCard),
+                ];
+            }
+            self::notifyAllPlayers('splitDecks', '', [
+                'fromDeck' => $otherDeckId,
+                'decks' => $decks,
+            ]);
         }
     }
     

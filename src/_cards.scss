@@ -27,7 +27,7 @@
 
     &[data-type="1"] {
         @for $i from 1 through 11 {
-            &[data-type-arg="#{$i}"] .front {
+            .front[data-type-arg="#{$i}"] {
                 background-position-x: #{($i) * 100% / 11};
             }
         }
@@ -61,7 +61,7 @@
             }
         }
         @for $i from 1 through 10 {
-            &[data-type-arg="#{$i}"] .front {
+            .front[data-type-arg="#{$i}"] {
                 background-position-x: #{($i) * 100% / 10};
             }
         }
@@ -78,7 +78,7 @@
     }
 }
 
-.hidden-deck.selectable {
+.deck.selectable {
     .card:hover {
         cursor: pointer;
 

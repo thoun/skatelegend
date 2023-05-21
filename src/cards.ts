@@ -1,17 +1,22 @@
+const CARD_WIDTH = 140;
+const CARD_HEIGHT = 280;
+
 class CardsManager extends CardManager<Card> {
     constructor (public game: SkateLegendGame) {
         super(game, {
             getId: (card) => `card-${card.id}`,
             setupDiv: (card: Card, div: HTMLElement) => {
                 div.dataset.type = ''+card.type;
-                div.dataset.typeArg = ''+card.typeArg;
             },
             setupFrontDiv: (card: Card, div: HTMLElement) => {
-                div.id = `card-${card.id}-front`;
+                div.dataset.typeArg = ''+card.typeArg;
                 this.game.setTooltip(div.id, this.getTooltip(card));
             },
             setupBackDiv: (card: Card, div: HTMLElement) => {},
-            
+            isCardVisible: card => Boolean(card.typeArg),
+            animationManager: game.animationManager,
+            cardWidth: CARD_WIDTH,
+            cardHeight: CARD_HEIGHT,
         });
     }
 

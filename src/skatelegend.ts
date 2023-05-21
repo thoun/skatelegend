@@ -112,6 +112,10 @@ class SkateLegend implements SkateLegendGame {
             case 'playCard':
                 this.onEnteringPlayCard();
                 break;
+            case 'pickCard':
+            case 'revealDeckCard':
+                this.onEnteringRevealDeckCard();
+                break;
             case 'endScore':
                 this.onEnteringShowScore();
                 break;
@@ -122,6 +126,12 @@ class SkateLegend implements SkateLegendGame {
         if ((this as any).isCurrentPlayerActive()) {
             this.tableCenter.makeDecksSelectable(true);
             this.getCurrentPlayerTable()?.makeCardsSelectable(true);
+        }
+    }
+    
+    private onEnteringRevealDeckCard() {
+        if ((this as any).isCurrentPlayerActive()) {
+            this.tableCenter.makeDecksSelectable(true);
         }
     }
 
@@ -169,12 +179,20 @@ class SkateLegend implements SkateLegendGame {
            case 'playCard':
                 this.onLeavingPlayCard();
                 break;
+            case 'pickCard':
+            case 'revealDeckCard':
+                this.onLeavingRevealDeckCard();
+                break;
         }
     }
 
     private onLeavingPlayCard() {
         this.tableCenter.makeDecksSelectable(false);
         this.getCurrentPlayerTable()?.makeCardsSelectable(false);
+    }
+
+    private onLeavingRevealDeckCard() {
+        this.tableCenter.makeDecksSelectable(false);
     }
 
     // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
@@ -532,7 +550,7 @@ class SkateLegend implements SkateLegendGame {
         //log( 'notifications subscriptions setup' );
 
         const notifs = [
-            ['flipTopDeck', ANIMATION_MS],
+            ['flipCard', ANIMATION_MS],
             ['playCard', ANIMATION_MS],
             ['discardedLegendCard', ANIMATION_MS],
             ['fall', ANIMATION_MS * 4],
@@ -543,6 +561,7 @@ class SkateLegend implements SkateLegendGame {
             ['discardTrophyCard', ANIMATION_MS],
             ['addCardToHand', ANIMATION_MS],
             ['detailledScore', ANIMATION_MS],
+            ['splitDecks', ANIMATION_MS],
         ];
     
         notifs.forEach((notif) => {
@@ -555,8 +574,8 @@ class SkateLegend implements SkateLegendGame {
         );*/
     }
 
-    notif_flipTopDeck(notif: Notif<NotifFlipTopDeckArgs>) {
-        this.tableCenter.flipTopDeck(notif.args.deckId, notif.args.card);
+    notif_flipCard(notif: Notif<NotifFlipTopDeckArgs>) {
+        this.cardsManager.updateCardInformations(notif.args.card);
     }
 
     notif_playCard(notif: Notif<NotifPlayCardArgs>) {
@@ -566,8 +585,10 @@ class SkateLegend implements SkateLegendGame {
         const currentPlayer = this.getPlayerId() == playerId;
         playerTable.played.addCard(notif.args.card, {
             fromElement: currentPlayer || fromDeck ? undefined : document.getElementById(`player-table-${playerId}-name`)
-        });
-        if (!fromDeck) { // from hand
+        }, { updateInformations: true, });
+        if (fromDeck > 0) {
+            this.tableCenter.decks[fromDeck].setCardNumber(notif.args.deckCount, notif.args.deckTopCard);
+        } else { // from hand
             this.handCounters[playerId].incValue(-1);
         }
         this.playedCounters[playerId].incValue(1);
@@ -659,11 +680,24 @@ class SkateLegend implements SkateLegendGame {
                 fromElement: document.getElementById(`deck${notif.args.fromDeckNumber}`)
             });
         } else {
-            // TODO if card is visible, make it invisible
+            this.stopVoidStocks[playerId].addCard(notif.args.card);
         }
+        this.tableCenter.decks[notif.args.fromDeckNumber].setCardNumber(notif.args.deckCount, notif.args.deckTopCard);
+
         this.handCounters[playerId].incValue(1);
     }
 
+    notif_splitDecks(notif: Notif<NotifSplitDecksArgs>) {
+        [1, 2].forEach(deckId => {
+            if (notif.args.decks[deckId].top) {
+                this.tableCenter.decks[deckId].addCard(notif.args.decks[deckId].top, {
+                    fromStock: notif.args.fromDeck != deckId ? this.tableCenter.decks[notif.args.fromDeck] : undefined,
+                });
+            }
+            this.tableCenter.decks[deckId].setCardNumber(notif.args.decks[deckId].count);
+        });
+    }
+    
     private setScore(playerId: number | string, column: number, score: number) { // column 1 for first round ... 5 for final score
         const cell = (document.getElementById(`score${playerId}`).getElementsByTagName('td')[column] as HTMLTableDataCellElement);
         cell.innerHTML = `${score ?? '-'}`;

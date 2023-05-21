@@ -183,9 +183,10 @@ class SkateLegend extends Table {
 
         $visibleTopDecks = $this->getVisibleTopDecks();
         for ($i = 1; $i <= 2; $i++) {
+            $topDeckCard = $this->getCardFromDb($this->cards->getCardOnTop('deck'.$i));
             $decks[$i] = [
                 'count' => intval($this->cards->countCardInLocation('deck'.$i)),
-                'top' => in_array($i, $visibleTopDecks) ? $this->getCardFromDb($this->cards->getCardOnTop('deck'.$i)) : null,
+                'top' => in_array($i, $visibleTopDecks) ? $topDeckCard : Card::onlyId($topDeckCard),
             ];
         }
 
