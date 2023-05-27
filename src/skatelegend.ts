@@ -569,9 +569,9 @@ class SkateLegend implements SkateLegendGame {
             (this as any).notifqueue.setSynchronous(notif[0], notif[1]);
         });
 
-        /*(this as any).notifqueue.setIgnoreNotificationCheck('cardInHandFromPick', (notif: Notif<NotifCardInHandFromPickArgs>) => 
-            notif.args.playerId == this.getPlayerId() && !notif.args.card.category
-        );*/
+        (this as any).notifqueue.setIgnoreNotificationCheck('addCardToHand', (notif: Notif<NotifAddCardToHandArgs>) => 
+            notif.args.playerId == this.getPlayerId() && !this.cardsManager.isCardVisible(notif.args.card)
+        );
     }
 
     notif_flipCard(notif: Notif<NotifFlipTopDeckArgs>) {
@@ -658,7 +658,9 @@ class SkateLegend implements SkateLegendGame {
     notif_takeTrophyCard(notif: Notif<NotifTakeTrophyCardArgs>) {
         const playerId = notif.args.playerId;
         const currentPlayer = this.getPlayerId() == playerId;
-        if (currentPlayer && !notif.args.perfectLanding) {
+        if (notif.args.perfectLanding) {
+            this.getPlayerTable(playerId).played.addCard(notif.args.card);
+        } else if (currentPlayer) {
             this.getPlayerTable(playerId).hand.addCard(notif.args.card);
         } else {
             this.tableCenter.legendDeck.removeCard(notif.args.card);

@@ -203,7 +203,7 @@ trait UtilTrait {
     }
 
     function playCard(int $playerId, Card $card, int $deckId) {
-        $this->cards->moveCard($card->id, 'played'.$playerId, intval($this->cards->countCardInLocation('played'.$playerId)) - 1);
+        $this->cards->moveCard($card->id, 'played'.$playerId, intval($this->cards->countCardInLocation('played'.$playerId)));
         
         $message = '';/* TODO $fromDeck ?
             clienttranslate('${player_name} plays a ${card_color} ${card_type} card from their hand (paid ${types}) ${card_display}') :
@@ -355,7 +355,6 @@ trait UtilTrait {
         $roundPoints[intval($this->getStat('roundNumber'))] = $wheels;
 
         self::DbQuery("update player set player_helmet_card_id = -1, player_active = 0, player_score = player_score + $wheels, player_round_points = '".json_encode($roundPoints)."' WHERE player_id = $playerId");
-        // TODO TOCHECK score now or at the end ?
 
         $message = $manuallyTriggered ? 
             clienttranslate('${player_name} chooses to stop their sequence') :
@@ -436,8 +435,11 @@ trait UtilTrait {
         $card = $this->getCardFromDb($this->cards->getCardOnTop('decklegend'));
         $perfectLanding = $card->typeArg == 1;
 
-        $this->cards->moveCard($card->id, $perfectLanding ? 'scored' : 'hand', $playerId);
-        // TODO score right now if $perfectLanding ?
+        if ($perfectLanding) {
+            $this->cards->moveCard($card->id, 'played'.$playerId, intval($this->cards->countCardInLocation('played'.$playerId)));
+        } else {
+            $this->cards->moveCard($card->id, 'hand', $playerId);
+        }
 
         self::notifyAllPlayers('takeTrophyCard', clienttranslate('${player_name} takes the trophy card for being the last active player'), [
             'playerId' => $playerId,

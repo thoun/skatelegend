@@ -11,7 +11,16 @@ trait DebugUtilTrait {
             return;
         } 
 
-        $this->debugSetHelmets(1);
+        $this->debugFillHands();
+        //$this->debugSetHelmets(1);
+    }
+
+    function debugFillHands() {
+        $number = 10;
+        $playersIds = $this->getPlayersIds();
+        foreach($playersIds as $playerId) {
+            $this->cards->pickCardsForLocation($number, 'deck2', 'hand', $playerId);
+        }
     }
 
     public function debugSetHelmets(int $number) {

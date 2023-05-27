@@ -37,13 +37,16 @@ trait StateTrait {
     function stStop() {
         $playerId = intval($this->getActivePlayerId());
 
-        $this->closeSequence($playerId, true);
-
-        $remainingActivePlayersIds = $this->getRemainingActivePlayersIds();
-        if (count($remainingActivePlayersIds) == 0) { 
-            // last player in 2 player-mode choses to stop
-            $this->takeLegendCard($playerId);
+        $playersIds = $this->getPlayersIds();
+        if (count($playersIds) == 2) {
+            $remainingActivePlayersIds = $this->getRemainingActivePlayersIds();
+            if (count($remainingActivePlayersIds) <= 1) { 
+                // last player in 2 player-mode choses to stop
+                $this->takeLegendCard($playerId);
+            }
         }
+
+        $this->closeSequence($playerId, true);
 
         $this->gamestate->nextState('next');
     }

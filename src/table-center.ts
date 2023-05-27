@@ -13,7 +13,7 @@ class TableCenter {
         }
 
         this.legendDeck = new Deck<Card>(game.cardsManager, document.getElementById(`rewards`), {
-            cardNumber: gamedatas.decks[0].count - (gamedatas.decks[0].top ? 1 : 0),
+            cardNumber: gamedatas.decks[0].count,
             topCard: gamedatas.decks[0].top,
         });
     }

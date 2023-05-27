@@ -10,9 +10,10 @@ class CardsManager extends CardManager<Card> {
             },
             setupFrontDiv: (card: Card, div: HTMLElement) => {
                 div.dataset.typeArg = ''+card.typeArg;
-                this.game.setTooltip(div.id, this.getTooltip(card));
+                if (card.typeArg) {
+                    this.game.setTooltip(div.id, this.getTooltip(card));
+                }
             },
-            setupBackDiv: (card: Card, div: HTMLElement) => {},
             isCardVisible: card => Boolean(card.typeArg),
             animationManager: game.animationManager,
             cardWidth: CARD_WIDTH,

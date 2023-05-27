@@ -77,10 +77,20 @@ trait ActionTrait {
         $card = $this->getCardFromDb($this->cards->getCardOnTop('deck'.$deckId));
         $this->cards->moveCard($card->id, 'hand', $playerId);
 
-        self::notifyAllPlayers('addCardToHand', clienttranslate('${player_name} takes the top card from deck ${deck_number}'), [
+        self::notifyPlayer($playerId, 'addCardToHand', clienttranslate('${player_name} takes the top card from deck ${deck_number}'), [
             'playerId' => $playerId,
             'player_name' => $this->getPlayerName($playerId),
             'card' => $card,
+            'fromDeckNumber' => $deckId,
+            'deck_number' => $deckId,
+            'deckCount' => intval($this->cards->countCardInLocation('deck'.$deckId)),
+            'deckTopCard' => Card::onlyId($this->getCardFromDb($this->cards->getCardOnTop('deck'.$deckId))),
+        ]);
+
+        self::notifyAllPlayers('addCardToHand', clienttranslate('${player_name} takes the top card from deck ${deck_number}'), [
+            'playerId' => $playerId,
+            'player_name' => $this->getPlayerName($playerId),
+            'card' => Card::onlyId($card),
             'fromDeckNumber' => $deckId,
             'deck_number' => $deckId,
             'deckCount' => intval($this->cards->countCardInLocation('deck'.$deckId)),
