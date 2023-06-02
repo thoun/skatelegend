@@ -189,6 +189,21 @@ var ZoomManager = /** @class */ (function () {
     };
     return ZoomManager;
 }());
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
         if (ar || !(i in from)) {
@@ -198,6 +213,93 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     }
     return to.concat(ar || Array.prototype.slice.call(from));
 };
+var BgaHelpButton = /** @class */ (function () {
+    function BgaHelpButton() {
+    }
+    return BgaHelpButton;
+}());
+var BgaHelpPopinButton = /** @class */ (function (_super) {
+    __extends(BgaHelpPopinButton, _super);
+    function BgaHelpPopinButton(settings) {
+        var _this = _super.call(this) || this;
+        _this.settings = settings;
+        return _this;
+    }
+    BgaHelpPopinButton.prototype.add = function (toElement) {
+        var _a;
+        var _this = this;
+        var button = document.createElement('button');
+        (_a = button.classList).add.apply(_a, __spreadArray(['bga-help_button', 'bga-help_popin-button'], (this.settings.buttonExtraClasses ? this.settings.buttonExtraClasses.split(/\s+/g) : []), false));
+        button.innerHTML = "?";
+        if (this.settings.buttonBackground) {
+            button.style.setProperty('--background', this.settings.buttonBackground);
+        }
+        if (this.settings.buttonColor) {
+            button.style.setProperty('--color', this.settings.buttonColor);
+        }
+        toElement.appendChild(button);
+        button.addEventListener('click', function () { return _this.showHelp(); });
+    };
+    BgaHelpPopinButton.prototype.showHelp = function () {
+        var _a, _b, _c;
+        var popinDialog = new window.ebg.popindialog();
+        popinDialog.create('bgaHelpDialog');
+        popinDialog.setTitle(this.settings.title);
+        popinDialog.setContent("<div id=\"help-dialog-content\">".concat((_a = this.settings.html) !== null && _a !== void 0 ? _a : '', "</div>"));
+        (_c = (_b = this.settings).onPopinCreated) === null || _c === void 0 ? void 0 : _c.call(_b, document.getElementById('help-dialog-content'));
+        popinDialog.show();
+    };
+    return BgaHelpPopinButton;
+}(BgaHelpButton));
+var BgaHelpExpandableButton = /** @class */ (function (_super) {
+    __extends(BgaHelpExpandableButton, _super);
+    function BgaHelpExpandableButton(settings) {
+        var _this = _super.call(this) || this;
+        _this.settings = settings;
+        return _this;
+    }
+    BgaHelpExpandableButton.prototype.add = function (toElement) {
+        var _a;
+        var _this = this;
+        var _b, _c, _d, _e, _f, _g, _h, _j;
+        var folded = (_b = this.settings.defaultFolded) !== null && _b !== void 0 ? _b : true;
+        if (this.settings.localStorageFoldedKey) {
+            var localStorageValue = localStorage.getItem(this.settings.localStorageFoldedKey);
+            if (localStorageValue) {
+                folded = localStorageValue == 'true';
+            }
+        }
+        var button = document.createElement('button');
+        button.dataset.folded = folded.toString();
+        (_a = button.classList).add.apply(_a, __spreadArray(['bga-help_button', 'bga-help_expandable-button'], (this.settings.buttonExtraClasses ? this.settings.buttonExtraClasses.split(/\s+/g) : []), false));
+        button.innerHTML = "\n            <div class=\"bga-help_folded-content ".concat(((_c = this.settings.foldedContentExtraClasses) !== null && _c !== void 0 ? _c : '').split(/\s+/g), "\">").concat((_d = this.settings.foldedHtml) !== null && _d !== void 0 ? _d : '', "</div>\n            <div class=\"bga-help_unfolded-content  ").concat(((_e = this.settings.unfoldedContentExtraClasses) !== null && _e !== void 0 ? _e : '').split(/\s+/g), "\">").concat((_f = this.settings.unfoldedHtml) !== null && _f !== void 0 ? _f : '', "</div>\n        ");
+        button.style.setProperty('--expanded-width', (_g = this.settings.expandedWidth) !== null && _g !== void 0 ? _g : 'auto');
+        button.style.setProperty('--expanded-height', (_h = this.settings.expandedHeight) !== null && _h !== void 0 ? _h : 'auto');
+        button.style.setProperty('--expanded-radius', (_j = this.settings.expandedRadius) !== null && _j !== void 0 ? _j : '10px');
+        toElement.appendChild(button);
+        button.addEventListener('click', function () {
+            button.dataset.folded = button.dataset.folded == 'true' ? 'false' : 'true';
+            if (_this.settings.localStorageFoldedKey) {
+                localStorage.setItem(_this.settings.localStorageFoldedKey, button.dataset.folded);
+            }
+        });
+    };
+    return BgaHelpExpandableButton;
+}(BgaHelpButton));
+var HelpManager = /** @class */ (function () {
+    function HelpManager(game, settings) {
+        this.game = game;
+        if (!(settings === null || settings === void 0 ? void 0 : settings.buttons)) {
+            throw new Error('HelpManager need a `buttons` list in the settings.');
+        }
+        var leftSide = document.getElementById('left-side');
+        var buttons = document.createElement('div');
+        buttons.id = "bga-help_buttons";
+        leftSide.appendChild(buttons);
+        settings.buttons.forEach(function (button) { return button.add(buttons); });
+    }
+    return HelpManager;
+}());
 /**
  * Jump to entry.
  */
@@ -237,29 +339,50 @@ var JumpToManager = /** @class */ (function () {
                 folded = localStorageValue == 'true';
             }
         }
-        document.getElementById('bga-jump-to-controls').classList.toggle('folded', folded);
+        document.getElementById('bga-jump-to_controls').classList.toggle('folded', folded);
     }
     JumpToManager.prototype.createPlayerJumps = function (entries) {
         var _this = this;
         var _a, _b, _c, _d;
-        document.getElementById("game_play_area_wrap").insertAdjacentHTML('afterend', "\n        <div id=\"bga-jump-to-controls\">        \n            <div id=\"bga-jump-to-toggle\" class=\"bga-jump-to-link ".concat((_b = (_a = this.settings) === null || _a === void 0 ? void 0 : _a.entryClasses) !== null && _b !== void 0 ? _b : '', " toggle\" style=\"--color: ").concat((_d = (_c = this.settings) === null || _c === void 0 ? void 0 : _c.toggleColor) !== null && _d !== void 0 ? _d : 'black', "\">\n                \u21D4\n            </div>\n        </div>"));
-        document.getElementById("bga-jump-to-toggle").addEventListener('click', function () { return _this.jumpToggle(); });
+        document.getElementById("game_play_area_wrap").insertAdjacentHTML('afterend', "\n        <div id=\"bga-jump-to_controls\">        \n            <div id=\"bga-jump-to_toggle\" class=\"bga-jump-to_link ".concat((_b = (_a = this.settings) === null || _a === void 0 ? void 0 : _a.entryClasses) !== null && _b !== void 0 ? _b : '', " toggle\" style=\"--color: ").concat((_d = (_c = this.settings) === null || _c === void 0 ? void 0 : _c.toggleColor) !== null && _d !== void 0 ? _d : 'black', "\">\n                \u21D4\n            </div>\n        </div>"));
+        document.getElementById("bga-jump-to_toggle").addEventListener('click', function () { return _this.jumpToggle(); });
         entries.forEach(function (entry) {
-            var _a, _b, _c, _d, _e;
-            document.getElementById("bga-jump-to-controls").insertAdjacentHTML('beforeend', "<div id=\"bga-jump-to-".concat(entry.targetId, "\" class=\"bga-jump-to-link ").concat((_b = (_a = _this.settings) === null || _a === void 0 ? void 0 : _a.entryClasses) !== null && _b !== void 0 ? _b : '', "\">\n                    ").concat(((_d = (_c = _this.settings) === null || _c === void 0 ? void 0 : _c.showEye) !== null && _d !== void 0 ? _d : true) ? "<div class=\"eye\"></div>" : "", "\n                    <span class=\"bga-jump-to-label\">").concat(entry.label, "</span>\n                </div>"));
-            var entryDiv = document.getElementById("bga-jump-to-".concat(entry.targetId));
-            Object.getOwnPropertyNames((_e = entry.data) !== null && _e !== void 0 ? _e : []).forEach(function (key) {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+            var html = "<div id=\"bga-jump-to_".concat(entry.targetId, "\" class=\"bga-jump-to_link ").concat((_b = (_a = _this.settings) === null || _a === void 0 ? void 0 : _a.entryClasses) !== null && _b !== void 0 ? _b : '', "\">");
+            if ((_d = (_c = _this.settings) === null || _c === void 0 ? void 0 : _c.showEye) !== null && _d !== void 0 ? _d : true) {
+                html += "<div class=\"eye\"></div>";
+            }
+            if (((_f = (_e = _this.settings) === null || _e === void 0 ? void 0 : _e.showAvatar) !== null && _f !== void 0 ? _f : true) && ((_g = entry.data) === null || _g === void 0 ? void 0 : _g.id)) {
+                var cssUrl = (_h = entry.data) === null || _h === void 0 ? void 0 : _h.avatarUrl;
+                if (!cssUrl) {
+                    var img = document.getElementById("avatar_".concat(entry.data.id));
+                    var url = img === null || img === void 0 ? void 0 : img.src;
+                    // ? Custom image : Bga Image
+                    //url = url.replace('_32', url.indexOf('data/avatar/defaults') > 0 ? '' : '_184');
+                    if (url) {
+                        cssUrl = "url('".concat(url, "')");
+                    }
+                }
+                if (cssUrl) {
+                    html += "<div class=\"bga-jump-to_avatar\" style=\"--avatar-url: ".concat(cssUrl, ";\"></div>");
+                }
+            }
+            html += "\n                <span class=\"bga-jump-to_label\">".concat(entry.label, "</span>\n            </div>");
+            //
+            document.getElementById("bga-jump-to_controls").insertAdjacentHTML('beforeend', html);
+            var entryDiv = document.getElementById("bga-jump-to_".concat(entry.targetId));
+            Object.getOwnPropertyNames((_j = entry.data) !== null && _j !== void 0 ? _j : []).forEach(function (key) {
                 entryDiv.dataset[key] = entry.data[key];
                 entryDiv.style.setProperty("--".concat(key), entry.data[key]);
             });
             entryDiv.addEventListener('click', function () { return _this.jumpTo(entry.targetId); });
         });
-        var jumpDiv = document.getElementById("bga-jump-to-controls");
+        var jumpDiv = document.getElementById("bga-jump-to_controls");
         jumpDiv.style.marginTop = "-".concat(Math.round(jumpDiv.getBoundingClientRect().height / 2), "px");
     };
     JumpToManager.prototype.jumpToggle = function () {
         var _a;
-        var jumpControls = document.getElementById('bga-jump-to-controls');
+        var jumpControls = document.getElementById('bga-jump-to_controls');
         jumpControls.classList.toggle('folded');
         if ((_a = this.settings) === null || _a === void 0 ? void 0 : _a.localStorageFoldedKey) {
             localStorage.setItem(this.settings.localStorageFoldedKey, jumpControls.classList.contains('folded').toString());
@@ -280,26 +403,79 @@ var JumpToManager = /** @class */ (function () {
         return orderedPlayers.map(function (player) { return new JumpToEntry(player.name, "player-table-".concat(player.id), {
             'color': '#' + player.color,
             'colorback': player.color_back ? '#' + player.color_back : null,
+            'id': player.id,
         }); });
     };
     return JumpToManager;
 }());
+var BgaAnimation = /** @class */ (function () {
+    function BgaAnimation(animationFunction, settings) {
+        this.animationFunction = animationFunction;
+        this.settings = settings;
+        this.played = null;
+        this.result = null;
+        this.playWhenNoAnimation = false;
+    }
+    return BgaAnimation;
+}());
 /**
- * Linear slide of the card from origin to destination.
+ * Just use playSequence from animationManager
  *
- * @param element the element to animate. The element should be attached to the destination element before the animation starts.
- * @param settings an `AnimationSettings` object
+ * @param animationManager the animation manager
+ * @param animation a `BgaAnimation` object
  * @returns a promise when animation ends
  */
-function slideAnimation(element, settings) {
+function attachWithAnimation(animationManager, animation) {
+    var _a;
+    var settings = animation.settings;
+    var element = settings.animation.settings.element;
+    var fromRect = element.getBoundingClientRect();
+    settings.animation.settings.fromRect = fromRect;
+    settings.attachElement.appendChild(element);
+    (_a = settings.afterAttach) === null || _a === void 0 ? void 0 : _a.call(settings, element, settings.attachElement);
+    return animationManager.play(settings.animation);
+}
+var BgaAttachWithAnimation = /** @class */ (function (_super) {
+    __extends(BgaAttachWithAnimation, _super);
+    function BgaAttachWithAnimation(settings) {
+        var _this = _super.call(this, attachWithAnimation, settings) || this;
+        _this.playWhenNoAnimation = true;
+        return _this;
+    }
+    return BgaAttachWithAnimation;
+}(BgaAnimation));
+/**
+ * Just use playSequence from animationManager
+ *
+ * @param animationManager the animation manager
+ * @param animation a `BgaAnimation` object
+ * @returns a promise when animation ends
+ */
+function cumulatedAnimations(animationManager, animation) {
+    return animationManager.playSequence(animation.settings.animations);
+}
+var BgaCumulatedAnimation = /** @class */ (function (_super) {
+    __extends(BgaCumulatedAnimation, _super);
+    function BgaCumulatedAnimation(settings) {
+        var _this = _super.call(this, cumulatedAnimations, settings) || this;
+        _this.playWhenNoAnimation = true;
+        return _this;
+    }
+    return BgaCumulatedAnimation;
+}(BgaAnimation));
+/**
+ * Linear slide of the element from origin to destination.
+ *
+ * @param animationManager the animation manager
+ * @param animation a `BgaAnimation` object
+ * @returns a promise when animation ends
+ */
+function slideAnimation(animationManager, animation) {
     var promise = new Promise(function (success) {
-        var _a, _b, _c, _d, _e;
-        // should be checked at the beginning of every animation
-        if (!shouldAnimate(settings)) {
-            success(false);
-            return promise;
-        }
-        var _f = getDeltaCoordinates(element, settings), x = _f.x, y = _f.y;
+        var _a, _b, _c, _d;
+        var settings = animation.settings;
+        var element = settings.element;
+        var _e = getDeltaCoordinates(element, settings), x = _e.x, y = _e.y;
         var duration = (_a = settings === null || settings === void 0 ? void 0 : settings.duration) !== null && _a !== void 0 ? _a : 500;
         var originalZIndex = element.style.zIndex;
         var originalTransition = element.style.transition;
@@ -307,14 +483,11 @@ function slideAnimation(element, settings) {
         element.style.transition = null;
         element.offsetHeight;
         element.style.transform = "translate(".concat(-x, "px, ").concat(-y, "px) rotate(").concat((_c = settings === null || settings === void 0 ? void 0 : settings.rotationDelta) !== null && _c !== void 0 ? _c : 0, "deg)");
-        (_d = settings.animationStart) === null || _d === void 0 ? void 0 : _d.call(settings, element);
         var timeoutId = null;
         var cleanOnTransitionEnd = function () {
-            var _a;
             element.style.zIndex = originalZIndex;
             element.style.transition = originalTransition;
-            (_a = settings.animationEnd) === null || _a === void 0 ? void 0 : _a.call(settings, element);
-            success(true);
+            success();
             element.removeEventListener('transitioncancel', cleanOnTransitionEnd);
             element.removeEventListener('transitionend', cleanOnTransitionEnd);
             document.removeEventListener('visibilitychange', cleanOnTransitionEnd);
@@ -336,12 +509,19 @@ function slideAnimation(element, settings) {
         element.offsetHeight;
         element.style.transition = "transform ".concat(duration, "ms linear");
         element.offsetHeight;
-        element.style.transform = (_e = settings === null || settings === void 0 ? void 0 : settings.finalTransform) !== null && _e !== void 0 ? _e : null;
+        element.style.transform = (_d = settings === null || settings === void 0 ? void 0 : settings.finalTransform) !== null && _d !== void 0 ? _d : null;
         // safety in case transitionend and transitioncancel are not called
         timeoutId = setTimeout(cleanOnTransitionEnd, duration + 100);
     });
     return promise;
 }
+var BgaSlideAnimation = /** @class */ (function (_super) {
+    __extends(BgaSlideAnimation, _super);
+    function BgaSlideAnimation(settings) {
+        return _super.call(this, slideAnimation, settings) || this;
+    }
+    return BgaSlideAnimation;
+}(BgaAnimation));
 function shouldAnimate(settings) {
     var _a;
     return document.visibilityState !== 'hidden' && !((_a = settings === null || settings === void 0 ? void 0 : settings.game) === null || _a === void 0 ? void 0 : _a.instantaneousMode);
@@ -379,8 +559,15 @@ function getDeltaCoordinates(element, settings) {
     }
     return { x: x, y: y };
 }
-function logAnimation(element, settings) {
-    console.log(element, element.getBoundingClientRect(), element.style.transform, settings);
+function logAnimation(animationManager, animation) {
+    var settings = animation.settings;
+    var element = settings.element;
+    if (element) {
+        console.log(animation, settings, element, element.getBoundingClientRect(), element.style.transform);
+    }
+    else {
+        console.log(animation, settings);
+    }
     return Promise.resolve(false);
 }
 var __assign = (this && this.__assign) || function () {
@@ -394,105 +581,6 @@ var __assign = (this && this.__assign) || function () {
     };
     return __assign.apply(this, arguments);
 };
-var AnimationManager = /** @class */ (function () {
-    /**
-     * @param game the BGA game class, usually it will be `this`
-     * @param settings: a `AnimationManagerSettings` object
-     */
-    function AnimationManager(game, settings) {
-        this.game = game;
-        this.settings = settings;
-        this.zoomManager = settings === null || settings === void 0 ? void 0 : settings.zoomManager;
-        if (!game) {
-            throw new Error('You must set your game as the first parameter of AnimationManager');
-        }
-    }
-    /**
-     * Attach an element to a parent, then play animation from element's origin to its new position.
-     *
-     * @param element the element to animate
-     * @param toElement the destination parent
-     * @param fn the animation function
-     * @param settings the animation settings
-     * @returns a promise when animation ends
-     */
-    AnimationManager.prototype.attachWithAnimation = function (element, toElement, fn, settings) {
-        var _a, _b, _c, _d, _e, _f;
-        var fromRect = element.getBoundingClientRect();
-        toElement.appendChild(element);
-        (_a = settings === null || settings === void 0 ? void 0 : settings.afterAttach) === null || _a === void 0 ? void 0 : _a.call(settings, element, toElement);
-        return (_f = fn(element, __assign(__assign({ duration: (_c = (_b = this.settings) === null || _b === void 0 ? void 0 : _b.duration) !== null && _c !== void 0 ? _c : 500, scale: (_e = (_d = this.zoomManager) === null || _d === void 0 ? void 0 : _d.zoom) !== null && _e !== void 0 ? _e : undefined }, settings !== null && settings !== void 0 ? settings : {}), { game: this.game, fromRect: fromRect }))) !== null && _f !== void 0 ? _f : Promise.resolve(false);
-    };
-    AnimationManager.prototype.getAnimation = function (animationFunctionName) {
-        var animation = window[animationFunctionName];
-        if (typeof animation !== 'function') {
-            throw new Error("Animation ".concat(animationFunctionName, " in the tsconfig.json file and cannot be used"));
-        }
-        return;
-    };
-    /**
-     * Attach an element to a parent with a slide animation.
-     *
-     * @param card the card informations
-     */
-    AnimationManager.prototype.attachWithSlideAnimation = function (element, toElement, settings) {
-        var slideAnimation = this.getAnimation('slideAnimation');
-        return this.attachWithAnimation(element, toElement, slideAnimation, settings);
-    };
-    /**
-     * Attach an element to a parent with a slide animation.
-     *
-     * @param card the card informations
-     */
-    AnimationManager.prototype.attachWithShowToScreenAnimation = function (element, toElement, settingsOrSettingsArray) {
-        var _this = this;
-        var cumulatedAnimations = this.getAnimation('cumulatedAnimations');
-        var showScreenCenterAnimation = this.getAnimation('showScreenCenterAnimation');
-        var pauseAnimation = this.getAnimation('pauseAnimation');
-        var cumulatedAnimation = function (element, settings) { return cumulatedAnimations(element, [
-            showScreenCenterAnimation,
-            pauseAnimation,
-            function (element) { return _this.attachWithSlideAnimation(element, toElement); },
-        ], settingsOrSettingsArray); };
-        return this.attachWithAnimation(element, toElement, cumulatedAnimation, null);
-    };
-    /**
-     * Slide from an element.
-     *
-     * @param element the element to animate
-     * @param fromElement the origin element
-     * @param settings the animation settings
-     * @returns a promise when animation ends
-     */
-    AnimationManager.prototype.slideFromElement = function (element, fromElement, settings) {
-        var _a, _b, _c, _d, _e;
-        var slideAnimation = this.getAnimation('slideAnimation');
-        return (_e = slideAnimation(element, __assign(__assign({ duration: (_b = (_a = this.settings) === null || _a === void 0 ? void 0 : _a.duration) !== null && _b !== void 0 ? _b : 500, scale: (_d = (_c = this.zoomManager) === null || _c === void 0 ? void 0 : _c.zoom) !== null && _d !== void 0 ? _d : undefined }, settings !== null && settings !== void 0 ? settings : {}), { game: this.game, fromElement: fromElement }))) !== null && _e !== void 0 ? _e : Promise.resolve(false);
-    };
-    AnimationManager.prototype.getZoomManager = function () {
-        return this.zoomManager;
-    };
-    /**
-     * Set the zoom manager, to get the scale of the current game.
-     *
-     * @param zoomManager the zoom manager
-     */
-    AnimationManager.prototype.setZoomManager = function (zoomManager) {
-        this.zoomManager = zoomManager;
-    };
-    AnimationManager.prototype.getSettings = function () {
-        return this.settings;
-    };
-    /**
-     * Returns if the animations are active. Animation aren't active when the window is not visible (`document.visibilityState === 'hidden'`), or `game.instantaneousMode` is true.
-     *
-     * @returns if the animations are active.
-     */
-    AnimationManager.prototype.animationsActive = function () {
-        return document.visibilityState !== 'hidden' && !this.game.instantaneousMode;
-    };
-    return AnimationManager;
-}());
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -529,6 +617,160 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var AnimationManager = /** @class */ (function () {
+    /**
+     * @param game the BGA game class, usually it will be `this`
+     * @param settings: a `AnimationManagerSettings` object
+     */
+    function AnimationManager(game, settings) {
+        this.game = game;
+        this.settings = settings;
+        this.zoomManager = settings === null || settings === void 0 ? void 0 : settings.zoomManager;
+        if (!game) {
+            throw new Error('You must set your game as the first parameter of AnimationManager');
+        }
+    }
+    AnimationManager.prototype.getZoomManager = function () {
+        return this.zoomManager;
+    };
+    /**
+     * Set the zoom manager, to get the scale of the current game.
+     *
+     * @param zoomManager the zoom manager
+     */
+    AnimationManager.prototype.setZoomManager = function (zoomManager) {
+        this.zoomManager = zoomManager;
+    };
+    AnimationManager.prototype.getSettings = function () {
+        return this.settings;
+    };
+    /**
+     * Returns if the animations are active. Animation aren't active when the window is not visible (`document.visibilityState === 'hidden'`), or `game.instantaneousMode` is true.
+     *
+     * @returns if the animations are active.
+     */
+    AnimationManager.prototype.animationsActive = function () {
+        return document.visibilityState !== 'hidden' && !this.game.instantaneousMode;
+    };
+    /**
+     * Plays an animation if the animations are active. Animation aren't active when the window is not visible (`document.visibilityState === 'hidden'`), or `game.instantaneousMode` is true.
+     *
+     * @param animation the animation to play
+     * @returns the animation promise.
+     */
+    AnimationManager.prototype.play = function (animation) {
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+        return __awaiter(this, void 0, void 0, function () {
+            var settings, _m;
+            return __generator(this, function (_o) {
+                switch (_o.label) {
+                    case 0:
+                        animation.played = animation.playWhenNoAnimation || this.animationsActive();
+                        if (!animation.played) return [3 /*break*/, 2];
+                        settings = animation.settings;
+                        (_a = settings.animationStart) === null || _a === void 0 ? void 0 : _a.call(settings, animation);
+                        (_b = settings.element) === null || _b === void 0 ? void 0 : _b.classList.add((_c = settings.animationClass) !== null && _c !== void 0 ? _c : 'bga-animations_animated');
+                        animation.settings = __assign(__assign({}, animation.settings), { duration: (_e = (_d = this.settings) === null || _d === void 0 ? void 0 : _d.duration) !== null && _e !== void 0 ? _e : 500, scale: (_g = (_f = this.zoomManager) === null || _f === void 0 ? void 0 : _f.zoom) !== null && _g !== void 0 ? _g : undefined });
+                        _m = animation;
+                        return [4 /*yield*/, animation.animationFunction(this, animation)];
+                    case 1:
+                        _m.result = _o.sent();
+                        (_j = (_h = animation.settings).animationEnd) === null || _j === void 0 ? void 0 : _j.call(_h, animation);
+                        (_k = settings.element) === null || _k === void 0 ? void 0 : _k.classList.remove((_l = settings.animationClass) !== null && _l !== void 0 ? _l : 'bga-animations_animated');
+                        return [3 /*break*/, 3];
+                    case 2: return [2 /*return*/, Promise.resolve(animation)];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        });
+    };
+    /**
+     * Plays multiple animations in parallel.
+     *
+     * @param animations the animations to play
+     * @returns a promise for all animations.
+     */
+    AnimationManager.prototype.playParallel = function (animations) {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                return [2 /*return*/, Promise.all(animations.map(function (animation) { return _this.play(animation); }))];
+            });
+        });
+    };
+    /**
+     * Plays multiple animations in sequence (the second when the first ends, ...).
+     *
+     * @param animations the animations to play
+     * @returns a promise for all animations.
+     */
+    AnimationManager.prototype.playSequence = function (animations) {
+        return __awaiter(this, void 0, void 0, function () {
+            var result, others;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!animations.length) return [3 /*break*/, 3];
+                        return [4 /*yield*/, this.play(animations[0])];
+                    case 1:
+                        result = _a.sent();
+                        return [4 /*yield*/, this.playSequence(animations.slice(1))];
+                    case 2:
+                        others = _a.sent();
+                        return [2 /*return*/, __spreadArray([result], others, true)];
+                    case 3: return [2 /*return*/, Promise.resolve([])];
+                }
+            });
+        });
+    };
+    /**
+     * Plays multiple animations with a delay between each animation start.
+     *
+     * @param animations the animations to play
+     * @param delay the delay (in ms)
+     * @returns a promise for all animations.
+     */
+    AnimationManager.prototype.playWithDelay = function (animations, delay) {
+        return __awaiter(this, void 0, void 0, function () {
+            var promise;
+            var _this = this;
+            return __generator(this, function (_a) {
+                promise = new Promise(function (success) {
+                    var promises = [];
+                    var _loop_1 = function (i) {
+                        setTimeout(function () {
+                            promises.push(_this.play(animations[i]));
+                            if (i == animations.length - 1) {
+                                Promise.all(promises).then(function (result) {
+                                    success(result);
+                                });
+                            }
+                        }, i * delay);
+                    };
+                    for (var i = 0; i < animations.length; i++) {
+                        _loop_1(i);
+                    }
+                });
+                return [2 /*return*/, promise];
+            });
+        });
+    };
+    /**
+     * Attach an element to a parent, then play animation from element's origin to its new position.
+     *
+     * @param animation the animation function
+     * @param attachElement the destination parent
+     * @returns a promise when animation ends
+     */
+    AnimationManager.prototype.attachWithAnimation = function (animation, attachElement) {
+        var attachWithAnimation = new BgaAttachWithAnimation({
+            animation: animation,
+            attachElement: attachElement
+        });
+        return this.play(attachWithAnimation);
+    };
+    return AnimationManager;
+}());
 /**
  * The abstract stock. It shouldn't be used directly, use stocks that extends it.
  */
@@ -739,7 +981,7 @@ var CardStock = /** @class */ (function () {
     CardStock.prototype.addCards = function (cards, animation, settings, shift) {
         if (shift === void 0) { shift = false; }
         return __awaiter(this, void 0, void 0, function () {
-            var promises, result, others, _loop_1, i, results;
+            var promises, result, others, _loop_2, i, results;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -760,11 +1002,11 @@ var CardStock = /** @class */ (function () {
                     case 3: return [3 /*break*/, 5];
                     case 4:
                         if (typeof shift === 'number') {
-                            _loop_1 = function (i) {
+                            _loop_2 = function (i) {
                                 setTimeout(function () { return promises.push(_this.addCard(cards[i], animation, settings)); }, i * shift);
                             };
                             for (i = 0; i < cards.length; i++) {
-                                _loop_1(i);
+                                _loop_2(i);
                             }
                         }
                         else {
@@ -989,19 +1231,37 @@ var CardStock = /** @class */ (function () {
      * @param fromElement The HTMLElement to animate from.
      */
     CardStock.prototype.animationFromElement = function (element, fromRect, settings) {
-        var _a, _b, _c, _d, _e, _f;
-        var side = element.dataset.side;
-        if (settings.originalSide && settings.originalSide != side) {
-            var cardSides_1 = element.getElementsByClassName('card-sides')[0];
-            cardSides_1.style.transition = 'none';
-            element.dataset.side = settings.originalSide;
-            setTimeout(function () {
-                cardSides_1.style.transition = null;
-                element.dataset.side = side;
+        var _a;
+        return __awaiter(this, void 0, void 0, function () {
+            var side, cardSides_1, animation, result;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        side = element.dataset.side;
+                        if (settings.originalSide && settings.originalSide != side) {
+                            cardSides_1 = element.getElementsByClassName('card-sides')[0];
+                            cardSides_1.style.transition = 'none';
+                            element.dataset.side = settings.originalSide;
+                            setTimeout(function () {
+                                cardSides_1.style.transition = null;
+                                element.dataset.side = side;
+                            });
+                        }
+                        animation = settings.animation;
+                        if (animation) {
+                            animation.settings.element = element;
+                            animation.settings.fromRect = fromRect;
+                        }
+                        else {
+                            animation = new BgaSlideAnimation({ element: element, fromRect: fromRect });
+                        }
+                        return [4 /*yield*/, this.manager.animationManager.play(animation)];
+                    case 1:
+                        result = _b.sent();
+                        return [2 /*return*/, (_a = result === null || result === void 0 ? void 0 : result.played) !== null && _a !== void 0 ? _a : false];
+                }
             });
-        }
-        var animation = (_a = settings.animation) !== null && _a !== void 0 ? _a : slideAnimation;
-        return (_f = animation(element, __assign(__assign({ duration: (_c = (_b = this.manager.animationManager.getSettings()) === null || _b === void 0 ? void 0 : _b.duration) !== null && _c !== void 0 ? _c : 500, scale: (_e = (_d = this.manager.animationManager.getZoomManager()) === null || _d === void 0 ? void 0 : _d.zoom) !== null && _e !== void 0 ? _e : undefined }, settings !== null && settings !== void 0 ? settings : {}), { game: this.manager.game, fromRect: fromRect }))) !== null && _f !== void 0 ? _f : Promise.resolve(false);
+        });
     };
     /**
      * Set the card to its front (visible) or back (not visible) side.
@@ -1051,21 +1311,24 @@ var CardStock = /** @class */ (function () {
     };
     return CardStock;
 }());
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
+var SlideAndBackAnimation = /** @class */ (function (_super) {
+    __extends(SlideAndBackAnimation, _super);
+    function SlideAndBackAnimation(manager, element, tempElement) {
+        var distance = (manager.getCardWidth() + manager.getCardHeight()) / 2;
+        var angle = Math.random() * Math.PI * 2;
+        var fromDelta = {
+            x: distance * Math.cos(angle),
+            y: distance * Math.sin(angle),
+        };
+        return _super.call(this, {
+            animations: [
+                new BgaSlideToAnimation({ element: element, fromDelta: fromDelta, duration: 250 }),
+                new BgaSlideAnimation({ element: element, fromDelta: fromDelta, duration: 250, animationEnd: tempElement ? (function () { return element.remove(); }) : undefined }),
+            ]
+        }) || this;
+    }
+    return SlideAndBackAnimation;
+}(BgaCumulatedAnimation));
 /**
  * Abstract stock to represent a deck. (pile of cards, with a fake 3d effect of thickness). *
  * Needs cardWidth and cardHeight to be set in the card manager.
@@ -1184,6 +1447,49 @@ var Deck = /** @class */ (function (_super) {
         var cards = this.getCards();
         return cards.length ? cards[cards.length - 1] : null;
     };
+    /**
+     * Shows a shuffle animation on the deck
+     *
+     * @param animatedCardsMax number of animated cards for shuffle animation.
+     * @param fakeCardSetter a function to generate a fake card for animation. Required if the card id is not based on a numerci `id` field, or if you want to set custom card back
+     * @returns promise when animation ends
+     */
+    Deck.prototype.shuffle = function (animatedCardsMax, fakeCardSetter) {
+        if (animatedCardsMax === void 0) { animatedCardsMax = 10; }
+        return __awaiter(this, void 0, void 0, function () {
+            var animatedCards, elements, i, newCard, newElement;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!this.manager.animationsActive()) {
+                            return [2 /*return*/, Promise.resolve(false)]; // we don't execute as it's just visual temporary stuff
+                        }
+                        animatedCards = Math.min(10, animatedCardsMax, this.getCardNumber());
+                        if (!(animatedCards > 1)) return [3 /*break*/, 2];
+                        elements = [this.getCardElement(this.getTopCard())];
+                        for (i = elements.length; i <= animatedCards; i++) {
+                            newCard = {};
+                            if (fakeCardSetter) {
+                                fakeCardSetter(newCard, i);
+                            }
+                            else {
+                                newCard.id = -100000 + i;
+                            }
+                            newElement = this.manager.createCardElement(newCard, false);
+                            newElement.dataset.tempCardForShuffleAnimation = 'true';
+                            this.element.prepend(newElement);
+                            elements.push(newElement);
+                        }
+                        return [4 /*yield*/, this.manager.animationManager.playWithDelay(elements.map(function (element) { return new SlideAndBackAnimation(_this.manager, element, element.dataset.tempCardForShuffleAnimation == 'true'); }), 50)];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/, true];
+                    case 2: return [2 /*return*/, Promise.resolve(false)];
+                }
+            });
+        });
+    };
     return Deck;
 }(CardStock));
 /**
@@ -1298,8 +1604,9 @@ var SlotStock = /** @class */ (function (_super) {
      * Swap cards inside the slot stock.
      *
      * @param cards the cards to swap
+     * @param settings for `updateInformations` and `selectable`
      */
-    SlotStock.prototype.swapCards = function (cards) {
+    SlotStock.prototype.swapCards = function (cards, settings) {
         var _this = this;
         if (!this.mapCardToSlot) {
             throw new Error('You need to define SlotStock.mapCardToSlot to use SlotStock.swapCards');
@@ -1308,21 +1615,29 @@ var SlotStock = /** @class */ (function (_super) {
         var elements = cards.map(function (card) { return _this.manager.getCardElement(card); });
         var elementsRects = elements.map(function (element) { return element.getBoundingClientRect(); });
         var cssPositions = elements.map(function (element) { return element.style.position; });
-        // we set to absolute so it doesn't mess with slide coordinates when 2 div arer at the same place
+        // we set to absolute so it doesn't mess with slide coordinates when 2 div are at the same place
         elements.forEach(function (element) { return element.style.position = 'absolute'; });
         cards.forEach(function (card, index) {
-            var _a;
+            var _a, _b;
             var cardElement = elements[index];
             var promise;
             var slotId = (_a = _this.mapCardToSlot) === null || _a === void 0 ? void 0 : _a.call(_this, card);
             _this.slots[slotId].appendChild(cardElement);
             cardElement.style.position = cssPositions[index];
+            var cardIndex = _this.cards.findIndex(function (c) { return _this.manager.getId(c) == _this.manager.getId(card); });
+            if (cardIndex !== -1) {
+                _this.cards.splice(cardIndex, 1, card);
+            }
+            if ((_b = settings === null || settings === void 0 ? void 0 : settings.updateInformations) !== null && _b !== void 0 ? _b : true) { // after splice/push
+                _this.manager.updateCardInformations(card);
+            }
             _this.removeSelectionClassesFromElement(cardElement);
             promise = _this.animationFromElement(cardElement, elementsRects[index], {});
             if (!promise) {
-                console.warn("CardStock.moveFromOtherStock didn't return a Promise");
+                console.warn("CardStock.animationFromElement didn't return a Promise");
                 promise = Promise.resolve(false);
             }
+            promise.then(function () { var _a; return _this.setSelectableCard(card, (_a = settings === null || settings === void 0 ? void 0 : settings.selectable) !== null && _a !== void 0 ? _a : true); });
             promises.push(promise);
         });
         return Promise.all(promises);
@@ -1391,6 +1706,8 @@ var CardManager = /** @class */ (function () {
         this.game = game;
         this.settings = settings;
         this.stocks = [];
+        this.updateFrontTimeoutId = [];
+        this.updateBackTimeoutId = [];
         this.animationManager = (_a = settings.animationManager) !== null && _a !== void 0 ? _a : new AnimationManager(game);
     }
     /**
@@ -1494,19 +1811,28 @@ var CardManager = /** @class */ (function () {
         }
         var isVisible = visible !== null && visible !== void 0 ? visible : this.isCardVisible(card);
         element.dataset.side = isVisible ? 'front' : 'back';
+        var stringId = JSON.stringify(this.getId(card));
         if ((_a = settings === null || settings === void 0 ? void 0 : settings.updateFront) !== null && _a !== void 0 ? _a : true) {
+            if (this.updateFrontTimeoutId[stringId]) { // make sure there is not a delayed animation that will overwrite the last flip request
+                clearTimeout(this.updateFrontTimeoutId[stringId]);
+                delete this.updateFrontTimeoutId[stringId];
+            }
             var updateFrontDelay = (_b = settings === null || settings === void 0 ? void 0 : settings.updateFrontDelay) !== null && _b !== void 0 ? _b : 500;
             if (!isVisible && updateFrontDelay > 0 && this.animationsActive()) {
-                setTimeout(function () { var _a, _b; return (_b = (_a = _this.settings).setupFrontDiv) === null || _b === void 0 ? void 0 : _b.call(_a, card, element.getElementsByClassName('front')[0]); }, updateFrontDelay);
+                this.updateFrontTimeoutId[stringId] = setTimeout(function () { var _a, _b; return (_b = (_a = _this.settings).setupFrontDiv) === null || _b === void 0 ? void 0 : _b.call(_a, card, element.getElementsByClassName('front')[0]); }, updateFrontDelay);
             }
             else {
                 (_d = (_c = this.settings).setupFrontDiv) === null || _d === void 0 ? void 0 : _d.call(_c, card, element.getElementsByClassName('front')[0]);
             }
         }
         if ((_e = settings === null || settings === void 0 ? void 0 : settings.updateBack) !== null && _e !== void 0 ? _e : false) {
+            if (this.updateBackTimeoutId[stringId]) { // make sure there is not a delayed animation that will overwrite the last flip request
+                clearTimeout(this.updateBackTimeoutId[stringId]);
+                delete this.updateBackTimeoutId[stringId];
+            }
             var updateBackDelay = (_f = settings === null || settings === void 0 ? void 0 : settings.updateBackDelay) !== null && _f !== void 0 ? _f : 0;
             if (isVisible && updateBackDelay > 0 && this.animationsActive()) {
-                setTimeout(function () { var _a, _b; return (_b = (_a = _this.settings).setupBackDiv) === null || _b === void 0 ? void 0 : _b.call(_a, card, element.getElementsByClassName('back')[0]); }, updateBackDelay);
+                this.updateBackTimeoutId[stringId] = setTimeout(function () { var _a, _b; return (_b = (_a = _this.settings).setupBackDiv) === null || _b === void 0 ? void 0 : _b.call(_a, card, element.getElementsByClassName('back')[0]); }, updateBackDelay);
             }
             else {
                 (_h = (_g = this.settings).setupBackDiv) === null || _h === void 0 ? void 0 : _h.call(_g, card, element.getElementsByClassName('back')[0]);
@@ -1699,7 +2025,7 @@ var TableCenter = /** @class */ (function () {
         var _this = this;
         this.game = game;
         this.decks = [];
-        var _loop_2 = function (i) {
+        var _loop_3 = function (i) {
             var deckDiv = document.getElementById("deck".concat(i));
             this_1.decks[i] = new Deck(game.cardsManager, deckDiv, {
                 cardNumber: gamedatas.decks[i].count,
@@ -1709,7 +2035,7 @@ var TableCenter = /** @class */ (function () {
         };
         var this_1 = this;
         for (var i = 1; i <= 2; i++) {
-            _loop_2(i);
+            _loop_3(i);
         }
         this.legendDeck = new Deck(game.cardsManager, document.getElementById("rewards"), {
             cardNumber: gamedatas.decks[0].count,
@@ -1757,6 +2083,7 @@ var SkateLegend = /** @class */ (function () {
         "gamedatas" argument contains all datas retrieved by your "getAllDatas" PHP method.
     */
     SkateLegend.prototype.setup = function (gamedatas) {
+        var _this = this;
         log("Starting game setup");
         this.gamedatas = gamedatas;
         log('gamedatas', gamedatas);
@@ -1787,9 +2114,18 @@ var SkateLegend = /** @class */ (function () {
         this.roundCounter.create("round-counter");
         this.roundCounter.setValue(gamedatas.roundNumber);
         this.fallVoidStock = new VoidStock(this.cardsManager, document.getElementById('overall-footer'));
+        new HelpManager(this, {
+            buttons: [
+                new BgaHelpPopinButton({
+                    title: _("Card details").toUpperCase(),
+                    html: this.getHelpHtml(),
+                    onPopinCreated: function () { return _this.populateHelp(); },
+                    buttonBackground: '#60c2cb',
+                }),
+            ]
+        });
         this.setupNotifications();
         this.setupPreferences();
-        this.addHelp();
         if (endGame) { // score or end
             this.onEnteringShowScore(true);
         }
@@ -1988,15 +2324,7 @@ var SkateLegend = /** @class */ (function () {
         var table = new PlayerTable(this, gamedatas.players[playerId]);
         this.playersTables.push(table);
     };
-    SkateLegend.prototype.addHelp = function () {
-        var _this = this;
-        dojo.place("\n            <button id=\"skatelegend-help-button\">?</button>\n        ", 'left-side');
-        document.getElementById('skatelegend-help-button').addEventListener('click', function () { return _this.showHelp(); });
-    };
-    SkateLegend.prototype.showHelp = function () {
-        var helpDialog = new ebg.popindialog();
-        helpDialog.create('skatelegendHelpDialog');
-        helpDialog.setTitle(_("Card details").toUpperCase());
+    SkateLegend.prototype.getHelpHtml = function () {
         /*const duoCards = [1, 2, 3].map(family => `
         <div class="help-section">
             <div id="help-pair-${family}"></div>
@@ -2061,6 +2389,10 @@ var SkateLegend = /** @class */ (function () {
         [[1, 1], [2, 2], [3, 6], [4, 9]].forEach(([family, color]) => this.cards.createMoveOrUpdateCard({id: 1030 + family, category: 3, family, color, index: 0 } as any, `help-collector-${family}`));
         // multiplier
         [1, 2, 3, 4].forEach(family => this.cards.createMoveOrUpdateCard({id: 1040 + family, category: 4, family } as any, `help-multiplier-${family}`));*/
+        return '';
+    };
+    SkateLegend.prototype.populateHelp = function () {
+        // TODO
     };
     SkateLegend.prototype.onDeckClick = function (number) {
         if (this.gamedatas.gamestate.name == 'pickCard') {
@@ -2205,10 +2537,11 @@ var SkateLegend = /** @class */ (function () {
         var notice = document.createElement('div');
         notice.classList.add('fall-notice');
         notice.innerHTML = _('${player_name} falls!').replace('${player_name}', "<div style=\"color: #".concat(this.getPlayerColor(playerId), "\">").concat(this.getPlayerName(playerId), "</div>"));
-        this.animationManager.attachWithSlideAnimation(notice, document.getElementById("player-table-".concat(playerId, "-played")), {
+        this.animationManager.attachWithAnimation(new BgaSlideAnimation({
+            element: notice,
             duration: ANIMATION_MS * 3,
             fromElement: document.getElementById('page-title'),
-        }).then(function () {
+        }), document.getElementById("player-table-".concat(playerId, "-played"))).then(function () {
             notice === null || notice === void 0 ? void 0 : notice.remove();
             _this.getPlayerTable(playerId).fall(_this.fallVoidStock);
             _this.helmetCounters[playerId].incValue(1);

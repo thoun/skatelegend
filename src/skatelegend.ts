@@ -88,9 +88,18 @@ class SkateLegend implements SkateLegendGame {
 
         this.fallVoidStock = new VoidStock<Card>(this.cardsManager, document.getElementById('overall-footer'));
 
+        new HelpManager(this, { 
+            buttons: [
+                new BgaHelpPopinButton({
+                    title: _("Card details").toUpperCase(),
+                    html: this.getHelpHtml(),
+                    onPopinCreated: () => this.populateHelp(),
+                    buttonBackground: '#60c2cb',
+                }),
+            ]
+        });
         this.setupNotifications();
         this.setupPreferences();
-        this.addHelp();
 
         if (endGame) { // score or end
             this.onEnteringShowScore(true);
@@ -360,18 +369,7 @@ class SkateLegend implements SkateLegendGame {
         this.playersTables.push(table);
     }
 
-    private addHelp() {
-        dojo.place(`
-            <button id="skatelegend-help-button">?</button>
-        `, 'left-side');
-        document.getElementById('skatelegend-help-button').addEventListener('click', () => this.showHelp());
-    }
-
-    private showHelp() {
-        const helpDialog = new ebg.popindialog();
-        helpDialog.create('skatelegendHelpDialog');
-        helpDialog.setTitle(_("Card details").toUpperCase());
-
+    private getHelpHtml() {
         /*const duoCards = [1, 2, 3].map(family => `
         <div class="help-section">
             <div id="help-pair-${family}"></div>
@@ -436,6 +434,12 @@ class SkateLegend implements SkateLegendGame {
         [[1, 1], [2, 2], [3, 6], [4, 9]].forEach(([family, color]) => this.cards.createMoveOrUpdateCard({id: 1030 + family, category: 3, family, color, index: 0 } as any, `help-collector-${family}`));
         // multiplier
         [1, 2, 3, 4].forEach(family => this.cards.createMoveOrUpdateCard({id: 1040 + family, category: 4, family } as any, `help-multiplier-${family}`));*/
+
+        return '';
+    }
+
+    private populateHelp() {
+        // TODO
     }
     
     public onDeckClick(number: number): void {
@@ -607,13 +611,13 @@ class SkateLegend implements SkateLegendGame {
         notice.classList.add('fall-notice');
         notice.innerHTML = _('${player_name} falls!').replace('${player_name}', `<div style="color: #${this.getPlayerColor(playerId)}">${this.getPlayerName(playerId)}</div>`)
 
-        this.animationManager.attachWithSlideAnimation(
-            notice,
-            document.getElementById(`player-table-${playerId}-played`),
-            { 
+        this.animationManager.attachWithAnimation(
+            new BgaSlideAnimation({
+                element: notice,
                 duration: ANIMATION_MS * 3,
                 fromElement: document.getElementById('page-title'),
-            }
+            }), 
+            document.getElementById(`player-table-${playerId}-played`),
         ).then(() => {
             notice?.remove();
             this.getPlayerTable(playerId).fall(this.fallVoidStock);

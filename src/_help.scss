@@ -1,46 +1,4 @@
-#skatelegend-help-button {
-    position: fixed;
-    bottom: 12px;
-    left: 5px;
-    width: 50px;
-    height: 50px;
-    background: #60c2cb;
-    font-weight: bold;
-    color: white;
-    border-radius: 25px;
-    box-shadow: 3px 5px 5px 0px rgb(0 0 0);
-    cursor: pointer;
-    z-index: 949;
-    font-size: 28pt;
-}
-
-/* we show help button if user has no mouse ( = no tooltips) */
-@media (hover: hover) {
-    #skatelegend-help-button {
-        //display: none;
-        bottom: 5px;
-    }
-}
-
-#popin_skatelegendHelpDialog_contents {
-    max-width: 100vw;
-    overflow-x: auto;
-}
-
-#popin_skatelegendHelpDialog {
-    background: white;
-    background-repeat: repeat;
-    max-width: 100vw;
-    max-height: 80vh;
-    overflow: hidden;
-}
-
 #help-popin {
-    width: 520px;
-    max-width: 35rem;
-    max-height: calc(80vh - 80px);
-    overflow: auto;
-
     h1 {
         color: #63c5cf;
         font-size: 18px;
