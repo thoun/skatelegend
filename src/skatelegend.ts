@@ -93,8 +93,7 @@ class SkateLegend implements SkateLegendGame {
                 new BgaHelpPopinButton({
                     title: _("Card details").toUpperCase(),
                     html: this.getHelpHtml(),
-                    onPopinCreated: () => this.populateHelp(),
-                    buttonBackground: '#60c2cb',
+                    buttonBackground: '#070407',
                 }),
             ]
         });
@@ -349,6 +348,9 @@ class SkateLegend implements SkateLegendGame {
             this.stopVoidStocks[playerId] = new VoidStock<Card>(this.cardsManager, document.getElementById(`scored-counter-${playerId}`));
         });
 
+        this.setTooltipToClass('playerhand-counter', _('Cards in hand'));
+        this.setTooltipToClass('played-counter', _('Size of the current sequence'));
+        this.setTooltipToClass('scored-counter', _('Number of scored cards'));
         this.setTooltipToClass('player-helmets-counter', _('Number of helmets'));
     }
     
@@ -370,76 +372,32 @@ class SkateLegend implements SkateLegendGame {
     }
 
     private getHelpHtml() {
-        /*const duoCards = [1, 2, 3].map(family => `
-        <div class="help-section">
-            <div id="help-pair-${family}"></div>
-            <div>${this.cards.getTooltip(2, family)}</div>
-        </div>
-        `).join('');
-
-        const duoSection = `
-        ${duoCards}
-        <div class="help-section">
-            <div id="help-pair-4"></div>
-            <div id="help-pair-5"></div>
-            <div>${this.cards.getTooltip(2, 4)}</div>
-        </div>
-        ${_("Note: The points for duo cards count whether the cards have been played or not. However, the effect is only applied when the player places the two cards in front of them.")}`;
-
-        const mermaidSection = `
-        <div class="help-section">
-            <div id="help-mermaid"></div>
-            <div>${this.cards.getTooltip(1)}</div>
-        </div>`;
-
-        const collectorSection = [1, 2, 3, 4].map(family => `
-        <div class="help-section">
-            <div id="help-collector-${family}"></div>
-            <div>${this.cards.getTooltip(3, family)}</div>
-        </div>
-        `).join('');
-
-        const multiplierSection = [1, 2, 3, 4].map(family => `
-        <div class="help-section">
-            <div id="help-multiplier-${family}"></div>
-            <div>${this.cards.getTooltip(4, family)}</div>
-        </div>
-        `).join('');
-        
         let html = `
         <div id="help-popin">
-            ${_("<strong>Important:</strong> When it is said that the player counts or scores the points on their cards, it means both those in their hand and those in front of them.")}
 
-            <h1>${_("Duo cards")}</h1>
-            ${duoSection}
-            <h1>${_("Mermaid cards")}</h1>
-            ${mermaidSection}
-            <h1>${_("Collector cards")}</h1>
-            ${collectorSection}
-            <h1>${_("Point Multiplier cards")}</h1>
-            ${multiplierSection}
+        <h1>${_("Card effect")}</h1>
+        <div class="row help-card-effect">`;
+        [10, 21, 31].forEach(power => {
+            html += `       
+                <div class="help-icon" data-power="${power}"></div>
+                <div class="help-label">${this.cardsManager.getPower(power)}</div>
+            `;
+        });
+        html += `    </div>  
+            <h1>${_("Conditions of Legendary Tricks card")}</h1>
+            <div class="row help-condition">`;
+        [[4, 4], [5, 4], [2, 2], [1, 3], [2, 6], [3, 5], [2, 1]].forEach(condition => {
+            html += `
+                <div class="help-icon" data-condition="${JSON.stringify(condition)}"></div>
+                <div class="help-label">${this.cardsManager.getCondition(condition)}</div>
+
+           `;
+        });
+        html += `    </div>  
         </div>
         `;
         
-        // Show the dialog
-        helpDialog.setContent(html);
-
-        helpDialog.show();
-
-        // pair
-        [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5]].forEach(([family, color]) => this.cards.createMoveOrUpdateCard({id: 1020 + family, category: 2, family, color, index: 0 } as any, `help-pair-${family}`));
-        // mermaid
-        this.cards.createMoveOrUpdateCard({id: 1010, category: 1 } as any, `help-mermaid`);
-        // collector
-        [[1, 1], [2, 2], [3, 6], [4, 9]].forEach(([family, color]) => this.cards.createMoveOrUpdateCard({id: 1030 + family, category: 3, family, color, index: 0 } as any, `help-collector-${family}`));
-        // multiplier
-        [1, 2, 3, 4].forEach(family => this.cards.createMoveOrUpdateCard({id: 1040 + family, category: 4, family } as any, `help-multiplier-${family}`));*/
-
-        return '';
-    }
-
-    private populateHelp() {
-        // TODO
+        return html;
     }
     
     public onDeckClick(number: number): void {

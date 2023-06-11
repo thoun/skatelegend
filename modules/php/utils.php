@@ -365,7 +365,7 @@ trait UtilTrait {
         ]);
 
         foreach ($cardsToDiscard as $card) {
-            self::notifyAllPlayers('discardedLegendCard', clienttranslate('${player_name} discards a legend card because the condition isn\'t met'), [
+            self::notifyAllPlayers('discardedLegendCard', clienttranslate('${player_name} discards a legendary trick card because the condition isn\'t met'), [
                 'playerId' => $playerId,
                 'player_name' => $this->getPlayerName($playerId),
                 'card' => $card,

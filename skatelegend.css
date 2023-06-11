@@ -675,7 +675,7 @@ body > .card {
   background-image: url("img/cards.svg");
   background-size: contain;
   background-repeat: no-repeat;
-  vertical-align: bottom;
+  vertical-align: middle;
 }
 
 .player-played-card {
@@ -836,25 +836,86 @@ body > .card {
   font-weight: bold;
 }
 
+#popin_bgaHelpDialog {
+  background: #ecf4fb;
+}
+
 #help-popin h1 {
-  color: #63c5cf;
-  font-size: 18px;
-  margin: 8px 0;
-}
-#help-popin .help-section {
-  color: white;
-  background-color: #63c5cf;
-  border-radius: 8px;
   padding: 5px;
-  margin: 3px 0;
+  border-radius: 10px;
+  font-weight: normal;
+  color: white;
+  text-align: center;
+}
+#help-popin h1 {
+  background: #070407;
+  font-size: 22px;
+  margin: 10px 0;
+}
+#help-popin .row {
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  grid-template-columns: 64px auto;
+  gap: 10px;
+}
+#help-popin .row .help-icon {
+  display: inline-block;
+  height: 48px;
+  background-image: url("img/cards.jpg");
+  border-radius: 5px;
+}
+#help-popin .row.help-card-effect {
+  grid-template-columns: 60px auto;
+}
+#help-popin .row.help-card-effect .help-icon {
+  width: 50px;
+  background-position-y: 0px;
+}
+#help-popin .row.help-card-effect .help-icon[data-power="10"] {
+  background-position-x: -140px;
+}
+#help-popin .row.help-card-effect .help-icon[data-power="21"] {
+  background-position-x: -1400px;
+}
+#help-popin .row.help-card-effect .help-icon[data-power="31"] {
+  background-position-x: -980px;
+}
+#help-popin .row.help-condition {
+  grid-template-columns: 60px auto;
+}
+#help-popin .row.help-condition .help-icon {
+  width: 36px;
+  height: 36px;
+  background-image: url("img/cards-legend.jpg");
+  background-position-y: 49px;
+}
+#help-popin .row.help-condition .help-icon[data-condition="[4,4]"] {
+  background-position-x: -2266px;
+}
+#help-popin .row.help-condition .help-icon[data-condition="[5,4]"] {
+  background-position-x: -2406px;
+}
+#help-popin .row.help-condition .help-icon[data-condition="[2,2]"] {
+  background-position-x: -1987px;
+}
+#help-popin .row.help-condition .help-icon[data-condition="[1,3]"] {
+  background-position-x: -2126px;
+}
+#help-popin .row.help-condition .help-icon[data-condition="[2,6]"] {
+  background-position-x: 395px;
+}
+#help-popin .row.help-condition .help-icon[data-condition="[3,5]"] {
+  background-position-x: -1005px;
+}
+#help-popin .row.help-condition .help-icon[data-condition="[2,1]"] {
+  background-position-x: -1845px;
+}
+#help-popin .row .help-label {
+  width: 100%;
   display: flex;
-}
-#help-popin .help-section > div:not(:first-child) {
-  margin-left: 5px;
-}
-#help-popin .help-section > div:not(:first-child):not([id]) {
-  flex: 1;
-  margin-left: 5px;
+  justify-content: start;
+  align-items: center;
 }
 
 /* make space between buttons on touch devices */

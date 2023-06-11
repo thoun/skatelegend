@@ -1940,27 +1940,30 @@ var CardsManager = /** @class */ (function (_super) {
     };
     CardsManager.prototype.getPower = function (power) {
         switch (power) {
-            case 10: return _('TODO POWER_FLIP_DECK');
-            case 21: return _('TODO POWER_PLAY_AGAIN');
-            case 22: return _('TODO POWER_PLAY_AGAIN_TWICE');
-            case 31: return _('TODO POWER_PICK_CARD');
-            case 32: return _('TODO POWER_PICK_CARD_TWICE');
+            case 10:
+                return _('Turn the first card of either Trick pile face up. If both piles already have their first card face up, nothing happens.');
+            case 21:
+            case 22:
+                return _('Immediately replay the "Perform a trick" action. If the new card played has an Effect, apply it immediately.');
+            case 31:
+            case 32:
+                return _('Add ${number} card to your hand from the Trick pile of your choice.').replace('${number}', power - 30);
         }
     };
     CardsManager.prototype.getCondition = function (condition) {
         switch (condition[1]) {
-            case 1: return _('TODO CONDITION_EQUAL');
-            case 2: return _('TODO CONDITION_DANGER');
-            case 3: return _('TODO CONDITION_YELLOW_GREEN');
-            case 4: return _('TODO CONDITION_CARDS');
-            case 5: return _('TODO CONDITION_DIFFERENT');
-            case 6: return _('TODO CONDITION_RED');
+            case 1: return _('${number} same colors in the sequence.').replace('${number}', condition[0]);
+            case 2: return _('${number} cards with the “Broken Board” icon in the sequence.').replace('${number}', condition[0]);
+            case 3: return _('1 green and 1 yellow card in the sequence.');
+            case 4: return _('${number} cards in the sequence.').replace('${number}', condition[0]);
+            case 5: return _('${number} different colors in the sequence.').replace('${number}', condition[0]);
+            case 6: return _('${number} red cards in the sequence.').replace('${number}', condition[0]);
         }
     };
     CardsManager.prototype.getTooltip = function (card) {
-        var html = "\n            <div><strong>".concat(_('Color:'), "</strong> ").concat(this.getColorName(card.color), "</div>\n            <div><strong>").concat(_('Wheels:'), "</strong> ").concat(card.wheels, "</div>\n        ");
+        var html = "\n            <div><strong>".concat(_('Color:'), "</strong> ").concat(this.getColorName(card.color), "</div>\n            <div><strong>").concat(_('Prestige Points:'), "</strong> ").concat(card.wheels, "</div>\n        ");
         if (card.danger) {
-            html += "<div><strong style=\"color: darkred\">".concat(_('Danger'), "</strong></div>");
+            html += "<div><strong style=\"color: darkred\">".concat(_('Broken Board'), "</strong></div>");
         }
         if (card.power) {
             html += "\n                <div><strong>".concat(_('Power:'), "</strong> ").concat(this.getPower(card.power), "</div>\n            ");
@@ -2083,7 +2086,6 @@ var SkateLegend = /** @class */ (function () {
         "gamedatas" argument contains all datas retrieved by your "getAllDatas" PHP method.
     */
     SkateLegend.prototype.setup = function (gamedatas) {
-        var _this = this;
         log("Starting game setup");
         this.gamedatas = gamedatas;
         log('gamedatas', gamedatas);
@@ -2119,8 +2121,7 @@ var SkateLegend = /** @class */ (function () {
                 new BgaHelpPopinButton({
                     title: _("Card details").toUpperCase(),
                     html: this.getHelpHtml(),
-                    onPopinCreated: function () { return _this.populateHelp(); },
-                    buttonBackground: '#60c2cb',
+                    buttonBackground: '#070407',
                 }),
             ]
         });
@@ -2308,6 +2309,9 @@ var SkateLegend = /** @class */ (function () {
             }
             _this.stopVoidStocks[playerId] = new VoidStock(_this.cardsManager, document.getElementById("scored-counter-".concat(playerId)));
         });
+        this.setTooltipToClass('playerhand-counter', _('Cards in hand'));
+        this.setTooltipToClass('played-counter', _('Size of the current sequence'));
+        this.setTooltipToClass('scored-counter', _('Number of scored cards'));
         this.setTooltipToClass('player-helmets-counter', _('Number of helmets'));
     };
     SkateLegend.prototype.setPlayerActive = function (playerId, active) {
@@ -2325,74 +2329,17 @@ var SkateLegend = /** @class */ (function () {
         this.playersTables.push(table);
     };
     SkateLegend.prototype.getHelpHtml = function () {
-        /*const duoCards = [1, 2, 3].map(family => `
-        <div class="help-section">
-            <div id="help-pair-${family}"></div>
-            <div>${this.cards.getTooltip(2, family)}</div>
-        </div>
-        `).join('');
-
-        const duoSection = `
-        ${duoCards}
-        <div class="help-section">
-            <div id="help-pair-4"></div>
-            <div id="help-pair-5"></div>
-            <div>${this.cards.getTooltip(2, 4)}</div>
-        </div>
-        ${_("Note: The points for duo cards count whether the cards have been played or not. However, the effect is only applied when the player places the two cards in front of them.")}`;
-
-        const mermaidSection = `
-        <div class="help-section">
-            <div id="help-mermaid"></div>
-            <div>${this.cards.getTooltip(1)}</div>
-        </div>`;
-
-        const collectorSection = [1, 2, 3, 4].map(family => `
-        <div class="help-section">
-            <div id="help-collector-${family}"></div>
-            <div>${this.cards.getTooltip(3, family)}</div>
-        </div>
-        `).join('');
-
-        const multiplierSection = [1, 2, 3, 4].map(family => `
-        <div class="help-section">
-            <div id="help-multiplier-${family}"></div>
-            <div>${this.cards.getTooltip(4, family)}</div>
-        </div>
-        `).join('');
-        
-        let html = `
-        <div id="help-popin">
-            ${_("<strong>Important:</strong> When it is said that the player counts or scores the points on their cards, it means both those in their hand and those in front of them.")}
-
-            <h1>${_("Duo cards")}</h1>
-            ${duoSection}
-            <h1>${_("Mermaid cards")}</h1>
-            ${mermaidSection}
-            <h1>${_("Collector cards")}</h1>
-            ${collectorSection}
-            <h1>${_("Point Multiplier cards")}</h1>
-            ${multiplierSection}
-        </div>
-        `;
-        
-        // Show the dialog
-        helpDialog.setContent(html);
-
-        helpDialog.show();
-
-        // pair
-        [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5]].forEach(([family, color]) => this.cards.createMoveOrUpdateCard({id: 1020 + family, category: 2, family, color, index: 0 } as any, `help-pair-${family}`));
-        // mermaid
-        this.cards.createMoveOrUpdateCard({id: 1010, category: 1 } as any, `help-mermaid`);
-        // collector
-        [[1, 1], [2, 2], [3, 6], [4, 9]].forEach(([family, color]) => this.cards.createMoveOrUpdateCard({id: 1030 + family, category: 3, family, color, index: 0 } as any, `help-collector-${family}`));
-        // multiplier
-        [1, 2, 3, 4].forEach(family => this.cards.createMoveOrUpdateCard({id: 1040 + family, category: 4, family } as any, `help-multiplier-${family}`));*/
-        return '';
-    };
-    SkateLegend.prototype.populateHelp = function () {
-        // TODO
+        var _this = this;
+        var html = "\n        <div id=\"help-popin\">\n\n        <h1>".concat(_("Card effect"), "</h1>\n        <div class=\"row help-card-effect\">");
+        [10, 21, 31].forEach(function (power) {
+            html += "       \n                <div class=\"help-icon\" data-power=\"".concat(power, "\"></div>\n                <div class=\"help-label\">").concat(_this.cardsManager.getPower(power), "</div>\n            ");
+        });
+        html += "    </div>  \n            <h1>".concat(_("Conditions of Legendary Tricks card"), "</h1>\n            <div class=\"row help-condition\">");
+        [[4, 4], [5, 4], [2, 2], [1, 3], [2, 6], [3, 5], [2, 1]].forEach(function (condition) {
+            html += "\n                <div class=\"help-icon\" data-condition=\"".concat(JSON.stringify(condition), "\"></div>\n                <div class=\"help-label\">").concat(_this.cardsManager.getCondition(condition), "</div>\n\n           ");
+        });
+        html += "    </div>  \n        </div>\n        ";
+        return html;
     };
     SkateLegend.prototype.onDeckClick = function (number) {
         if (this.gamedatas.gamestate.name == 'pickCard') {

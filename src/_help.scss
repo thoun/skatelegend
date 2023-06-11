@@ -1,26 +1,94 @@
+
+#popin_bgaHelpDialog {
+    background: #ecf4fb;
+}
+
 #help-popin {
     h1 {
-        color: #63c5cf;
-        font-size: 18px;
-        margin: 8px 0;
+        padding: 5px;
+        border-radius: 10px;
+        font-weight: normal;
+        color: white;
+        text-align: center;
     }
 
-    .help-section {    
-        color: white;
-        background-color: #63c5cf;
-        border-radius: 8px;
-        padding: 5px;
-        margin: 3px 0;
+    h1 {
+        background: #070407;
+        font-size: 22px;
+        margin: 10px 0;
+    }
 
-        display: flex;
+    .row {
+        display: grid;
+        align-items: center;
+        justify-items: center;
+        grid-template-columns: 64px auto;
+        gap: 10px;
 
-        &>div:not(:first-child) {
-            margin-left: 5px;
+        .help-icon {
+            display: inline-block;
+            height: 48px;
+            background-image: url('img/cards.jpg');
+            border-radius: 5px;
+        }
 
-            &:not([id]) {
-                flex: 1;
-                margin-left: 5px;
-            } 
-        } 
+        &.help-card-effect {
+            grid-template-columns: 60px auto;
+
+            .help-icon {
+                width: 50px;
+                background-position-y: 0px;
+
+                &[data-power="10"] {
+                    background-position-x: -140px;
+                }
+                &[data-power="21"] {
+                    background-position-x: -1400px;
+                }
+                &[data-power="31"] {
+                    background-position-x: -980px;
+                }
+            }
+        }
+        
+        &.help-condition {
+            grid-template-columns: 60px auto;
+
+            .help-icon {
+                width: 36px;
+                height: 36px;
+                background-image: url('img/cards-legend.jpg');
+                background-position-y: 49px;
+        
+                &[data-condition="[4,4]"] {
+                    background-position-x: -2266px;
+                }        
+                &[data-condition="[5,4]"] {
+                    background-position-x: -2406px;
+                }        
+                &[data-condition="[2,2]"] {
+                    background-position-x: -1987px;
+                }        
+                &[data-condition="[1,3]"] {
+                    background-position-x: -2126px;
+                }        
+                &[data-condition="[2,6]"] {
+                    background-position-x: 395px;
+                } 
+                &[data-condition="[3,5]"] {
+                    background-position-x: -1005px;
+                } 
+                &[data-condition="[2,1]"] {
+                    background-position-x: -1845px;
+                }
+            }
+        }
+
+        .help-label {
+            width: 100%;
+            display: flex;
+            justify-content: start;
+            align-items: center;
+        }
     }
 }
