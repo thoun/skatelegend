@@ -105,5 +105,15 @@
 
       self::ajaxResponse();
     }
+  	
+    public function tease() {
+      self::setAjaxMode();
+
+      $sentence = self::getArg("sentence", AT_posint, true);
+
+      $this->game->tease($sentence);
+
+      self::ajaxResponse();
+    }
   }
   

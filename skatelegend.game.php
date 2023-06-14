@@ -193,6 +193,7 @@ class SkateLegend extends Table {
         $result['decks'] = $decks;
         $result['roundNumber'] = $roundNumber + 1;
         $result['remainingHelmets'] = $this->getRemainingHelmets();
+        $result['SENTENCES'] = $this->SENTENCES;
   
         return $result;
     }

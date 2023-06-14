@@ -26,6 +26,7 @@ class SkateLegend implements SkateLegendGame {
     private roundCounter: Counter;
     private fallVoidStock: VoidStock<Card>;
     private stopVoidStocks: VoidStock<Card>[] = [];
+    private teaseTimers: number[] = [];
     
     private TOOLTIP_DELAY = document.body.classList.contains('touch-device') ? 1500 : undefined;
 
@@ -314,6 +315,11 @@ class SkateLegend implements SkateLegendGame {
                     <span id="player-helmets-counter-${player.id}"></span>
                 </div>
             </div>
+            <div id="tease-${player.id}-wrapper" class="tease-wrapper">            
+                <div class="bubble-wrapper">
+                    <div id="player-${player.id}-discussion-bubble" class="discussion_bubble" data-visible="false"></div>
+                </div>
+            </div>
             <div id="round-points-${player.id}"></div>
             `, `player_board_${player.id}`);
 
@@ -341,17 +347,57 @@ class SkateLegend implements SkateLegendGame {
                 this.setPlayerActive(playerId, player.active);
             }
 
-            if (playerId == this.getPlayerId() && player.roundPoints) {
-                this.setRoundPoints(playerId, player.roundPoints);
+            if (playerId == this.getPlayerId()) {
+                document.getElementById(`tease-${player.id}-wrapper`).insertAdjacentHTML('beforeend', `         
+                <div class="bubble-wrapper">
+                    <div id="player-${player.id}-action-bubble" class="discussion_bubble" data-visible="false"></div>
+                </div>
+                <button id="tease-${player.id}-button" class="bgabutton bgabutton_blue tease-button"><div class="tease-icon"></button>
+                `);
+                const actionBubble = document.getElementById(`player-${player.id}-action-bubble`);
+                document.getElementById(`tease-${player.id}-button`).addEventListener('click', () => {
+                    actionBubble.dataset.visible = actionBubble.dataset.visible == 'true' ? 'false' : 'true';
+                });
+
+                this.gamedatas.SENTENCES.forEach((sentence, index) => {
+                    actionBubble.insertAdjacentHTML('beforeend', `<button id="tease-${player.id}-sentence-${index}" class="bgabutton bgabutton_blue">${_(sentence)}</button>`);
+                    document.getElementById(`tease-${player.id}-sentence-${index}`).addEventListener('click', () => {
+                        this.tease(index);
+                        actionBubble.dataset.visible = 'false';
+                    });
+                });
+                actionBubble.insertAdjacentHTML('beforeend', `<button id="tease-${player.id}-sentence-cancel" class="bgabutton bgabutton_gray">${_('Cancel')}</button>`);
+                    document.getElementById(`tease-${player.id}-sentence-cancel`).addEventListener('click', () => {
+                        actionBubble.dataset.visible = 'false';
+                    });
+
+                if (player.roundPoints) {
+                    this.setRoundPoints(playerId, player.roundPoints);
+                }
             }
 
             this.stopVoidStocks[playerId] = new VoidStock<Card>(this.cardsManager, document.getElementById(`scored-counter-${playerId}`));
+
         });
 
         this.setTooltipToClass('playerhand-counter', _('Cards in hand'));
         this.setTooltipToClass('played-counter', _('Size of the current sequence'));
         this.setTooltipToClass('scored-counter', _('Number of scored cards'));
         this.setTooltipToClass('player-helmets-counter', _('Number of helmets'));
+    }
+
+    public showTease(playerId: number, sentence: string) {
+        if (this.teaseTimers[playerId]) {
+            clearTimeout(this.teaseTimers[playerId]);
+            this.teaseTimers[playerId] = null;
+        }
+        const bubble = document.getElementById(`player-${playerId}-discussion-bubble`);
+        bubble.innerHTML = _(sentence);
+        bubble.dataset.visible = 'true';
+        this.teaseTimers[playerId] = setTimeout(() => {
+            bubble.dataset.visible = 'false';
+            this.teaseTimers[playerId] = null;
+        }, 2000);
     }
     
     public setPlayerActive(playerId: number, active: boolean): void {
@@ -490,9 +536,20 @@ class SkateLegend implements SkateLegendGame {
         this.takeAction('skipHelmet');
     }
 
+    public tease(sentence: number) {
+        this.takeNoLockAction('tease', {
+            sentence
+        });
+    }
+
     public takeAction(action: string, data?: any) {
         data = data || {};
         data.lock = true;
+        (this as any).ajaxcall(`/skatelegend/skatelegend/${action}.html`, data, this, () => {});
+    }
+
+    public takeNoLockAction(action: string, data?: any) {
+        data = data || {};
         (this as any).ajaxcall(`/skatelegend/skatelegend/${action}.html`, data, this, () => {});
     }
 
@@ -524,6 +581,7 @@ class SkateLegend implements SkateLegendGame {
             ['addCardToHand', ANIMATION_MS],
             ['detailledScore', ANIMATION_MS],
             ['splitDecks', ANIMATION_MS],
+            ['tease', 1],
         ];
     
         notifs.forEach((notif) => {
@@ -660,6 +718,10 @@ class SkateLegend implements SkateLegendGame {
             }
             this.tableCenter.decks[deckId].setCardNumber(notif.args.decks[deckId].count);
         });
+    }
+
+    notif_tease(notif: Notif<NotifTeaseArgs>) {
+        this.showTease(notif.args.playerId, notif.args.sentence);
     }
     
     private setScore(playerId: number | string, column: number, score: number) { // column 1 for first round ... 5 for final score

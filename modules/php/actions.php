@@ -109,4 +109,17 @@ trait ActionTrait {
 
         $this->afterPlayPower();
     }
+  	
+    public function tease(int $sentence) {        
+        $playerId = intval($this->getActivePlayerId());
+
+        $sentence = $this->SENTENCES[$sentence];
+
+        self::notifyAllPlayers('tease', clienttranslate('${player_name} says: ${sentence}'), [
+            'playerId' => $playerId,
+            'player_name' => $this->getPlayerName($playerId),
+            'sentence' => $sentence,
+            'i18n' => ['sentence'],
+        ]);
+    }
 }

@@ -50,3 +50,9 @@ $this->CARDS_TYPE = [
         10 => new CardType(1, GREEN, 5, false, POWER_PLAY_AGAIN_TWICE),
     ],
 ];
+
+$this->SENTENCES = [
+    clienttranslate("Mais allé pioche tu risque rien :) !!"),
+    clienttranslate("Tu vas tomber !!"),
+    clienttranslate("A ta place j’arrêterai la…"),
+];

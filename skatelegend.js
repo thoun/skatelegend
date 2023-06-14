@@ -2067,6 +2067,7 @@ var SkateLegend = /** @class */ (function () {
         this.scoredCounters = [];
         this.helmetCounters = [];
         this.stopVoidStocks = [];
+        this.teaseTimers = [];
         this.TOOLTIP_DELAY = document.body.classList.contains('touch-device') ? 1500 : undefined;
         /*const zoomStr = localStorage.getItem(LOCAL_STORAGE_ZOOM_KEY);
         if (zoomStr) {
@@ -2284,7 +2285,7 @@ var SkateLegend = /** @class */ (function () {
         Object.values(gamedatas.players).forEach(function (player) {
             var playerId = Number(player.id);
             // hand + scored cards counter + helmets counter
-            dojo.place("<div class=\"counters\">\n                <div id=\"playerhand-counter-wrapper-".concat(player.id, "\" class=\"playerhand-counter\">\n                    <div class=\"player-hand-card\"></div> \n                    <span id=\"playerhand-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"played-counter-wrapper-").concat(player.id, "\" class=\"played-counter\">\n                    <div class=\"player-played-card\"></div> \n                    <span id=\"played-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"scored-counter-wrapper-").concat(player.id, "\" class=\"scored-counter\">\n                    <div class=\"player-scored-card\"></div> \n                    <span id=\"scored-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>\n            <div class=\"counters\">\n                <div id=\"player-helmets-counter-wrapper-").concat(player.id, "\" class=\"player-helmets-counter\">\n                    <div class=\"player-helmets\"></div> \n                    <span id=\"player-helmets-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>\n            <div id=\"round-points-").concat(player.id, "\"></div>\n            "), "player_board_".concat(player.id));
+            dojo.place("<div class=\"counters\">\n                <div id=\"playerhand-counter-wrapper-".concat(player.id, "\" class=\"playerhand-counter\">\n                    <div class=\"player-hand-card\"></div> \n                    <span id=\"playerhand-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"played-counter-wrapper-").concat(player.id, "\" class=\"played-counter\">\n                    <div class=\"player-played-card\"></div> \n                    <span id=\"played-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"scored-counter-wrapper-").concat(player.id, "\" class=\"scored-counter\">\n                    <div class=\"player-scored-card\"></div> \n                    <span id=\"scored-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>\n            <div class=\"counters\">\n                <div id=\"player-helmets-counter-wrapper-").concat(player.id, "\" class=\"player-helmets-counter\">\n                    <div class=\"player-helmets\"></div> \n                    <span id=\"player-helmets-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>\n            <div id=\"tease-").concat(player.id, "-wrapper\" class=\"tease-wrapper\">            \n                <div class=\"bubble-wrapper\">\n                    <div id=\"player-").concat(player.id, "-discussion-bubble\" class=\"discussion_bubble\" data-visible=\"false\"></div>\n                </div>\n            </div>\n            <div id=\"round-points-").concat(player.id, "\"></div>\n            "), "player_board_".concat(player.id));
             var handCounter = new ebg.counter();
             handCounter.create("playerhand-counter-".concat(playerId));
             handCounter.setValue(player.handCount);
@@ -2304,8 +2305,26 @@ var SkateLegend = /** @class */ (function () {
             if (!endGame) {
                 _this.setPlayerActive(playerId, player.active);
             }
-            if (playerId == _this.getPlayerId() && player.roundPoints) {
-                _this.setRoundPoints(playerId, player.roundPoints);
+            if (playerId == _this.getPlayerId()) {
+                document.getElementById("tease-".concat(player.id, "-wrapper")).insertAdjacentHTML('beforeend', "         \n                <div class=\"bubble-wrapper\">\n                    <div id=\"player-".concat(player.id, "-action-bubble\" class=\"discussion_bubble\" data-visible=\"false\"></div>\n                </div>\n                <button id=\"tease-").concat(player.id, "-button\" class=\"bgabutton bgabutton_blue tease-button\"><div class=\"tease-icon\"></button>\n                "));
+                var actionBubble_1 = document.getElementById("player-".concat(player.id, "-action-bubble"));
+                document.getElementById("tease-".concat(player.id, "-button")).addEventListener('click', function () {
+                    actionBubble_1.dataset.visible = actionBubble_1.dataset.visible == 'true' ? 'false' : 'true';
+                });
+                _this.gamedatas.SENTENCES.forEach(function (sentence, index) {
+                    actionBubble_1.insertAdjacentHTML('beforeend', "<button id=\"tease-".concat(player.id, "-sentence-").concat(index, "\" class=\"bgabutton bgabutton_blue\">").concat(_(sentence), "</button>"));
+                    document.getElementById("tease-".concat(player.id, "-sentence-").concat(index)).addEventListener('click', function () {
+                        _this.tease(index);
+                        actionBubble_1.dataset.visible = 'false';
+                    });
+                });
+                actionBubble_1.insertAdjacentHTML('beforeend', "<button id=\"tease-".concat(player.id, "-sentence-cancel\" class=\"bgabutton bgabutton_gray\">").concat(_('Cancel'), "</button>"));
+                document.getElementById("tease-".concat(player.id, "-sentence-cancel")).addEventListener('click', function () {
+                    actionBubble_1.dataset.visible = 'false';
+                });
+                if (player.roundPoints) {
+                    _this.setRoundPoints(playerId, player.roundPoints);
+                }
             }
             _this.stopVoidStocks[playerId] = new VoidStock(_this.cardsManager, document.getElementById("scored-counter-".concat(playerId)));
         });
@@ -2313,6 +2332,20 @@ var SkateLegend = /** @class */ (function () {
         this.setTooltipToClass('played-counter', _('Size of the current sequence'));
         this.setTooltipToClass('scored-counter', _('Number of scored cards'));
         this.setTooltipToClass('player-helmets-counter', _('Number of helmets'));
+    };
+    SkateLegend.prototype.showTease = function (playerId, sentence) {
+        var _this = this;
+        if (this.teaseTimers[playerId]) {
+            clearTimeout(this.teaseTimers[playerId]);
+            this.teaseTimers[playerId] = null;
+        }
+        var bubble = document.getElementById("player-".concat(playerId, "-discussion-bubble"));
+        bubble.innerHTML = _(sentence);
+        bubble.dataset.visible = 'true';
+        this.teaseTimers[playerId] = setTimeout(function () {
+            bubble.dataset.visible = 'false';
+            _this.teaseTimers[playerId] = null;
+        }, 2000);
     };
     SkateLegend.prototype.setPlayerActive = function (playerId, active) {
         document.getElementById("overall_player_board_".concat(playerId)).classList.toggle('inactive', !active);
@@ -2413,9 +2446,18 @@ var SkateLegend = /** @class */ (function () {
         }
         this.takeAction('skipHelmet');
     };
+    SkateLegend.prototype.tease = function (sentence) {
+        this.takeNoLockAction('tease', {
+            sentence: sentence
+        });
+    };
     SkateLegend.prototype.takeAction = function (action, data) {
         data = data || {};
         data.lock = true;
+        this.ajaxcall("/skatelegend/skatelegend/".concat(action, ".html"), data, this, function () { });
+    };
+    SkateLegend.prototype.takeNoLockAction = function (action, data) {
+        data = data || {};
         this.ajaxcall("/skatelegend/skatelegend/".concat(action, ".html"), data, this, function () { });
     };
     ///////////////////////////////////////////////////
@@ -2445,6 +2487,7 @@ var SkateLegend = /** @class */ (function () {
             ['addCardToHand', ANIMATION_MS],
             ['detailledScore', ANIMATION_MS],
             ['splitDecks', ANIMATION_MS],
+            ['tease', 1],
         ];
         notifs.forEach(function (notif) {
             dojo.subscribe(notif[0], _this, "notif_".concat(notif[0]));
@@ -2568,6 +2611,9 @@ var SkateLegend = /** @class */ (function () {
             }
             _this.tableCenter.decks[deckId].setCardNumber(notif.args.decks[deckId].count);
         });
+    };
+    SkateLegend.prototype.notif_tease = function (notif) {
+        this.showTease(notif.args.playerId, notif.args.sentence);
     };
     SkateLegend.prototype.setScore = function (playerId, column, score) {
         var cell = document.getElementById("score".concat(playerId)).getElementsByTagName('td')[column];

@@ -42,6 +42,7 @@ interface SkateLegendGamedatas {
     // Add here variables you set up in getAllDatas
     roundNumber: number;
     decks: { [deckId: number]: { count: number; top?: Card; } };
+    SENTENCES: string[];
 }
 
 interface SkateLegendGame extends Game {
@@ -141,4 +142,10 @@ interface NotifDetailledScoreArgs {
 interface NotifSplitDecksArgs {
     fromDeck: number;
     decks: { [deckId: number]: { count: number; top?: Card; } };
+}
+
+// tease
+interface NotifTeaseArgs {
+    playerId: number;
+    sentence: string;
 }
