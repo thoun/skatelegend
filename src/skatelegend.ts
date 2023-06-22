@@ -157,6 +157,7 @@ class SkateLegend implements SkateLegendGame {
                 `;
             });
             html += `
+                <th id="th-helmet-score" class="helmet-score">${_("Helmet score")}</th>
                 <th id="th-end-score" class="end-score">${_("Final score")}</th>
             `;
             dojo.place(html, headers);
@@ -174,6 +175,7 @@ class SkateLegend implements SkateLegendGame {
                 `;
             });
             html += `
+                <td id="helmet-score${player.id}" class="helmet-score">${player.helmets * 2 ?? ''}</td>
                 <td id="end-score${player.id}" class="total">${player.score ?? ''}</td>
             </tr>
             `;
@@ -735,8 +737,11 @@ class SkateLegend implements SkateLegendGame {
         Object.entries(notif.args.roundScores).forEach(entry => {
             const playerId = Number(entry[0]);
             entry[1].forEach((roundPoints, index) => this.setScore(playerId, index + 1, roundPoints));
-            const total = entry[1].filter(n => n !== null).reduce((a, b) => a + b, 0);
-            this.setScore(playerId, 5, total);
+            this.setScore(playerId, 5, notif.args.helmetScores[playerId]);
+
+            let total = entry[1].filter(n => n !== null).reduce((a, b) => a + b, 0);
+            total += notif.args.helmetScores[playerId];
+            this.setScore(playerId, 6, total);
             (this as any).scoreCtrl[playerId]?.toValue(total);
             this.setPlayerActive(playerId, true);
         });

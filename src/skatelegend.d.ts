@@ -132,10 +132,10 @@ interface NotifAddCardToHandArgs {
     deckCount: number;
     deckTopCard?: Card;
 }
-
 // detailledScore
 interface NotifDetailledScoreArgs {
     roundScores: { [playerId: number | string]: number[]};
+    helmetScores: { [playerId: number | string]: number};
 }
 
 // splitDecks

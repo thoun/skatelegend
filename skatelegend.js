@@ -2174,18 +2174,18 @@ var SkateLegend = /** @class */ (function () {
             [1, 2, 3, 4].forEach(function (i) {
                 html_1 += "\n                    <th id=\"th-round".concat(i, "-score\" class=\"round-score\">").concat(_("Round ${number}").replace('${number}', i), "</th>\n                ");
             });
-            html_1 += "\n                <th id=\"th-end-score\" class=\"end-score\">".concat(_("Final score"), "</th>\n            ");
+            html_1 += "\n                <th id=\"th-helmet-score\" class=\"helmet-score\">".concat(_("Helmet score"), "</th>\n                <th id=\"th-end-score\" class=\"end-score\">").concat(_("Final score"), "</th>\n            ");
             dojo.place(html_1, headers);
         }
         var players = Object.values(this.gamedatas.players);
         players.forEach(function (player) {
-            var _a;
+            var _a, _b;
             var html = "\n                <tr id=\"score".concat(player.id, "\">\n                <td class=\"player-name\" style=\"color: #").concat(player.color, "\">").concat(player.name, "</td>");
             [1, 2, 3, 4].forEach(function (i) {
                 var _a, _b;
                 html += "\n                    <td id=\"round-score".concat(player.id, "\" class=\"round-score\">").concat((_b = (_a = player.allRoundsPoints) === null || _a === void 0 ? void 0 : _a[i - 1]) !== null && _b !== void 0 ? _b : '-', "</td>\n                ");
             });
-            html += "\n                <td id=\"end-score".concat(player.id, "\" class=\"total\">").concat((_a = player.score) !== null && _a !== void 0 ? _a : '', "</td>\n            </tr>\n            ");
+            html += "\n                <td id=\"helmet-score".concat(player.id, "\" class=\"helmet-score\">").concat((_a = player.helmets * 2) !== null && _a !== void 0 ? _a : '', "</td>\n                <td id=\"end-score").concat(player.id, "\" class=\"total\">").concat((_b = player.score) !== null && _b !== void 0 ? _b : '', "</td>\n            </tr>\n            ");
             dojo.place(html, 'score-table-body');
         });
     };
@@ -2626,8 +2626,10 @@ var SkateLegend = /** @class */ (function () {
             var _a;
             var playerId = Number(entry[0]);
             entry[1].forEach(function (roundPoints, index) { return _this.setScore(playerId, index + 1, roundPoints); });
+            _this.setScore(playerId, 5, notif.args.helmetScores[playerId]);
             var total = entry[1].filter(function (n) { return n !== null; }).reduce(function (a, b) { return a + b; }, 0);
-            _this.setScore(playerId, 5, total);
+            total += notif.args.helmetScores[playerId];
+            _this.setScore(playerId, 6, total);
             (_a = _this.scoreCtrl[playerId]) === null || _a === void 0 ? void 0 : _a.toValue(total);
             _this.setPlayerActive(playerId, true);
         });

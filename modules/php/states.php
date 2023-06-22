@@ -124,10 +124,29 @@ trait StateTrait {
 
     function stEndScore() {
         $dbResults = $this->getCollectionFromDb("SELECT player_id, player_round_points FROM `player` ORDER BY player_no", true);
-        $roundScores = array_map(fn($dbResult) => json_decode($dbResult, true), $dbResults);
+        $roundScores = array_map(fn($dbResult) => json_decode($dbResult, true), $dbResults);        
+        $helmetScores = [];
+
+        $playersIds = $this->getPlayersIds();
+        foreach ($playersIds as $playerId) {
+            $helmets = $this->getPlayerHelmets($playerId);
+            $helmetScore = $helmets * 2;
+            $helmetScores[$playerId] = $helmetScore;
+
+            if ($helmets > 0) {
+                self::DbQuery("update player set player_score = player_score + $helmetScore WHERE player_id = $playerId");
+
+                self::notifyAllPlayers('helmetScore', clienttranslate('${player_name} scores ${helmet_points} points with ${helmets} remaining helmet(s)'), [
+                    'player_name' => $this->getPlayerName($playerId),
+                    'helmets' => $helmets, // for logs
+                    'helmet_points' => $helmetScore, // for logs
+                ]);
+            }
+        }
 
         $this->notifyAllPlayers('detailledScore', '', [
             'roundScores' => $roundScores,
+            'helmetScores' => $helmetScores,
         ]);
 
         $this->gamestate->nextState('endGame');
