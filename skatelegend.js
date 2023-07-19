@@ -1978,7 +1978,7 @@ var CardsManager = /** @class */ (function (_super) {
 var isDebug = window.location.host == 'studio.boardgamearena.com' || window.location.hash.indexOf('debug') > -1;
 var log = isDebug ? console.log.bind(window.console) : function () { };
 var PlayerTable = /** @class */ (function () {
-    function PlayerTable(game, player) {
+    function PlayerTable(game, player, SENTENCES) {
         var _this = this;
         this.game = game;
         this.playerId = Number(player.id);
@@ -1986,7 +1986,17 @@ var PlayerTable = /** @class */ (function () {
         var html = "\n        <div id=\"player-table-".concat(this.playerId, "\" class=\"player-table\" style=\"--player-color: #").concat(player.color, ";\">\n            <div id=\"player-table-").concat(this.playerId, "-name\" class=\"name-wrapper\">").concat(player.name, "</div>\n            <div class=\"cards\">\n                <div class=\"block-with-text visible-cards\">\n                    <div class=\"block-label\">").concat(this.currentPlayer ? _('Your sequence') : _('${player_name}\'s sequence').replace('${player_name}', "<span style=\"color: #".concat(this.game.getPlayerColor(this.playerId), "\">").concat(this.game.getPlayerName(this.playerId), "</span>")), "</div>\n                    <div id=\"player-table-").concat(this.playerId, "-played\" class=\"cards\"></div>\n                </div>\n            </div>\n        </div>\n        ");
         dojo.place(html, document.getElementById('tables'));
         if (this.currentPlayer) {
-            document.getElementById("table").insertAdjacentHTML('afterbegin', "\n            <div class=\"block-with-text hand-wrapper cards\">\n                <div class=\"block-label\">".concat(_('Your hand'), "</div>\n                <div id=\"player-table-").concat(this.playerId, "-hand\" class=\"hand cards\"></div>\n            </div>\n            "));
+            var html_1 = "\n            <div class=\"hand-and-speak\">\n                <div class=\"block-with-text hand-wrapper cards\">\n                    <div class=\"block-label\">".concat(_('Your hand'), "</div>\n                    <div id=\"player-table-").concat(this.playerId, "-hand\" class=\"hand cards\"></div>\n                </div>\n                <div class=\"speak\">\n                    <div class=\"tease-icon\"></div>");
+            SENTENCES.forEach(function (sentence, index) {
+                html_1 += "<button id=\"tease-".concat(player.id, "-sentence-").concat(index, "\" class=\"bgabutton bgabutton_gray\">").concat(_(sentence), "</button>");
+            });
+            html_1 += "    </div>\n            </div>\n            ";
+            document.getElementById("table").insertAdjacentHTML('afterbegin', html_1);
+            SENTENCES.forEach(function (sentence, index) {
+                document.getElementById("tease-".concat(player.id, "-sentence-").concat(index)).addEventListener('click', function () {
+                    _this.game.tease(index);
+                });
+            });
             var handDiv = document.getElementById("player-table-".concat(this.playerId, "-hand"));
             this.hand = new LineStock(this.game.cardsManager, handDiv, {
                 sort: function (a, b) { return b.type - a.type; },
@@ -2015,7 +2025,7 @@ var PlayerTable = /** @class */ (function () {
         to.addCards(this.played.getCards());
     };
     PlayerTable.prototype.addHelmet = function (card) {
-        this.played.getCardElement(card).querySelector('.front').insertAdjacentHTML('beforeend', "<div class=\"helmet\"></div>");
+        this.played.getCardElement(card).insertAdjacentHTML('beforeend', "<div class=\"helmet\"></div>");
     };
     PlayerTable.prototype.makeCardsSelectable = function (selectable) {
         var _a;
@@ -2170,12 +2180,12 @@ var SkateLegend = /** @class */ (function () {
         document.getElementById('score').style.display = 'flex';
         var headers = document.getElementById('scoretr');
         if (!headers.childElementCount) {
-            var html_1 = "\n                <th></th>";
+            var html_2 = "\n                <th></th>";
             [1, 2, 3, 4].forEach(function (i) {
-                html_1 += "\n                    <th id=\"th-round".concat(i, "-score\" class=\"round-score\">").concat(_("Round ${number}").replace('${number}', i), "</th>\n                ");
+                html_2 += "\n                    <th id=\"th-round".concat(i, "-score\" class=\"round-score\">").concat(_("Round ${number}").replace('${number}', i), "</th>\n                ");
             });
-            html_1 += "\n                <th id=\"th-helmet-score\" class=\"helmet-score\">".concat(_("Helmet score"), "</th>\n                <th id=\"th-end-score\" class=\"end-score\">").concat(_("Final score"), "</th>\n            ");
-            dojo.place(html_1, headers);
+            html_2 += "\n                <th id=\"th-helmet-score\" class=\"helmet-score\">".concat(_("Helmet score"), "</th>\n                <th id=\"th-end-score\" class=\"end-score\">").concat(_("Final score"), "</th>\n            ");
+            dojo.place(html_2, headers);
         }
         var players = Object.values(this.gamedatas.players);
         players.forEach(function (player) {
@@ -2306,22 +2316,28 @@ var SkateLegend = /** @class */ (function () {
                 _this.setPlayerActive(playerId, player.active);
             }
             if (playerId == _this.getPlayerId()) {
-                document.getElementById("tease-".concat(player.id, "-wrapper")).insertAdjacentHTML('beforeend', "         \n                <div class=\"bubble-wrapper\">\n                    <div id=\"player-".concat(player.id, "-action-bubble\" class=\"discussion_bubble\" data-visible=\"false\"></div>\n                </div>\n                <button id=\"tease-").concat(player.id, "-button\" class=\"bgabutton bgabutton_blue tease-button\"><div class=\"tease-icon\"></button>\n                "));
-                var actionBubble_1 = document.getElementById("player-".concat(player.id, "-action-bubble"));
-                document.getElementById("tease-".concat(player.id, "-button")).addEventListener('click', function () {
-                    actionBubble_1.dataset.visible = actionBubble_1.dataset.visible == 'true' ? 'false' : 'true';
+                /*document.getElementById(`tease-${player.id}-wrapper`).insertAdjacentHTML('beforeend', `
+                <div class="bubble-wrapper">
+                    <div id="player-${player.id}-action-bubble" class="discussion_bubble" data-visible="false"></div>
+                </div>
+                <button id="tease-${player.id}-button" class="bgabutton bgabutton_blue tease-button"><div class="tease-icon"></button>
+                `);
+                const actionBubble = document.getElementById(`player-${player.id}-action-bubble`);
+                document.getElementById(`tease-${player.id}-button`).addEventListener('click', () => {
+                    actionBubble.dataset.visible = actionBubble.dataset.visible == 'true' ? 'false' : 'true';
                 });
-                _this.gamedatas.SENTENCES.forEach(function (sentence, index) {
-                    actionBubble_1.insertAdjacentHTML('beforeend', "<button id=\"tease-".concat(player.id, "-sentence-").concat(index, "\" class=\"bgabutton bgabutton_blue\">").concat(_(sentence), "</button>"));
-                    document.getElementById("tease-".concat(player.id, "-sentence-").concat(index)).addEventListener('click', function () {
-                        _this.tease(index);
-                        actionBubble_1.dataset.visible = 'false';
+
+                this.gamedatas.SENTENCES.forEach((sentence, index) => {
+                    actionBubble.insertAdjacentHTML('beforeend', `<button id="tease-${player.id}-sentence-${index}" class="bgabutton bgabutton_blue">${_(sentence)}</button>`);
+                    document.getElementById(`tease-${player.id}-sentence-${index}`).addEventListener('click', () => {
+                        this.tease(index);
+                        actionBubble.dataset.visible = 'false';
                     });
                 });
-                actionBubble_1.insertAdjacentHTML('beforeend', "<button id=\"tease-".concat(player.id, "-sentence-cancel\" class=\"bgabutton bgabutton_gray\">").concat(_('Cancel'), "</button>"));
-                document.getElementById("tease-".concat(player.id, "-sentence-cancel")).addEventListener('click', function () {
-                    actionBubble_1.dataset.visible = 'false';
-                });
+                actionBubble.insertAdjacentHTML('beforeend', `<button id="tease-${player.id}-sentence-cancel" class="bgabutton bgabutton_gray">${_('Cancel')}</button>`);
+                    document.getElementById(`tease-${player.id}-sentence-cancel`).addEventListener('click', () => {
+                        actionBubble.dataset.visible = 'false';
+                    });*/
                 if (player.roundPoints) {
                     _this.setRoundPoints(playerId, player.roundPoints);
                 }
@@ -2358,7 +2374,7 @@ var SkateLegend = /** @class */ (function () {
         });
     };
     SkateLegend.prototype.createPlayerTable = function (gamedatas, playerId) {
-        var table = new PlayerTable(this, gamedatas.players[playerId]);
+        var table = new PlayerTable(this, gamedatas.players[playerId], gamedatas.SENTENCES);
         this.playersTables.push(table);
     };
     SkateLegend.prototype.getHelpHtml = function () {

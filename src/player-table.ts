@@ -9,7 +9,7 @@ class PlayerTable {
 
     private currentPlayer: boolean;
 
-    constructor(private game: SkateLegendGame, player: SkateLegendPlayer) {
+    constructor(private game: SkateLegendGame, player: SkateLegendPlayer, SENTENCES: string[]) {
         this.playerId = Number(player.id);
         this.currentPlayer = this.playerId == this.game.getPlayerId();
 
@@ -27,12 +27,29 @@ class PlayerTable {
         dojo.place(html, document.getElementById('tables'));
 
         if (this.currentPlayer) {
-            document.getElementById(`table`).insertAdjacentHTML('afterbegin', `
-            <div class="block-with-text hand-wrapper cards">
-                <div class="block-label">${_('Your hand')}</div>
-                <div id="player-table-${this.playerId}-hand" class="hand cards"></div>
+            let html = `
+            <div class="hand-and-speak">
+                <div class="block-with-text hand-wrapper cards">
+                    <div class="block-label">${_('Your hand')}</div>
+                    <div id="player-table-${this.playerId}-hand" class="hand cards"></div>
+                </div>
+                <div class="speak">
+                    <div class="tease-icon"></div>`;
+
+            SENTENCES.forEach((sentence, index) => {
+                html += `<button id="tease-${player.id}-sentence-${index}" class="bgabutton bgabutton_gray">${_(sentence)}</button>`;
+            });
+
+            html += `    </div>
             </div>
-            `)
+            `;
+            document.getElementById(`table`).insertAdjacentHTML('afterbegin', html);
+
+            SENTENCES.forEach((sentence, index) => {
+                document.getElementById(`tease-${player.id}-sentence-${index}`).addEventListener('click', () => {
+                    this.game.tease(index);
+                });
+            });
 
             const handDiv = document.getElementById(`player-table-${this.playerId}-hand`);
             this.hand = new LineStock<Card>(this.game.cardsManager, handDiv, {
@@ -41,7 +58,6 @@ class PlayerTable {
             this.hand.onCardClick = (card: Card) => this.game.playCardFromHand(card.id);
             
             this.hand.addCards(player.hand);
-
         }
         this.voidStock = new VoidStock<Card>(this.game.cardsManager, document.getElementById(`player-table-${this.playerId}-name`));
         
@@ -70,7 +86,7 @@ class PlayerTable {
     }
     
     public addHelmet(card: Card) {
-        this.played.getCardElement(card).querySelector('.front').insertAdjacentHTML('beforeend', `<div class="helmet"></div>`);
+        this.played.getCardElement(card).insertAdjacentHTML('beforeend', `<div class="helmet"></div>`);
     }
     
     public makeCardsSelectable(selectable: boolean) {

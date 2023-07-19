@@ -56,6 +56,7 @@ interface SkateLegendGame extends Game {
     setTooltip(id: string, html: string): void;
     playCardFromHand(id: number): void;
     onDeckClick(number: number): void;
+    tease(index: number): void;
 }
 
 interface EnteringChooseContinueArgs {

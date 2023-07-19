@@ -71,6 +71,9 @@
         display: inline-block;
         width: 64px;
         height: 64px;
+        position: absolute;
+        top: -50px;
+        left: 38px;
         background-image: url('img/helmet.png');
         background-size: contain;
         background-repeat: no-repeat;

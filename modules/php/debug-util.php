@@ -11,7 +11,7 @@ trait DebugUtilTrait {
             return;
         } 
 
-        $this->debugFillHands();
+        //$this->debugFillHands();
         //$this->debugSetHelmets(1);
     }
 

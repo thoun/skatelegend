@@ -111,7 +111,7 @@ trait ActionTrait {
     }
   	
     public function tease(int $sentence) {        
-        $playerId = intval($this->getActivePlayerId());
+        $playerId = intval($this->getCurrentPlayerId());
 
         $sentence = $this->SENTENCES[$sentence];
 

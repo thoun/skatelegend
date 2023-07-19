@@ -350,7 +350,7 @@ class SkateLegend implements SkateLegendGame {
             }
 
             if (playerId == this.getPlayerId()) {
-                document.getElementById(`tease-${player.id}-wrapper`).insertAdjacentHTML('beforeend', `         
+                /*document.getElementById(`tease-${player.id}-wrapper`).insertAdjacentHTML('beforeend', `         
                 <div class="bubble-wrapper">
                     <div id="player-${player.id}-action-bubble" class="discussion_bubble" data-visible="false"></div>
                 </div>
@@ -371,7 +371,7 @@ class SkateLegend implements SkateLegendGame {
                 actionBubble.insertAdjacentHTML('beforeend', `<button id="tease-${player.id}-sentence-cancel" class="bgabutton bgabutton_gray">${_('Cancel')}</button>`);
                     document.getElementById(`tease-${player.id}-sentence-cancel`).addEventListener('click', () => {
                         actionBubble.dataset.visible = 'false';
-                    });
+                    });*/
 
                 if (player.roundPoints) {
                     this.setRoundPoints(playerId, player.roundPoints);
@@ -415,7 +415,7 @@ class SkateLegend implements SkateLegendGame {
     }
 
     private createPlayerTable(gamedatas: SkateLegendGamedatas, playerId: number) {
-        const table = new PlayerTable(this, gamedatas.players[playerId]);
+        const table = new PlayerTable(this, gamedatas.players[playerId], gamedatas.SENTENCES);
         this.playersTables.push(table);
     }
 

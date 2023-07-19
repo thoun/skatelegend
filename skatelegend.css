@@ -608,6 +608,9 @@ body > .card {
   display: inline-block;
   width: 64px;
   height: 64px;
+  position: absolute;
+  top: -50px;
+  left: 38px;
   background-image: url("img/helmet.png");
   background-size: contain;
   background-repeat: no-repeat;
@@ -719,10 +722,11 @@ body > .card {
   width: auto;
   padding: 3px;
 }
-.tease-button .tease-icon {
+
+.tease-icon {
   background: url("img/speak-icon.svg");
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   background-size: contain;
 }
 
@@ -795,6 +799,28 @@ body > .card {
 .hand-wrapper {
   background: rgba(0, 0, 0, 0.2);
   border-radius: 10px;
+}
+
+.hand-and-speak {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.hand-and-speak .hand-wrapper {
+  flex: 7;
+}
+.hand-and-speak .speak {
+  flex: 1;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.hand-and-speak .speak button {
+  white-space: normal;
+  background: white;
+  width: auto;
 }
 
 .block-with-text {
