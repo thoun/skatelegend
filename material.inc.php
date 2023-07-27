@@ -52,7 +52,8 @@ $this->CARDS_TYPE = [
 ];
 
 $this->SENTENCES = [
-    clienttranslate("Mais allé pioche tu risque rien :) !!"),
-    clienttranslate("Tu vas tomber !!"),
-    clienttranslate("A ta place j’arrêterai la…"),
+    clienttranslate("you should stop... 😬"),
+    clienttranslate("go and play, you're safe! 😇"),
+    clienttranslate("you're going down, for sure 😈"),
+    clienttranslate("haha told you! 😂"),
 ];
