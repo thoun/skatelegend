@@ -8,6 +8,7 @@ class PlayerTable {
     public played: LineStock<Card>;
 
     private currentPlayer: boolean;
+    private teaseTimer: number;
 
     constructor(private game: SkateLegendGame, player: SkateLegendPlayer, SENTENCES: string[]) {
         this.playerId = Number(player.id);
@@ -16,6 +17,11 @@ class PlayerTable {
         let html = `
         <div id="player-table-${this.playerId}" class="player-table" style="--player-color: #${player.color};">
             <div id="player-table-${this.playerId}-name" class="name-wrapper">${player.name}</div>
+            <div id="tease-${this.playerId}-wrapper" class="tease-wrapper">            
+                <div class="bubble-wrapper">
+                    <div id="player-${this.playerId}-discussion-bubble" class="discussion_bubble" data-visible="false"></div>
+                </div>
+            </div>
             <div class="cards">
                 <div class="block-with-text visible-cards">
                     <div class="block-label">${this.currentPlayer ? _('Your sequence') : _('${player_name}\'s sequence').replace('${player_name}', `<span style="color: #${this.game.getPlayerColor(this.playerId)}">${this.game.getPlayerName(this.playerId)}</span>`)}</div>
@@ -91,5 +97,19 @@ class PlayerTable {
     
     public makeCardsSelectable(selectable: boolean) {
         this.hand?.setSelectionMode(selectable ? 'single' : 'none');
+    }
+    
+    public showTease(sentence: string) {
+        if (this.teaseTimer) {
+            clearTimeout(this.teaseTimer);
+            this.teaseTimer = null;
+        }
+        const bubble = document.getElementById(`player-${this.playerId}-discussion-bubble`);
+        bubble.innerHTML = _(sentence);
+        bubble.dataset.visible = 'true';
+        this.teaseTimer = setTimeout(() => {
+            bubble.dataset.visible = 'false';
+            this.teaseTimer = null;
+        }, 2000);
     }
 }

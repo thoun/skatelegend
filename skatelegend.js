@@ -1983,7 +1983,7 @@ var PlayerTable = /** @class */ (function () {
         this.game = game;
         this.playerId = Number(player.id);
         this.currentPlayer = this.playerId == this.game.getPlayerId();
-        var html = "\n        <div id=\"player-table-".concat(this.playerId, "\" class=\"player-table\" style=\"--player-color: #").concat(player.color, ";\">\n            <div id=\"player-table-").concat(this.playerId, "-name\" class=\"name-wrapper\">").concat(player.name, "</div>\n            <div class=\"cards\">\n                <div class=\"block-with-text visible-cards\">\n                    <div class=\"block-label\">").concat(this.currentPlayer ? _('Your sequence') : _('${player_name}\'s sequence').replace('${player_name}', "<span style=\"color: #".concat(this.game.getPlayerColor(this.playerId), "\">").concat(this.game.getPlayerName(this.playerId), "</span>")), "</div>\n                    <div id=\"player-table-").concat(this.playerId, "-played\" class=\"cards\"></div>\n                </div>\n            </div>\n        </div>\n        ");
+        var html = "\n        <div id=\"player-table-".concat(this.playerId, "\" class=\"player-table\" style=\"--player-color: #").concat(player.color, ";\">\n            <div id=\"player-table-").concat(this.playerId, "-name\" class=\"name-wrapper\">").concat(player.name, "</div>\n            <div id=\"tease-").concat(this.playerId, "-wrapper\" class=\"tease-wrapper\">            \n                <div class=\"bubble-wrapper\">\n                    <div id=\"player-").concat(this.playerId, "-discussion-bubble\" class=\"discussion_bubble\" data-visible=\"false\"></div>\n                </div>\n            </div>\n            <div class=\"cards\">\n                <div class=\"block-with-text visible-cards\">\n                    <div class=\"block-label\">").concat(this.currentPlayer ? _('Your sequence') : _('${player_name}\'s sequence').replace('${player_name}', "<span style=\"color: #".concat(this.game.getPlayerColor(this.playerId), "\">").concat(this.game.getPlayerName(this.playerId), "</span>")), "</div>\n                    <div id=\"player-table-").concat(this.playerId, "-played\" class=\"cards\"></div>\n                </div>\n            </div>\n        </div>\n        ");
         dojo.place(html, document.getElementById('tables'));
         if (this.currentPlayer) {
             var html_1 = "\n            <div class=\"hand-and-speak\">\n                <div class=\"block-with-text hand-wrapper cards\">\n                    <div class=\"block-label\">".concat(_('Your hand'), "</div>\n                    <div id=\"player-table-").concat(this.playerId, "-hand\" class=\"hand cards\"></div>\n                </div>\n                <div class=\"speak\">\n                    <div class=\"tease-icon\"></div>");
@@ -2031,6 +2031,20 @@ var PlayerTable = /** @class */ (function () {
         var _a;
         (_a = this.hand) === null || _a === void 0 ? void 0 : _a.setSelectionMode(selectable ? 'single' : 'none');
     };
+    PlayerTable.prototype.showTease = function (sentence) {
+        var _this = this;
+        if (this.teaseTimer) {
+            clearTimeout(this.teaseTimer);
+            this.teaseTimer = null;
+        }
+        var bubble = document.getElementById("player-".concat(this.playerId, "-discussion-bubble"));
+        bubble.innerHTML = _(sentence);
+        bubble.dataset.visible = 'true';
+        this.teaseTimer = setTimeout(function () {
+            bubble.dataset.visible = 'false';
+            _this.teaseTimer = null;
+        }, 2000);
+    };
     return PlayerTable;
 }());
 var TableCenter = /** @class */ (function () {
@@ -2077,7 +2091,7 @@ var SkateLegend = /** @class */ (function () {
         this.scoredCounters = [];
         this.helmetCounters = [];
         this.stopVoidStocks = [];
-        this.teaseTimers = [];
+        //private teaseTimers: number[] = [];
         this.TOOLTIP_DELAY = document.body.classList.contains('touch-device') ? 1500 : undefined;
         /*const zoomStr = localStorage.getItem(LOCAL_STORAGE_ZOOM_KEY);
         if (zoomStr) {
@@ -2295,7 +2309,7 @@ var SkateLegend = /** @class */ (function () {
         Object.values(gamedatas.players).forEach(function (player) {
             var playerId = Number(player.id);
             // hand + scored cards counter + helmets counter
-            dojo.place("<div class=\"counters\">\n                <div id=\"playerhand-counter-wrapper-".concat(player.id, "\" class=\"playerhand-counter\">\n                    <div class=\"player-hand-card\"></div> \n                    <span id=\"playerhand-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"played-counter-wrapper-").concat(player.id, "\" class=\"played-counter\">\n                    <div class=\"player-played-card\"></div> \n                    <span id=\"played-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"scored-counter-wrapper-").concat(player.id, "\" class=\"scored-counter\">\n                    <div class=\"player-scored-card\"></div> \n                    <span id=\"scored-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>\n            <div class=\"counters\">\n                <div id=\"player-helmets-counter-wrapper-").concat(player.id, "\" class=\"player-helmets-counter\">\n                    <div class=\"player-helmets\"></div> \n                    <span id=\"player-helmets-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>\n            <div id=\"tease-").concat(player.id, "-wrapper\" class=\"tease-wrapper\">            \n                <div class=\"bubble-wrapper\">\n                    <div id=\"player-").concat(player.id, "-discussion-bubble\" class=\"discussion_bubble\" data-visible=\"false\"></div>\n                </div>\n            </div>\n            <div id=\"round-points-").concat(player.id, "\"></div>\n            "), "player_board_".concat(player.id));
+            dojo.place("<div class=\"counters\">\n                <div id=\"playerhand-counter-wrapper-".concat(player.id, "\" class=\"playerhand-counter\">\n                    <div class=\"player-hand-card\"></div> \n                    <span id=\"playerhand-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"played-counter-wrapper-").concat(player.id, "\" class=\"played-counter\">\n                    <div class=\"player-played-card\"></div> \n                    <span id=\"played-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"scored-counter-wrapper-").concat(player.id, "\" class=\"scored-counter\">\n                    <div class=\"player-scored-card\"></div> \n                    <span id=\"scored-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>\n            <div class=\"counters\">\n                <div id=\"player-helmets-counter-wrapper-").concat(player.id, "\" class=\"player-helmets-counter\">\n                    <div class=\"player-helmets\"></div> \n                    <span id=\"player-helmets-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>\n            <div id=\"round-points-").concat(player.id, "\"></div>\n            "), "player_board_".concat(player.id));
             var handCounter = new ebg.counter();
             handCounter.create("playerhand-counter-".concat(playerId));
             handCounter.setValue(player.handCount);
@@ -2349,20 +2363,19 @@ var SkateLegend = /** @class */ (function () {
         this.setTooltipToClass('scored-counter', _('Number of scored cards'));
         this.setTooltipToClass('player-helmets-counter', _('Number of helmets'));
     };
-    SkateLegend.prototype.showTease = function (playerId, sentence) {
-        var _this = this;
+    /*public showTease(playerId: number, sentence: string) {
         if (this.teaseTimers[playerId]) {
             clearTimeout(this.teaseTimers[playerId]);
             this.teaseTimers[playerId] = null;
         }
-        var bubble = document.getElementById("player-".concat(playerId, "-discussion-bubble"));
+        const bubble = document.getElementById(`player-${playerId}-discussion-bubble`);
         bubble.innerHTML = _(sentence);
         bubble.dataset.visible = 'true';
-        this.teaseTimers[playerId] = setTimeout(function () {
+        this.teaseTimers[playerId] = setTimeout(() => {
             bubble.dataset.visible = 'false';
-            _this.teaseTimers[playerId] = null;
+            this.teaseTimers[playerId] = null;
         }, 2000);
-    };
+    }*/
     SkateLegend.prototype.setPlayerActive = function (playerId, active) {
         document.getElementById("overall_player_board_".concat(playerId)).classList.toggle('inactive', !active);
     };
@@ -2629,7 +2642,7 @@ var SkateLegend = /** @class */ (function () {
         });
     };
     SkateLegend.prototype.notif_tease = function (notif) {
-        this.showTease(notif.args.playerId, notif.args.sentence);
+        this.getPlayerTable(notif.args.playerId).showTease(notif.args.sentence);
     };
     SkateLegend.prototype.setScore = function (playerId, column, score) {
         var cell = document.getElementById("score".concat(playerId)).getElementsByTagName('td')[column];

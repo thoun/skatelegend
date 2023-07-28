@@ -26,7 +26,7 @@ class SkateLegend implements SkateLegendGame {
     private roundCounter: Counter;
     private fallVoidStock: VoidStock<Card>;
     private stopVoidStocks: VoidStock<Card>[] = [];
-    private teaseTimers: number[] = [];
+    //private teaseTimers: number[] = [];
     
     private TOOLTIP_DELAY = document.body.classList.contains('touch-device') ? 1500 : undefined;
 
@@ -317,11 +317,6 @@ class SkateLegend implements SkateLegendGame {
                     <span id="player-helmets-counter-${player.id}"></span>
                 </div>
             </div>
-            <div id="tease-${player.id}-wrapper" class="tease-wrapper">            
-                <div class="bubble-wrapper">
-                    <div id="player-${player.id}-discussion-bubble" class="discussion_bubble" data-visible="false"></div>
-                </div>
-            </div>
             <div id="round-points-${player.id}"></div>
             `, `player_board_${player.id}`);
 
@@ -388,7 +383,7 @@ class SkateLegend implements SkateLegendGame {
         this.setTooltipToClass('player-helmets-counter', _('Number of helmets'));
     }
 
-    public showTease(playerId: number, sentence: string) {
+    /*public showTease(playerId: number, sentence: string) {
         if (this.teaseTimers[playerId]) {
             clearTimeout(this.teaseTimers[playerId]);
             this.teaseTimers[playerId] = null;
@@ -400,7 +395,7 @@ class SkateLegend implements SkateLegendGame {
             bubble.dataset.visible = 'false';
             this.teaseTimers[playerId] = null;
         }, 2000);
-    }
+    }*/
     
     public setPlayerActive(playerId: number, active: boolean): void {
         document.getElementById(`overall_player_board_${playerId}`).classList.toggle('inactive', !active);
@@ -723,7 +718,7 @@ class SkateLegend implements SkateLegendGame {
     }
 
     notif_tease(notif: Notif<NotifTeaseArgs>) {
-        this.showTease(notif.args.playerId, notif.args.sentence);
+        this.getPlayerTable(notif.args.playerId).showTease(notif.args.sentence);
     }
     
     private setScore(playerId: number | string, column: number, score: number) { // column 1 for first round ... 5 for final score
