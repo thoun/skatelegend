@@ -1944,7 +1944,7 @@ var CardsManager = /** @class */ (function (_super) {
                 return _('Turn the first card of either Trick pile face up. If both piles already have their first card face up, nothing happens.');
             case 21:
             case 22:
-                return _('Immediately replay the "Perform a trick" action. If the new card played has an Effect, apply it immediately.');
+                return _('Immediately replay the "Perform a trick" action (${number}x). If the new card played has an Effect, apply it immediately.').replace('${number}', power - 20);
             case 31:
             case 32:
                 return _('Add ${number} card to your hand from the Trick pile of your choice.').replace('${number}', power - 30);
