@@ -100,8 +100,19 @@ trait StateTrait {
             if (count($remainingActivePlayersIds) == 1) {
                 $remainingPlayerId = $remainingActivePlayersIds[0];
                 $this->gamestate->changeActivePlayer($remainingPlayerId); // will start next round
+
+                
+                $card = $this->getCardFromDb($this->cards->getCardOnTop('decklegend'));
+                $perfectLanding = $card->typeArg == 1;
+                if ($perfectLanding) { // take the legend card before closing if Perfect landing
+                    $this->takeLegendCard($remainingPlayerId);
+                }
+
                 $this->closeSequence($remainingPlayerId, false);
-                $this->takeLegendCard($remainingPlayerId);
+
+                if (!$perfectLanding) { // take the legend card after closing in the other cases
+                    $this->takeLegendCard($remainingPlayerId);
+                }
             }
             $this->gamestate->nextState('endRound');
         } else {
