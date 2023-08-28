@@ -205,21 +205,17 @@ trait UtilTrait {
     function playCard(int $playerId, Card $card, int $deckId) {
         $this->cards->moveCard($card->id, 'played'.$playerId, intval($this->cards->countCardInLocation('played'.$playerId)));
         
-        $message = '';/* TODO $fromDeck ?
-            clienttranslate('${player_name} plays a ${card_color} ${card_type} card from their hand (paid ${types}) ${card_display}') :
-            clienttranslate('${player_name} plays a ${card_color} ${card_type} card from their hand ${card_display}');*/
+        $message = $deckId > 0 ?
+            clienttranslate('${player_name} plays a ${card_color} card from deck ${deck_number}') :
+            clienttranslate('${player_name} plays a ${card_color} card from their hand');
 
         $args = [
             'playerId' => $playerId,
             'player_name' => $this->getPlayerName($playerId),
             'card' => $card,
             'fromDeck' => $deckId,
-            /*'newCount' => intval($this->cards->countCardInLocation('hand', $playerId)),
-            'discardedTokens' => $tokens,
-            'types' => array_map(fn($token) => $token->type, $tokens), // for logs
-            'card_type' => $this->getCardType($card->cardType), // for logs
             'card_color' => $this->getCardColor($card->color), // for logs
-            'card_display' => 100 * $card->color + $card->number, // for logs*/
+            'deck_number' => $deckId,
         ];
 
         if ($deckId > 0) {
@@ -488,6 +484,16 @@ trait UtilTrait {
                 'fromDeck' => $otherDeckId,
                 'decks' => $decks,
             ]);
+        }
+    }
+
+    function getCardColor(int $color) {
+        switch ($color) {
+            case GRAY: return clienttranslate("Gray");
+            case BLUE: return clienttranslate("Blue");
+            case YELLOW: return clienttranslate("Yellow");
+            case RED: return clienttranslate("Red");
+            case GREEN: return clienttranslate("Green");
         }
     }
     

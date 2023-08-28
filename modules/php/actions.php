@@ -13,12 +13,19 @@ trait ActionTrait {
 
     public function continue() {
         $this->checkAction('continue'); 
+        
+        $playerId = intval($this->getActivePlayerId());
+
+        self::notifyAllPlayers('log', clienttranslate('${player_name} chooses to continue their sequence'), [
+            'playerId' => $playerId,
+            'player_name' => $this->getPlayerName($playerId),
+        ]);
 
         $this->gamestate->nextState('continue');
     }
 
     public function stop() {
-        $this->checkAction('stop'); 
+        $this->checkAction('stop');
         
         $this->gamestate->nextState('stop');
     }
