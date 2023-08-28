@@ -87,7 +87,6 @@ $playerActionsGameStates = [
         "descriptionmyturn" => clienttranslate('${you} must choose to continue or stop the sequence'),
         "type" => "activeplayer",
         "args" => "argChooseContinue",
-        "action" => "stChooseContinue",
         "possibleactions" => [ 
             "continue",
             "stop"

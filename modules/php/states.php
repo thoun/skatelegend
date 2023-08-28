@@ -24,15 +24,7 @@ trait StateTrait {
         // TODO probably place cards ?
 
         $this->gamestate->nextState('next');
-    }    
-
-    function stChooseContinue() {
-        $playerId = intval($this->getActivePlayerId());
-
-        // TODO automatically continue if no cards, or no danger ?
-
-        //$this->gamestate->nextState('continue');
-    } 
+    }
 
     function stStop() {
         $playerId = intval($this->getActivePlayerId());
