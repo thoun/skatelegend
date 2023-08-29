@@ -32,6 +32,10 @@ trait ActionTrait {
   	
     public function playCardFromHand(int $id) {
         $this->checkAction('playCardFromHand'); 
+
+        if (intval($this->gamestate->state_id()) == ST_PLAYER_CHOOSE_CONTINUE) {
+            $this->continue();
+        }
         
         $playerId = intval($this->getActivePlayerId());
         
@@ -46,7 +50,11 @@ trait ActionTrait {
     }
     
     public function playCardFromDeck(int $deckId) {
-        $this->checkAction('playCardFromDeck'); 
+        $this->checkAction('playCardFromDeck');  
+
+        if (intval($this->gamestate->state_id()) == ST_PLAYER_CHOOSE_CONTINUE) {
+            $this->continue();
+        }
         
         $playerId = intval($this->getActivePlayerId());
 

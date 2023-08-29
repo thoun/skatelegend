@@ -89,7 +89,9 @@ $playerActionsGameStates = [
         "args" => "argChooseContinue",
         "possibleactions" => [ 
             "continue",
-            "stop"
+            "stop",
+            "playCardFromHand",
+            "playCardFromDeck",
         ],
         "transitions" => [
             "continue" => ST_PLAYER_PLAY_CARD,
