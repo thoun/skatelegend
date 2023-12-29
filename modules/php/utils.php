@@ -216,6 +216,7 @@ trait UtilTrait {
             'fromDeck' => $deckId,
             'card_color' => $this->getCardColor($card->color), // for logs
             'deck_number' => $deckId,
+            'i18n' => ['card_color'],
         ];
 
         if ($deckId > 0) {
