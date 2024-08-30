@@ -15,15 +15,6 @@ $gameinfos = [
 // Name of the game in English (will serve as the basis for translation) 
 'game_name' => "Skate Legend",
 
-// Game designer (or game designers, separated by commas)
-'designer' => 'Corentin Lebrat, Anthony Perone',       
-
-// Game artist (or game artists, separated by commas)
-'artist' => 'Olivier Chevillon',         
-
-// Year of FIRST publication of this game. Can be negative.
-'year' => 2023,                 
-
 // Game publisher (use empty string if there is no publisher)
 'publisher' => 'Rose Noire Edition',                     
 
@@ -85,19 +76,7 @@ $gameinfos = [
 // Language dependency. If false or not set, there is no language dependency. If true, all players at the table must speak the same language.
 // If an array of shortcode languages such as array( 1 => 'en', 2 => 'fr', 3 => 'it' ) then all players at the table must speak the same language, and this language must be one of the listed languages.
 // NB: the default will be the first language in this list spoken by the player, so you should list them by popularity/preference.
-'language_dependency' => false,
-
-// Complexity of the game, from 0 (extremely simple) to 5 (extremely complex)
-'complexity' => 1,    
-
-// Luck of the game, from 0 (absolutely no luck in this game) to 5 (totally luck driven)
-'luck' => 3,    
-
-// Strategy of the game, from 0 (no strategy can be setup) to 5 (totally based on strategy)
-'strategy' => 2,    
-
-// Diplomacy of the game, from 0 (no interaction in this game) to 5 (totally based on interaction and discussion between players)
-'diplomacy' => 2,    
+'language_dependency' => false,  
 
 // Colors attributed to players
 'player_colors' => ['ff0000', '008000', '0000ff', 'ffa500', '000000', 'e94190', '982fff', '72c3b1', 'f07f16', 'bdd002', '7b7b7b'],
@@ -113,48 +92,13 @@ $gameinfos = [
 // Game interface width range (pixels)
 // Note: game interface = space on the left side, without the column on the right
 'game_interface_width' => [
+    'autoscale' => true,
 
     // Minimum width
     //  default: 740
     //  maximum possible value: 740 (ie: your game interface should fit with a 740px width (correspond to a 1024px screen)
     //  minimum possible value: 320 (the lowest value you specify, the better the display is on mobile)
     'min' => 550,
-
-    // Maximum width
-    //  default: null (ie: no limit, the game interface is as big as the player's screen allows it).
-    //  maximum possible value: unlimited
-    //  minimum possible value: 740
-    'max' => null
 ],
 
-// Game presentation
-// Short game presentation text that will appear on the game description page, structured as an array of paragraphs.
-// Each paragraph must be wrapped with totranslate() for translation and should not contain html (plain text without formatting).
-// A good length for this text is between 100 and 150 words (about 6 to 9 lines on a standard display)
-'presentation' => [
-    totranslate("Skate Legend is a fast-paced and addictive card game for 2-5 players, in which you play skateboarders racing through the city streets at full speed."),
-    totranslate("The goal? Earn the most points by performing as many sequences of figures as spectacular as they are dangerous."),
-    totranslate("So, ready to hit the ramp?"),
-],
-
-// Games tags (categories)
-//  You can attribute a maximum of ten "tags" for your game.
-//  Each tag has a specific ID (ex: 22 for the category "Prototype", 101 for the tag "Science-fiction theme game")
-//  Please see the "Game meta information" entry in the BGA Studio documentation for a full list of available tags:
-//  https://en.doc.boardgamearena.com/Game_meta-information:_gameinfos.inc.php#Tags
-//  IMPORTANT: this list should be ORDERED, with the most important tag first.
-//  NOTE: tags are only read during the first deploy from the file gameinfos.inc.php; afterwards, BGA is responsible for setting tags for a game.
-
-'tags' => [2, 11, 26, 110, 200, 207, 224],
-
-
-//////// BGA SANDBOX ONLY PARAMETERS (DO NOT MODIFY)
-
-// simple : A plays, B plays, C plays, A plays, B plays, ...
-// circuit : A plays and choose the next player C, C plays and choose the next player D, ...
-// complex : A+B+C plays and says that the next player is A+B
-'is_sandbox' => false,
-'turnControl' => 'simple'
-
-////////
 ];
