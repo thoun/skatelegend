@@ -2269,6 +2269,7 @@ var SkateLegend = /** @class */ (function () {
     */
     SkateLegend.prototype.setup = function (gamedatas) {
         log("Starting game setup");
+        this.bga.gameArea.getElement().insertAdjacentHTML('beforeend', "\n            <div id=\"score\">\n                <div id=\"table-wrapper\">\n                    <table>\n                        <thead>\n                            <tr id=\"scoretr\"></tr>\n                        </thead>\n                        <tbody id=\"score-table-body\">\n                        </tbody>\n                    </table>\n                </div>\n            </div>\n\n            <div id=\"table\">\n                <div id=\"round-counter-row\">\n                    <div id=\"round-counter-block\"><span id=\"round-counter\"></span> / 4</div>\n                </div>\n                <div id=\"centered-table\">\n                    <div id=\"tables-and-center\">\n                        <div id=\"table-center\">\n                            <div id=\"decks\">\n                                <div id=\"deck1\"></div>\n                                <div id=\"deck2\"></div>\n                            </div>\n                            <div id=\"rewards\"></div>\n                        </div>\n                        <div id=\"tables\"></div>\n                    </div>\n                </div>\n            </div>\n        ");
         this.gamedatas = gamedatas;
         log('gamedatas', gamedatas);
         var endGame = Number(gamedatas.gamestate.id) >= 90; // score or end
@@ -2308,7 +2309,6 @@ var SkateLegend = /** @class */ (function () {
             ]
         });
         this.setupNotifications();
-        this.setupPreferences();
         if (endGame) { // score or end
             this.onEnteringShowScore(true);
         }
@@ -2436,23 +2436,6 @@ var SkateLegend = /** @class */ (function () {
     SkateLegend.prototype.getCurrentPlayerTable = function () {
         var _this = this;
         return this.playersTables.find(function (playerTable) { return playerTable.playerId === _this.getPlayerId(); });
-    };
-    SkateLegend.prototype.setupPreferences = function () {
-        var _this = this;
-        // Extract the ID and value from the UI control
-        var onchange = function (e) {
-            var match = e.target.id.match(/^preference_[cf]ontrol_(\d+)$/);
-            if (!match) {
-                return;
-            }
-            var prefId = +match[1];
-            var prefValue = +e.target.value;
-            _this.prefs[prefId].value = prefValue;
-        };
-        // Call onPreferenceChange() when any value changes
-        dojo.query(".preference_control").connect("onchange", onchange);
-        // Call onPreferenceChange() now
-        dojo.forEach(dojo.query("#ingame_menu_content .preference_control"), function (el) { return onchange({ target: el }); });
     };
     SkateLegend.prototype.getOrderedPlayers = function (gamedatas) {
         var _this = this;
@@ -2633,18 +2616,13 @@ var SkateLegend = /** @class */ (function () {
         this.takeAction('skipHelmet');
     };
     SkateLegend.prototype.tease = function (sentence) {
-        this.takeNoLockAction('tease', {
+        this.bga.actions.performAction('tease', {
             sentence: sentence
-        });
+        }, { lock: false, checkAction: false });
     };
     SkateLegend.prototype.takeAction = function (action, data) {
         data = data || {};
-        data.lock = true;
-        this.ajaxcall("/skatelegend/skatelegend/".concat(action, ".html"), data, this, function () { });
-    };
-    SkateLegend.prototype.takeNoLockAction = function (action, data) {
-        data = data || {};
-        this.ajaxcall("/skatelegend/skatelegend/".concat(action, ".html"), data, this, function () { });
+        this.bga.actions.performAction(action, data, { checkAction: false });
     };
     ///////////////////////////////////////////////////
     //// Reaction to cometD notifications

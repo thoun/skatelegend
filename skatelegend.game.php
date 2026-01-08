@@ -16,8 +16,9 @@
   *
   */
 
-
-require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
+use Bga\GameFramework\Components\Deck;
+use Bga\GameFramework\Table;
+use Bga\GameFramework\VisibleSystemException;
 
 require_once('modules/php/constants.inc.php');
 require_once('modules/php/utils.php');
@@ -33,6 +34,10 @@ class SkateLegend extends Table {
     use ArgsTrait;
     use DebugUtilTrait;
 
+    public Deck $cards;
+    public array $CARDS_TYPE;
+    public array $SENTENCES;
+
 	function __construct() {
         // Your global variables labels:
         //  Here, you can assign labels to global variables you are using for this game.
@@ -47,15 +52,9 @@ class SkateLegend extends Table {
             PLAY_AGAIN => 11,
         ]);
 		
-        $this->cards = $this->getNew("module.common.deck");
-        $this->cards->init("card");
+        $this->cards = $this->deckFactory->createDeck("card");
         $this->cards->autoreshuffle = false;        
-	}
-	
-    protected function getGameName() {
-		// Used for translations and stuff. Please do not modify.
-        return "skatelegend";
-    }	
+	}	
 
     /*
         setupNewGame:
@@ -93,7 +92,7 @@ class SkateLegend extends Table {
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
         // 10+ : rounds/turns        
-        $this->initStat('table', 'roundNumber', 0);
+        $this->tableStats->init('roundNumber', 0);
         /*foreach([
             // 10+ : rounds/turns        
             'roundsAsFirstPlayer', 'checkedMercenaries', 'numberOfZones', 'numberOfLines', 'figuresOver6',
@@ -122,10 +121,7 @@ class SkateLegend extends Table {
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
 
-        // TODO TEMP
-        $this->debugSetup();
-
-        /************ End of the game initialization *****/
+        return \ST_NEW_ROUND;
     }
 
     /*
@@ -137,7 +133,7 @@ class SkateLegend extends Table {
         _ when the game starts
         _ when a player refreshes the game page (F5)
     */
-    protected function getAllDatas() {
+    protected function getAllDatas(): array {
         $result = [];
     
         $currentPlayerId = self::getCurrentPlayerId();    // !! We must only return informations visible by this player !!
@@ -148,7 +144,7 @@ class SkateLegend extends Table {
         $result['players'] = self::getCollectionFromDb($sql);
 
         $roundNumber = intval($this->getStat('roundNumber'));
-        $isEndScore = intval($this->gamestate->state_id()) >= ST_END_SCORE;
+        $isEndScore = $this->gamestate->getCurrentMainStateId() >= ST_END_SCORE;
         
         foreach($result['players'] as $playerId => &$player) {
 
@@ -250,7 +246,7 @@ class SkateLegend extends Table {
             return;
         }
 
-        throw new feException( "Zombie mode not supported at this game state: ".$statename );
+        throw new VisibleSystemException( "Zombie mode not supported at this game state: ".$statename );
     }
     
 ///////////////////////////////////////////////////////////////////////////////////:

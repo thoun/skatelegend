@@ -1,10 +1,3 @@
-declare const define;
-declare const ebg;
-declare const $;
-declare const dojo: Dojo;
-declare const _;
-declare const g_gamethemeurl;
-
 const ANIMATION_MS = 500;
 const ACTION_TIMER_DURATION = 5;
 
@@ -30,6 +23,8 @@ class SkateLegend implements SkateLegendGame {
     
     private TOOLTIP_DELAY = document.body.classList.contains('touch-device') ? 1500 : undefined;
 
+    public bga: Bga;
+
     constructor() {
         /*const zoomStr = localStorage.getItem(LOCAL_STORAGE_ZOOM_KEY);
         if (zoomStr) {
@@ -52,6 +47,37 @@ class SkateLegend implements SkateLegendGame {
 
     public setup(gamedatas: SkateLegendGamedatas) {
         log( "Starting game setup" );
+        this.bga.gameArea.getElement().insertAdjacentHTML('beforeend', `
+            <div id="score">
+                <div id="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr id="scoretr"></tr>
+                        </thead>
+                        <tbody id="score-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="table">
+                <div id="round-counter-row">
+                    <div id="round-counter-block"><span id="round-counter"></span> / 4</div>
+                </div>
+                <div id="centered-table">
+                    <div id="tables-and-center">
+                        <div id="table-center">
+                            <div id="decks">
+                                <div id="deck1"></div>
+                                <div id="deck2"></div>
+                            </div>
+                            <div id="rewards"></div>
+                        </div>
+                        <div id="tables"></div>
+                    </div>
+                </div>
+            </div>
+        `);
         
         this.gamedatas = gamedatas;
 
@@ -99,7 +125,6 @@ class SkateLegend implements SkateLegendGame {
             ]
         });
         this.setupNotifications();
-        this.setupPreferences();
 
         if (endGame) { // score or end
             this.onEnteringShowScore(true);
@@ -259,28 +284,6 @@ class SkateLegend implements SkateLegendGame {
 
     private getCurrentPlayerTable(): PlayerTable | null {
         return this.playersTables.find(playerTable => playerTable.playerId === this.getPlayerId());
-    }
-
-    private setupPreferences() {
-        // Extract the ID and value from the UI control
-        const onchange = (e) => {
-          var match = e.target.id.match(/^preference_[cf]ontrol_(\d+)$/);
-          if (!match) {
-            return;
-          }
-          var prefId = +match[1];
-          var prefValue = +e.target.value;
-          (this as any).prefs[prefId].value = prefValue;
-        }
-        
-        // Call onPreferenceChange() when any value changes
-        dojo.query(".preference_control").connect("onchange", onchange);
-        
-        // Call onPreferenceChange() now
-        dojo.forEach(
-          dojo.query("#ingame_menu_content .preference_control"),
-          el => onchange({ target: el })
-        );
     }
 
     private getOrderedPlayers(gamedatas: SkateLegendGamedatas) {
@@ -534,20 +537,14 @@ class SkateLegend implements SkateLegendGame {
     }
 
     public tease(sentence: number) {
-        this.takeNoLockAction('tease', {
+        this.bga.actions.performAction('tease', {
             sentence
-        });
+        }, { lock: false, checkAction: false });
     }
 
     public takeAction(action: string, data?: any) {
         data = data || {};
-        data.lock = true;
-        (this as any).ajaxcall(`/skatelegend/skatelegend/${action}.html`, data, this, () => {});
-    }
-
-    public takeNoLockAction(action: string, data?: any) {
-        data = data || {};
-        (this as any).ajaxcall(`/skatelegend/skatelegend/${action}.html`, data, this, () => {});
+        this.bga.actions.performAction(action, data, { checkAction: false});
     }
 
     ///////////////////////////////////////////////////

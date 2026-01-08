@@ -1,0 +1,10 @@
+{
+    "table": {
+        "roundNumber": {
+            "id": 10,
+            "name": "Number of rounds",
+            "type": "int"
+        }
+    },
+    "player": []
+}
