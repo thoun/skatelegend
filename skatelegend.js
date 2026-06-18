@@ -2449,7 +2449,7 @@ var SkateLegend = /** @class */ (function () {
         Object.values(gamedatas.players).forEach(function (player) {
             var playerId = Number(player.id);
             // hand + scored cards counter + helmets counter
-            dojo.place("<div class=\"counters\">\n                <div id=\"playerhand-counter-wrapper-".concat(player.id, "\" class=\"playerhand-counter\">\n                    <div class=\"player-hand-card\"></div> \n                    <span id=\"playerhand-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"played-counter-wrapper-").concat(player.id, "\" class=\"played-counter\">\n                    <div class=\"player-played-card\"></div> \n                    <span id=\"played-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"scored-counter-wrapper-").concat(player.id, "\" class=\"scored-counter\">\n                    <div class=\"player-scored-card\"></div> \n                    <span id=\"scored-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>\n            <div class=\"counters\">\n                <div id=\"player-helmets-counter-wrapper-").concat(player.id, "\" class=\"player-helmets-counter\">\n                    <div class=\"player-helmets\"></div> \n                    <span id=\"player-helmets-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>\n            <div id=\"round-points-").concat(player.id, "\"></div>\n            "), "player_board_".concat(player.id));
+            _this.bga.playerPanels.getElement(playerId).insertAdjacentHTML('beforeend', "<div class=\"counters\">\n                <div id=\"playerhand-counter-wrapper-".concat(player.id, "\" class=\"playerhand-counter\">\n                    <div class=\"player-hand-card\"></div> \n                    <span id=\"playerhand-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"played-counter-wrapper-").concat(player.id, "\" class=\"played-counter\">\n                    <div class=\"player-played-card\"></div> \n                    <span id=\"played-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"scored-counter-wrapper-").concat(player.id, "\" class=\"scored-counter\">\n                    <div class=\"player-scored-card\"></div> \n                    <span id=\"scored-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>\n            <div class=\"counters\">\n                <div id=\"player-helmets-counter-wrapper-").concat(player.id, "\" class=\"player-helmets-counter\">\n                    <div class=\"player-helmets\"></div> \n                    <span id=\"player-helmets-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>\n            <div id=\"round-points-").concat(player.id, "\"></div>\n            "));
             var handCounter = new ebg.counter();
             handCounter.create("playerhand-counter-".concat(playerId));
             handCounter.setValue(player.handCount);
@@ -2715,7 +2715,7 @@ var SkateLegend = /** @class */ (function () {
     };
     SkateLegend.prototype.setRoundPoints = function (playerId, roundPoints) {
         if (roundPoints === void 0) { roundPoints = null; }
-        document.getElementById("round-points-".concat(playerId)).innerHTML = roundPoints ? _('You scored ${points} points this round').replace('${points}', roundPoints) : '';
+        document.getElementById("round-points-".concat(playerId)).innerHTML = roundPoints ? _('You scored ${points} points this round').replace('${points}', '' + roundPoints) : '';
     };
     SkateLegend.prototype.notif_newRound = function (notif) {
         var _this = this;
@@ -2787,14 +2787,13 @@ var SkateLegend = /** @class */ (function () {
         var _this = this;
         log('notif_detailledScore', notif.args);
         Object.entries(notif.args.roundScores).forEach(function (entry) {
-            var _a;
             var playerId = Number(entry[0]);
             entry[1].forEach(function (roundPoints, index) { return _this.setScore(playerId, index + 1, roundPoints); });
             _this.setScore(playerId, 5, notif.args.helmetScores[playerId]);
             var total = entry[1].filter(function (n) { return n !== null; }).reduce(function (a, b) { return a + b; }, 0);
             total += notif.args.helmetScores[playerId];
             _this.setScore(playerId, 6, total);
-            (_a = _this.scoreCtrl[playerId]) === null || _a === void 0 ? void 0 : _a.toValue(total);
+            _this.bga.playerPanels.getScoreCounter(playerId).toValue(total);
             _this.setPlayerActive(playerId, true);
         });
     };

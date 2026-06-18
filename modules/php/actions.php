@@ -16,7 +16,7 @@ trait ActionTrait {
         
         $playerId = intval($this->getActivePlayerId());
 
-        self::notifyAllPlayers('log', clienttranslate('${player_name} chooses to continue their sequence'), [
+        $this->bga->notify->all('log', clienttranslate('${player_name} chooses to continue their sequence'), [
             'playerId' => $playerId,
             'player_name' => $this->getPlayerName($playerId),
         ]);
@@ -33,7 +33,7 @@ trait ActionTrait {
     public function playCardFromHand(int $id) {
         $this->checkAction('playCardFromHand'); 
 
-        if (intval($this->gamestate->state_id()) == ST_PLAYER_CHOOSE_CONTINUE) {
+        if ($this->gamestate->getCurrentMainStateId() == ST_PLAYER_CHOOSE_CONTINUE) {
             $this->continue();
         }
         
@@ -52,7 +52,7 @@ trait ActionTrait {
     public function playCardFromDeck(int $deckId) {
         $this->checkAction('playCardFromDeck');  
 
-        if (intval($this->gamestate->state_id()) == ST_PLAYER_CHOOSE_CONTINUE) {
+        if ($this->gamestate->getCurrentMainStateId() == ST_PLAYER_CHOOSE_CONTINUE) {
             $this->continue();
         }
         
@@ -102,7 +102,7 @@ trait ActionTrait {
             'deckTopCard' => Card::onlyId($this->getCardFromDb($this->cards->getCardOnTop('deck'.$deckId))),
         ]);
 
-        self::notifyAllPlayers('addCardToHand', clienttranslate('${player_name} takes the top card from deck ${deck_number}'), [
+        $this->bga->notify->all('addCardToHand', clienttranslate('${player_name} takes the top card from deck ${deck_number}'), [
             'playerId' => $playerId,
             'player_name' => $this->getPlayerName($playerId),
             'card' => Card::onlyId($card),
@@ -130,7 +130,7 @@ trait ActionTrait {
 
         $sentence = $this->SENTENCES[$sentence];
 
-        self::notifyAllPlayers('tease', clienttranslate('${player_name} says: ${sentence}'), [
+        $this->bga->notify->all('tease', clienttranslate('${player_name} says: ${sentence}'), [
             'playerId' => $playerId,
             'player_name' => $this->getPlayerName($playerId),
             'sentence' => $sentence,

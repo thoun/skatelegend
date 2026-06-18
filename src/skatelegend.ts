@@ -300,7 +300,7 @@ class SkateLegend implements SkateLegendGame {
              
 
             // hand + scored cards counter + helmets counter
-            dojo.place(`<div class="counters">
+            this.bga.playerPanels.getElement(playerId).insertAdjacentHTML('beforeend', `<div class="counters">
                 <div id="playerhand-counter-wrapper-${player.id}" class="playerhand-counter">
                     <div class="player-hand-card"></div> 
                     <span id="playerhand-counter-${player.id}"></span>
@@ -321,7 +321,7 @@ class SkateLegend implements SkateLegendGame {
                 </div>
             </div>
             <div id="round-points-${player.id}"></div>
-            `, `player_board_${player.id}`);
+            `);
 
             const handCounter = new ebg.counter();
             handCounter.create(`playerhand-counter-${playerId}`);
@@ -650,7 +650,7 @@ class SkateLegend implements SkateLegendGame {
     }
     
     private setRoundPoints(playerId: number, roundPoints: number | null = null) {
-        document.getElementById(`round-points-${playerId}`).innerHTML = roundPoints ? _('You scored ${points} points this round').replace('${points}', roundPoints) : '';
+        document.getElementById(`round-points-${playerId}`).innerHTML = roundPoints ? _('You scored ${points} points this round').replace('${points}', ''+roundPoints) : '';
     }
 
     notif_newRound(notif: Notif<NotifNewRoundArgs>) {
@@ -734,7 +734,7 @@ class SkateLegend implements SkateLegendGame {
             let total = entry[1].filter(n => n !== null).reduce((a, b) => a + b, 0);
             total += notif.args.helmetScores[playerId];
             this.setScore(playerId, 6, total);
-            (this as any).scoreCtrl[playerId]?.toValue(total);
+            this.bga.playerPanels.getScoreCounter(playerId).toValue(total);
             this.setPlayerActive(playerId, true);
         });
     }

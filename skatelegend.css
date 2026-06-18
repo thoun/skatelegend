@@ -645,14 +645,12 @@ body > .card {
   padding: 10px;
 }
 
-.player-board {
-  background-color: white;
+html[data-theme=light] .player-board {
+  --game-bga-player-panel-background: white;
 }
-.player-board.spectator-mode * {
-  background: white !important;
-}
+
 .player-board.inactive {
-  background-color: #b9b9b9;
+  --game-bga-player-panel-background: #b9b9b9;
 }
 
 .end-game-points {
@@ -819,6 +817,7 @@ body > .card {
 }
 .hand-and-speak .speak button {
   white-space: normal;
+  color: black;
   background: white;
   width: auto;
 }
@@ -914,6 +913,10 @@ body > .card {
 
 #popin_bgaHelpDialog {
   background: #ecf4fb;
+}
+
+html[data-theme=dark] #popin_bgaHelpDialog {
+  background-color: var(--game-palette-bga-gray-244);
 }
 
 #help-popin h1 {

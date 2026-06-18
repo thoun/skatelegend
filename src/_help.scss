@@ -3,6 +3,12 @@
     background: #ecf4fb;
 }
 
+html[data-theme="dark"] {
+    #popin_bgaHelpDialog {
+        background-color: var(--game-palette-bga-gray-244);
+    }
+}
+
 #help-popin {
     h1 {
         padding: 5px;

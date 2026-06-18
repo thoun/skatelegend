@@ -16,7 +16,7 @@ trait StateTrait {
 
         $roundNumber = intval($this->getStat('roundNumber')) + 1;
 
-        self::notifyAllPlayers('newRound', clienttranslate('Round ${round_number} / 4 starts'), [
+        $this->bga->notify->all('newRound', clienttranslate('Round ${round_number} / 4 starts'), [
             'round_number' => $roundNumber, // for logs
             'roundNumber' => $roundNumber,
         ]);
@@ -51,7 +51,7 @@ trait StateTrait {
         $sequence = $this->getCardsByLocation('played'.$playerId);
         $this->cards->moveCards(array_map(fn($card) => $card->id, $sequence), 'discard');
 
-        self::notifyAllPlayers('fall', clienttranslate('${player_name} falls! The sequence is discarded, but he gains one helmet'), [
+        $this->bga->notify->all('fall', clienttranslate('${player_name} falls! The sequence is discarded, but he gains one helmet'), [
             'playerId' => $playerId,
             'player_name' => $this->getPlayerName($playerId),
         ]);
@@ -63,7 +63,7 @@ trait StateTrait {
             $card = $this->getCardFromDb($this->cards->getCardOnTop('decklegend'));
             $this->cards->moveCard($card->id, 'discard');
 
-            self::notifyAllPlayers('discardTrophyCard', clienttranslate('The trophy card is discarded as the last active player fell'), [
+            $this->bga->notify->all('discardTrophyCard', clienttranslate('The trophy card is discarded as the last active player fell'), [
                 'card' => $card,
                 'newCount' => intval($this->cards->countCardInLocation('decklegend')),
                 'newCard' => $this->getCardFromDb($this->cards->getCardOnTop('decklegend')),
@@ -137,9 +137,9 @@ trait StateTrait {
             $helmetScores[$playerId] = $helmetScore;
 
             if ($helmets > 0) {
-                self::DbQuery("update player set player_score = player_score + $helmetScore WHERE player_id = $playerId");
+                $this->bga->playerScore->inc($playerId, $helmetScore, null);
 
-                self::notifyAllPlayers('helmetScore', clienttranslate('${player_name} scores ${helmet_points} points with ${helmets} remaining helmet(s)'), [
+                $this->bga->notify->all('helmetScore', clienttranslate('${player_name} scores ${helmet_points} points with ${helmets} remaining helmet(s)'), [
                     'player_name' => $this->getPlayerName($playerId),
                     'helmets' => $helmets, // for logs
                     'helmet_points' => $helmetScore, // for logs

@@ -101,7 +101,7 @@ trait UtilTrait {
     }
 
     function getPlayerScore(int $playerId) {
-        return intval($this->getUniqueValueFromDB("SELECT player_score FROM player where `player_id` = $playerId"));
+        return $this->bga->playerScore->get($playerId);
     }
 
     function getPlayerActive(int $playerId) {
@@ -109,7 +109,7 @@ trait UtilTrait {
     }
 
     function incPlayerScore(int $playerId, int $amount, $message = '', $args = []) {
-        $this->DbQuery("UPDATE player SET `player_score` = `player_score` + $amount WHERE player_id = $playerId");
+        $this->bga->playerScore->inc($playerId, $amount, null);
             
         $logType = array_key_exists('scoreType', $args) && in_array($args['scoreType'], ['endControlTerritory']) ? $args['scoreType'] : 'score';
         $this->notifyAllPlayers($logType, $message, [
@@ -197,7 +197,7 @@ trait UtilTrait {
 
         $card = $this->getCardFromDb($this->cards->getCardOnTop('deck'.$deckId));
 
-        self::notifyAllPlayers('flipCard', '', [
+        $this->bga->notify->all('flipCard', '', [
             'card' => $card,
         ]);
     }
@@ -224,7 +224,7 @@ trait UtilTrait {
             $args['deckTopCard'] = Card::onlyId($this->getCardFromDb($this->cards->getCardOnTop('deck'.$deckId)));
         }
         
-        self::notifyAllPlayers('playCard', $message, $args);
+        $this->bga->notify->all('playCard', $message, $args);
 
         if ($deckId > 0) {
             $this->cardPickedFromDeck($deckId);
@@ -356,20 +356,20 @@ trait UtilTrait {
         $message = $manuallyTriggered ? 
             clienttranslate('${player_name} chooses to stop their sequence') :
             clienttranslate('${player_name} automatically stops their sequence (last remaining active player)');
-        self::notifyAllPlayers('log', $message, [
+        $this->bga->notify->all('log', $message, [
             'playerId' => $playerId,
             'player_name' => $this->getPlayerName($playerId),
         ]);
 
         foreach ($cardsToDiscard as $card) {
-            self::notifyAllPlayers('discardedLegendCard', clienttranslate('${player_name} discards a legendary trick card because the condition isn\'t met'), [
+            $this->bga->notify->all('discardedLegendCard', clienttranslate('${player_name} discards a legendary trick card because the condition isn\'t met'), [
                 'playerId' => $playerId,
                 'player_name' => $this->getPlayerName($playerId),
                 'card' => $card,
             ]);
         }
 
-        self::notifyAllPlayers('closeSequence', clienttranslate('${player_name} score ${points} points with closed sequence'), [
+        $this->bga->notify->all('closeSequence', clienttranslate('${player_name} score ${points} points with closed sequence'), [
             'playerId' => $playerId,
             'player_name' => $this->getPlayerName($playerId),
             'points' => $wheels, // for logs
@@ -381,7 +381,7 @@ trait UtilTrait {
     function addHelmet(int $playerId, Card $card) {
         self::DbQuery("update player set player_helmet_card_id = $card->id, player_helmets = player_helmets - 1 WHERE player_id = $playerId");
 
-        self::notifyAllPlayers('addHelmet', clienttranslate('${player_name} adds a helmet on the last played card'), [
+        $this->bga->notify->all('addHelmet', clienttranslate('${player_name} adds a helmet on the last played card'), [
             'playerId' => $playerId,
             'player_name' => $this->getPlayerName($playerId),
             'card' => $card,
@@ -438,7 +438,7 @@ trait UtilTrait {
             $this->cards->moveCard($card->id, 'hand', $playerId);
         }
 
-        self::notifyAllPlayers('takeTrophyCard', clienttranslate('${player_name} takes the trophy card for being the last active player'), [
+        $this->bga->notify->all('takeTrophyCard', clienttranslate('${player_name} takes the trophy card for being the last active player'), [
             'playerId' => $playerId,
             'player_name' => $this->getPlayerName($playerId),
             'card' => $card,
@@ -481,7 +481,7 @@ trait UtilTrait {
                     'top' => in_array($i, $visibleTopDecks) ? $topDeckCard : Card::onlyId($topDeckCard),
                 ];
             }
-            self::notifyAllPlayers('splitDecks', '', [
+            $this->bga->notify->all('splitDecks', '', [
                 'fromDeck' => $otherDeckId,
                 'decks' => $decks,
             ]);
