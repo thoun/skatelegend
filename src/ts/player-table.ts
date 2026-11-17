@@ -1,7 +1,6 @@
-const isDebug = window.location.host == 'studio.boardgamearena.com' || window.location.hash.indexOf('debug') > -1;
-const log = isDebug ? console.log.bind(window.console) : function () { };
+import { LineStock, VoidStock } from './libs';
 
-class PlayerTable {
+export class PlayerTable {
     public playerId: number;
     public voidStock: VoidStock<Card>;
     public hand?: LineStock<Card>;
@@ -30,7 +29,7 @@ class PlayerTable {
             </div>
         </div>
         `;
-        dojo.place(html, document.getElementById('tables'));
+        document.getElementById('tables').insertAdjacentHTML('beforeend', html);
 
         if (this.currentPlayer) {
             let html = `

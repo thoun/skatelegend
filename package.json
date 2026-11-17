@@ -2,22 +2,28 @@
   "name": "skatelegend",
   "version": "1.0.0",
   "description": "",
-  "main": "skatelegend.js",
+  "main": "modules/js/Game.js",
   "scripts": {
-    "build:ts": "tsc",
-    "build:scss": "sass --no-source-map src/skatelegend.scss skatelegend.css"
+    "build:ts": "rollup -c",
+    "build:scss": "sass --no-source-map src/skatelegend.scss skatelegend.css",
+    "watch:ts": "rollup -c -w",
+    "watch:scss": "sass --watch --no-source-map src/skatelegend.scss:skatelegend.css",
+    "build": "npm run build:ts && npm run build:scss",
+    "watch": "npm run watch:ts & npm run watch:scss",
+    "typecheck": "node build/legacy-libs.mjs && tsc --noEmit"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "bga-animations": "thoun/bga-animations#1.0.2",
     "bga-cards": "thoun/bga-cards#2.0.2",
-    "bga-help": "thoun/bga-help#1.0.0",
-    "bga-jump-to": "thoun/bga-jump-to#1.0.0",
-    "bga-zoom": "thoun/bga-zoom#1.0.4"
+    "bga-help": "thoun/bga-help#1.0.0"
   },
   "devDependencies": {
+    "@rollup/plugin-typescript": "^12.3.1",
+    "rollup": "^4.68.5",
     "sass": "^1.62.1",
-    "typescript": "^5.0.4"
+    "tslib": "^2.9.1",
+    "typescript": "^6.0.3"
   }
 }

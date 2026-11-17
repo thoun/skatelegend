@@ -14,7 +14,7 @@ In VS Code, add extension https://marketplace.visualstudio.com/items?itemName=em
             {
                 "match": ".*\\.ts$",
                 "isAsync": true,
-                "cmd": "npm run build:ts"
+                "cmd": "npm run build"
             },
             {
                 "match": ".*\\.scss$",
@@ -24,7 +24,11 @@ In VS Code, add extension https://marketplace.visualstudio.com/items?itemName=em
         ]
     }
 ```
-If you use it for another game, replace `skatelegend` mentions on package.json `build:scss` script and on tsconfig.json `files` property.
+The maintained interface entry point is `src/ts/Game.ts`. Run `npm run build` to bundle it into `modules/js/Game.js` and compile the existing SCSS into `skatelegend.css`. Run `npm run typecheck` for a separate TypeScript check, or `npm run watch` while developing.
+
+The build prepares the pinned unofficial help, animation, and card libraries as separate AMD files in `modules/js/`, loaded with `importDojoLibs` as in Castle Combo. Zoom and jump-to use the official `1.x` ES modules. The ignored `.build/` directory contains generated type-checking input; do not edit it or commit `node_modules`.
+
+If you use this project for another game, update the stylesheet paths in `package.json`.
 
 ## Auto-upload builded files
 Also add one auto-FTP upload extension (for example https://marketplace.visualstudio.com/items?itemName=lukasz-wronski.ftp-sync) and configure it. The extension will detected modified files in the workspace, including builded ones, and upload them to remote server.

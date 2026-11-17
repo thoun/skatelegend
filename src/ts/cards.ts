@@ -1,9 +1,11 @@
+import { CardManager } from './libs';
+
 const CARD_WIDTH = 140;
 const CARD_HEIGHT = 280;
 
-class CardsManager extends CardManager<Card> {
-    constructor (public game: SkateLegendGame) {
-        super(game, {
+export class CardsManager extends CardManager<Card> {
+    constructor (private skateGame: SkateLegendGame) {
+        super(skateGame.bga.gameui, {
             getId: (card) => `card-${card.id}`,
             setupDiv: (card: Card, div: HTMLElement) => {
                 div.dataset.type = ''+card.type;
@@ -11,11 +13,11 @@ class CardsManager extends CardManager<Card> {
             setupFrontDiv: (card: Card, div: HTMLElement) => {
                 div.dataset.typeArg = ''+card.typeArg;
                 if (card.typeArg) {
-                    this.game.setTooltip(div.id, this.getTooltip(card));
+                    this.skateGame.setTooltip(div.id, this.getTooltip(card));
                 }
             },
             isCardVisible: card => Boolean(card.typeArg),
-            animationManager: game.animationManager,
+            animationManager: skateGame.animationManager,
             cardWidth: CARD_WIDTH,
             cardHeight: CARD_HEIGHT,
         });
@@ -37,21 +39,21 @@ class CardsManager extends CardManager<Card> {
                 return _('Turn the first card of either Trick pile face up. If both piles already have their first card face up, nothing happens.');
             case 21: 
             case 22: 
-                return _('Immediately replay the "Perform a trick" action (${number}x). If the new card played has an Effect, apply it immediately.').replace('${number}', power - 20);
+                return _('Immediately replay the "Perform a trick" action (${number}x). If the new card played has an Effect, apply it immediately.').replace('${number}', String(power - 20));
             case 31: 
             case 32:
-                return _('Add ${number} card to your hand from the Trick pile of your choice.').replace('${number}', power - 30);
+                return _('Add ${number} card to your hand from the Trick pile of your choice.').replace('${number}', String(power - 30));
         }
     }
 
     public getCondition(condition: number[]) {
         switch (condition[1]) {
-            case 1: return _('${number} same colors in the sequence.').replace('${number}', condition[0]);
-            case 2: return _('${number} cards with the “Broken Board” icon in the sequence.').replace('${number}', condition[0]);
+            case 1: return _('${number} same colors in the sequence.').replace('${number}', String(condition[0]));
+            case 2: return _('${number} cards with the “Broken Board” icon in the sequence.').replace('${number}', String(condition[0]));
             case 3: return _('1 green and 1 yellow card in the sequence.');
-            case 4: return _('${number} cards in the sequence.').replace('${number}', condition[0]);
-            case 5: return _('${number} different colors in the sequence.').replace('${number}', condition[0]);
-            case 6: return _('${number} red cards in the sequence.').replace('${number}', condition[0]);
+            case 4: return _('${number} cards in the sequence.').replace('${number}', String(condition[0]));
+            case 5: return _('${number} different colors in the sequence.').replace('${number}', String(condition[0]));
+            case 6: return _('${number} red cards in the sequence.').replace('${number}', String(condition[0]));
         }
     }
     

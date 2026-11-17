@@ -1,283 +1,12 @@
-var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
-var DEFAULT_ZOOM_LEVELS = [0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1];
-function throttle(callback, delay) {
-    var last;
-    var timer;
-    return function () {
-        var context = this;
-        var now = +new Date();
-        var args = arguments;
-        if (last && now < last + delay) {
-            clearTimeout(timer);
-            timer = setTimeout(function () {
-                last = now;
-                callback.apply(context, args);
-            }, delay);
-        }
-        else {
-            last = now;
-            callback.apply(context, args);
-        }
-    };
-}
-var advThrottle = function (func, delay, options) {
-    if (options === void 0) { options = { leading: true, trailing: false }; }
-    var timer = null, lastRan = null, trailingArgs = null;
-    return function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        if (timer) { //called within cooldown period
-            lastRan = this; //update context
-            trailingArgs = args; //save for later
-            return;
-        }
-        if (options.leading) { // if leading
-            func.call.apply(// if leading
-            func, __spreadArray([this], args, false)); //call the 1st instance
-        }
-        else { // else it's trailing
-            lastRan = this; //update context
-            trailingArgs = args; //save for later
-        }
-        var coolDownPeriodComplete = function () {
-            if (options.trailing && trailingArgs) { // if trailing and the trailing args exist
-                func.call.apply(// if trailing and the trailing args exist
-                func, __spreadArray([lastRan], trailingArgs, false)); //invoke the instance with stored context "lastRan"
-                lastRan = null; //reset the status of lastRan
-                trailingArgs = null; //reset trailing arguments
-                timer = setTimeout(coolDownPeriodComplete, delay); //clear the timout
-            }
-            else {
-                timer = null; // reset timer
-            }
-        };
-        timer = setTimeout(coolDownPeriodComplete, delay);
-    };
-};
-var ZoomManager = /** @class */ (function () {
-    /**
-     * Place the settings.element in a zoom wrapper and init zoomControls.
-     *
-     * @param settings: a `ZoomManagerSettings` object
-     */
-    function ZoomManager(settings) {
-        var _this = this;
-        var _a, _b, _c, _d, _e, _f;
+var BgaAnimation = /** @class */ (function () {
+    function BgaAnimation(animationFunction, settings) {
+        this.animationFunction = animationFunction;
         this.settings = settings;
-        if (!settings.element) {
-            throw new DOMException('You need to set the element to wrap in the zoom element');
-        }
-        this._zoomLevels = (_a = settings.zoomLevels) !== null && _a !== void 0 ? _a : DEFAULT_ZOOM_LEVELS;
-        this._zoom = this.settings.defaultZoom || 1;
-        if (this.settings.localStorageZoomKey) {
-            var zoomStr = localStorage.getItem(this.settings.localStorageZoomKey);
-            if (zoomStr) {
-                this._zoom = Number(zoomStr);
-            }
-        }
-        this.wrapper = document.createElement('div');
-        this.wrapper.id = 'bga-zoom-wrapper';
-        this.wrapElement(this.wrapper, settings.element);
-        this.wrapper.appendChild(settings.element);
-        settings.element.classList.add('bga-zoom-inner');
-        if ((_b = settings.smooth) !== null && _b !== void 0 ? _b : true) {
-            settings.element.dataset.smooth = 'true';
-            settings.element.addEventListener('transitionend', advThrottle(function () { return _this.zoomOrDimensionChanged(); }, this.throttleTime, { leading: true, trailing: true, }));
-        }
-        if ((_d = (_c = settings.zoomControls) === null || _c === void 0 ? void 0 : _c.visible) !== null && _d !== void 0 ? _d : true) {
-            this.initZoomControls(settings);
-        }
-        if (this._zoom !== 1) {
-            this.setZoom(this._zoom);
-        }
-        this.throttleTime = (_e = settings.throttleTime) !== null && _e !== void 0 ? _e : 100;
-        window.addEventListener('resize', advThrottle(function () {
-            var _a;
-            _this.zoomOrDimensionChanged();
-            if ((_a = _this.settings.autoZoom) === null || _a === void 0 ? void 0 : _a.expectedWidth) {
-                _this.setAutoZoom();
-            }
-        }, this.throttleTime, { leading: true, trailing: true, }));
-        if (window.ResizeObserver) {
-            new ResizeObserver(advThrottle(function () { return _this.zoomOrDimensionChanged(); }, this.throttleTime, { leading: true, trailing: true, })).observe(settings.element);
-        }
-        if ((_f = this.settings.autoZoom) === null || _f === void 0 ? void 0 : _f.expectedWidth) {
-            this.setAutoZoom();
-        }
+        this.played = null;
+        this.result = null;
+        this.playWhenNoAnimation = false;
     }
-    Object.defineProperty(ZoomManager.prototype, "zoom", {
-        /**
-         * Returns the zoom level
-         */
-        get: function () {
-            return this._zoom;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(ZoomManager.prototype, "zoomLevels", {
-        /**
-         * Returns the zoom levels
-         */
-        get: function () {
-            return this._zoomLevels;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    ZoomManager.prototype.setAutoZoom = function () {
-        var _this = this;
-        var _a, _b, _c;
-        var zoomWrapperWidth = document.getElementById('bga-zoom-wrapper').clientWidth;
-        if (!zoomWrapperWidth) {
-            setTimeout(function () { return _this.setAutoZoom(); }, 200);
-            return;
-        }
-        var expectedWidth = (_a = this.settings.autoZoom) === null || _a === void 0 ? void 0 : _a.expectedWidth;
-        var newZoom = this.zoom;
-        while (newZoom > this._zoomLevels[0] && newZoom > ((_c = (_b = this.settings.autoZoom) === null || _b === void 0 ? void 0 : _b.minZoomLevel) !== null && _c !== void 0 ? _c : 0) && zoomWrapperWidth / newZoom < expectedWidth) {
-            newZoom = this._zoomLevels[this._zoomLevels.indexOf(newZoom) - 1];
-        }
-        if (this._zoom == newZoom) {
-            if (this.settings.localStorageZoomKey) {
-                localStorage.setItem(this.settings.localStorageZoomKey, '' + this._zoom);
-            }
-        }
-        else {
-            this.setZoom(newZoom);
-        }
-    };
-    /**
-     * Sets the available zoomLevels and new zoom to the provided values.
-     * @param zoomLevels the new array of zoomLevels that can be used.
-     * @param newZoom if provided the zoom will be set to this value, if not the last element of the zoomLevels array will be set as the new zoom
-     */
-    ZoomManager.prototype.setZoomLevels = function (zoomLevels, newZoom) {
-        if (!zoomLevels || zoomLevels.length <= 0) {
-            return;
-        }
-        this._zoomLevels = zoomLevels;
-        var zoomIndex = newZoom && zoomLevels.includes(newZoom) ? this._zoomLevels.indexOf(newZoom) : this._zoomLevels.length - 1;
-        this.setZoom(this._zoomLevels[zoomIndex]);
-    };
-    /**
-     * Set the zoom level. Ideally, use a zoom level in the zoomLevels range.
-     * @param zoom zool level
-     */
-    ZoomManager.prototype.setZoom = function (zoom) {
-        var _a, _b, _c, _d;
-        if (zoom === void 0) { zoom = 1; }
-        this._zoom = zoom;
-        if (this.settings.localStorageZoomKey) {
-            localStorage.setItem(this.settings.localStorageZoomKey, '' + this._zoom);
-        }
-        var newIndex = this._zoomLevels.indexOf(this._zoom);
-        (_a = this.zoomInButton) === null || _a === void 0 ? void 0 : _a.classList.toggle('disabled', newIndex === this._zoomLevels.length - 1);
-        (_b = this.zoomOutButton) === null || _b === void 0 ? void 0 : _b.classList.toggle('disabled', newIndex === 0);
-        this.settings.element.style.transform = zoom === 1 ? '' : "scale(".concat(zoom, ")");
-        (_d = (_c = this.settings).onZoomChange) === null || _d === void 0 ? void 0 : _d.call(_c, this._zoom);
-        this.zoomOrDimensionChanged();
-    };
-    /**
-     * Call this method for the browsers not supporting ResizeObserver, everytime the table height changes, if you know it.
-     * If the browsert is recent enough (>= Safari 13.1) it will just be ignored.
-     */
-    ZoomManager.prototype.manualHeightUpdate = function () {
-        if (!window.ResizeObserver) {
-            this.zoomOrDimensionChanged();
-        }
-    };
-    /**
-     * Everytime the element dimensions changes, we update the style. And call the optional callback.
-     * Unsafe method as this is not protected by throttle. Surround with  `advThrottle(() => this.zoomOrDimensionChanged(), this.throttleTime, { leading: true, trailing: true, })` to avoid spamming recomputation.
-     */
-    ZoomManager.prototype.zoomOrDimensionChanged = function () {
-        var _a, _b;
-        this.settings.element.style.width = "".concat(this.wrapper.offsetWidth / this._zoom, "px");
-        this.wrapper.style.height = "".concat(this.settings.element.offsetHeight * this._zoom, "px");
-        (_b = (_a = this.settings).onDimensionsChange) === null || _b === void 0 ? void 0 : _b.call(_a, this._zoom);
-    };
-    /**
-     * Simulates a click on the Zoom-in button.
-     */
-    ZoomManager.prototype.zoomIn = function () {
-        if (this._zoom === this._zoomLevels[this._zoomLevels.length - 1]) {
-            return;
-        }
-        var newIndex = this._zoomLevels.indexOf(this._zoom) + 1;
-        this.setZoom(newIndex === -1 ? 1 : this._zoomLevels[newIndex]);
-    };
-    /**
-     * Simulates a click on the Zoom-out button.
-     */
-    ZoomManager.prototype.zoomOut = function () {
-        if (this._zoom === this._zoomLevels[0]) {
-            return;
-        }
-        var newIndex = this._zoomLevels.indexOf(this._zoom) - 1;
-        this.setZoom(newIndex === -1 ? 1 : this._zoomLevels[newIndex]);
-    };
-    /**
-     * Changes the color of the zoom controls.
-     */
-    ZoomManager.prototype.setZoomControlsColor = function (color) {
-        if (this.zoomControls) {
-            this.zoomControls.dataset.color = color;
-        }
-    };
-    /**
-     * Set-up the zoom controls
-     * @param settings a `ZoomManagerSettings` object.
-     */
-    ZoomManager.prototype.initZoomControls = function (settings) {
-        var _this = this;
-        var _a, _b, _c, _d, _e, _f;
-        this.zoomControls = document.createElement('div');
-        this.zoomControls.id = 'bga-zoom-controls';
-        this.zoomControls.dataset.position = (_b = (_a = settings.zoomControls) === null || _a === void 0 ? void 0 : _a.position) !== null && _b !== void 0 ? _b : 'top-right';
-        this.zoomOutButton = document.createElement('button');
-        this.zoomOutButton.type = 'button';
-        this.zoomOutButton.addEventListener('click', function () { return _this.zoomOut(); });
-        if ((_c = settings.zoomControls) === null || _c === void 0 ? void 0 : _c.customZoomOutElement) {
-            settings.zoomControls.customZoomOutElement(this.zoomOutButton);
-        }
-        else {
-            this.zoomOutButton.classList.add("bga-zoom-out-icon");
-        }
-        this.zoomInButton = document.createElement('button');
-        this.zoomInButton.type = 'button';
-        this.zoomInButton.addEventListener('click', function () { return _this.zoomIn(); });
-        if ((_d = settings.zoomControls) === null || _d === void 0 ? void 0 : _d.customZoomInElement) {
-            settings.zoomControls.customZoomInElement(this.zoomInButton);
-        }
-        else {
-            this.zoomInButton.classList.add("bga-zoom-in-icon");
-        }
-        this.zoomControls.appendChild(this.zoomOutButton);
-        this.zoomControls.appendChild(this.zoomInButton);
-        this.wrapper.appendChild(this.zoomControls);
-        this.setZoomControlsColor((_f = (_e = settings.zoomControls) === null || _e === void 0 ? void 0 : _e.color) !== null && _f !== void 0 ? _f : 'black');
-    };
-    /**
-     * Wraps an element around an existing DOM element
-     * @param wrapper the wrapper element
-     * @param element the existing element
-     */
-    ZoomManager.prototype.wrapElement = function (wrapper, element) {
-        element.parentNode.insertBefore(wrapper, element);
-        wrapper.appendChild(element);
-    };
-    return ZoomManager;
+    return BgaAnimation;
 }());
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -294,211 +23,6 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-var BgaHelpButton = /** @class */ (function () {
-    function BgaHelpButton() {
-    }
-    return BgaHelpButton;
-}());
-var BgaHelpPopinButton = /** @class */ (function (_super) {
-    __extends(BgaHelpPopinButton, _super);
-    function BgaHelpPopinButton(settings) {
-        var _this = _super.call(this) || this;
-        _this.settings = settings;
-        return _this;
-    }
-    BgaHelpPopinButton.prototype.add = function (toElement) {
-        var _a;
-        var _this = this;
-        var button = document.createElement('button');
-        (_a = button.classList).add.apply(_a, __spreadArray(['bga-help_button', 'bga-help_popin-button'], (this.settings.buttonExtraClasses ? this.settings.buttonExtraClasses.split(/\s+/g) : []), false));
-        button.innerHTML = "?";
-        if (this.settings.buttonBackground) {
-            button.style.setProperty('--background', this.settings.buttonBackground);
-        }
-        if (this.settings.buttonColor) {
-            button.style.setProperty('--color', this.settings.buttonColor);
-        }
-        toElement.appendChild(button);
-        button.addEventListener('click', function () { return _this.showHelp(); });
-    };
-    BgaHelpPopinButton.prototype.showHelp = function () {
-        var _a, _b, _c;
-        var popinDialog = new window.ebg.popindialog();
-        popinDialog.create('bgaHelpDialog');
-        popinDialog.setTitle(this.settings.title);
-        popinDialog.setContent("<div id=\"help-dialog-content\">".concat((_a = this.settings.html) !== null && _a !== void 0 ? _a : '', "</div>"));
-        (_c = (_b = this.settings).onPopinCreated) === null || _c === void 0 ? void 0 : _c.call(_b, document.getElementById('help-dialog-content'));
-        popinDialog.show();
-    };
-    return BgaHelpPopinButton;
-}(BgaHelpButton));
-var BgaHelpExpandableButton = /** @class */ (function (_super) {
-    __extends(BgaHelpExpandableButton, _super);
-    function BgaHelpExpandableButton(settings) {
-        var _this = _super.call(this) || this;
-        _this.settings = settings;
-        return _this;
-    }
-    BgaHelpExpandableButton.prototype.add = function (toElement) {
-        var _a;
-        var _this = this;
-        var _b, _c, _d, _e, _f, _g, _h, _j;
-        var folded = (_b = this.settings.defaultFolded) !== null && _b !== void 0 ? _b : true;
-        if (this.settings.localStorageFoldedKey) {
-            var localStorageValue = localStorage.getItem(this.settings.localStorageFoldedKey);
-            if (localStorageValue) {
-                folded = localStorageValue == 'true';
-            }
-        }
-        var button = document.createElement('button');
-        button.dataset.folded = folded.toString();
-        (_a = button.classList).add.apply(_a, __spreadArray(['bga-help_button', 'bga-help_expandable-button'], (this.settings.buttonExtraClasses ? this.settings.buttonExtraClasses.split(/\s+/g) : []), false));
-        button.innerHTML = "\n            <div class=\"bga-help_folded-content ".concat(((_c = this.settings.foldedContentExtraClasses) !== null && _c !== void 0 ? _c : '').split(/\s+/g), "\">").concat((_d = this.settings.foldedHtml) !== null && _d !== void 0 ? _d : '', "</div>\n            <div class=\"bga-help_unfolded-content  ").concat(((_e = this.settings.unfoldedContentExtraClasses) !== null && _e !== void 0 ? _e : '').split(/\s+/g), "\">").concat((_f = this.settings.unfoldedHtml) !== null && _f !== void 0 ? _f : '', "</div>\n        ");
-        button.style.setProperty('--expanded-width', (_g = this.settings.expandedWidth) !== null && _g !== void 0 ? _g : 'auto');
-        button.style.setProperty('--expanded-height', (_h = this.settings.expandedHeight) !== null && _h !== void 0 ? _h : 'auto');
-        button.style.setProperty('--expanded-radius', (_j = this.settings.expandedRadius) !== null && _j !== void 0 ? _j : '10px');
-        toElement.appendChild(button);
-        button.addEventListener('click', function () {
-            button.dataset.folded = button.dataset.folded == 'true' ? 'false' : 'true';
-            if (_this.settings.localStorageFoldedKey) {
-                localStorage.setItem(_this.settings.localStorageFoldedKey, button.dataset.folded);
-            }
-        });
-    };
-    return BgaHelpExpandableButton;
-}(BgaHelpButton));
-var HelpManager = /** @class */ (function () {
-    function HelpManager(game, settings) {
-        this.game = game;
-        if (!(settings === null || settings === void 0 ? void 0 : settings.buttons)) {
-            throw new Error('HelpManager need a `buttons` list in the settings.');
-        }
-        var leftSide = document.getElementById('left-side');
-        var buttons = document.createElement('div');
-        buttons.id = "bga-help_buttons";
-        leftSide.appendChild(buttons);
-        settings.buttons.forEach(function (button) { return button.add(buttons); });
-    }
-    return HelpManager;
-}());
-/**
- * Jump to entry.
- */
-var JumpToEntry = /** @class */ (function () {
-    function JumpToEntry(
-    /**
-     * Label shown on the entry. For players, it's player name.
-     */
-    label, 
-    /**
-     * HTML Element id, to scroll into view when clicked.
-     */
-    targetId, 
-    /**
-     * Any element that is useful to customize the link.
-     * Basic ones are 'color' and 'colorback'.
-     */
-    data) {
-        if (data === void 0) { data = {}; }
-        this.label = label;
-        this.targetId = targetId;
-        this.data = data;
-    }
-    return JumpToEntry;
-}());
-var JumpToManager = /** @class */ (function () {
-    function JumpToManager(game, settings) {
-        var _a, _b, _c;
-        this.game = game;
-        this.settings = settings;
-        var entries = __spreadArray(__spreadArray([], ((_a = settings === null || settings === void 0 ? void 0 : settings.topEntries) !== null && _a !== void 0 ? _a : []), true), ((_b = settings === null || settings === void 0 ? void 0 : settings.playersEntries) !== null && _b !== void 0 ? _b : this.createEntries(Object.values(game.gamedatas.players))), true);
-        this.createPlayerJumps(entries);
-        var folded = (_c = settings === null || settings === void 0 ? void 0 : settings.defaultFolded) !== null && _c !== void 0 ? _c : false;
-        if (settings === null || settings === void 0 ? void 0 : settings.localStorageFoldedKey) {
-            var localStorageValue = localStorage.getItem(settings.localStorageFoldedKey);
-            if (localStorageValue) {
-                folded = localStorageValue == 'true';
-            }
-        }
-        document.getElementById('bga-jump-to_controls').classList.toggle('folded', folded);
-    }
-    JumpToManager.prototype.createPlayerJumps = function (entries) {
-        var _this = this;
-        var _a, _b, _c, _d;
-        document.getElementById("game_play_area_wrap").insertAdjacentHTML('afterend', "\n        <div id=\"bga-jump-to_controls\">        \n            <div id=\"bga-jump-to_toggle\" class=\"bga-jump-to_link ".concat((_b = (_a = this.settings) === null || _a === void 0 ? void 0 : _a.entryClasses) !== null && _b !== void 0 ? _b : '', " toggle\" style=\"--color: ").concat((_d = (_c = this.settings) === null || _c === void 0 ? void 0 : _c.toggleColor) !== null && _d !== void 0 ? _d : 'black', "\">\n                \u21D4\n            </div>\n        </div>"));
-        document.getElementById("bga-jump-to_toggle").addEventListener('click', function () { return _this.jumpToggle(); });
-        entries.forEach(function (entry) {
-            var _a, _b, _c, _d, _e, _f, _g, _h, _j;
-            var html = "<div id=\"bga-jump-to_".concat(entry.targetId, "\" class=\"bga-jump-to_link ").concat((_b = (_a = _this.settings) === null || _a === void 0 ? void 0 : _a.entryClasses) !== null && _b !== void 0 ? _b : '', "\">");
-            if ((_d = (_c = _this.settings) === null || _c === void 0 ? void 0 : _c.showEye) !== null && _d !== void 0 ? _d : true) {
-                html += "<div class=\"eye\"></div>";
-            }
-            if (((_f = (_e = _this.settings) === null || _e === void 0 ? void 0 : _e.showAvatar) !== null && _f !== void 0 ? _f : true) && ((_g = entry.data) === null || _g === void 0 ? void 0 : _g.id)) {
-                var cssUrl = (_h = entry.data) === null || _h === void 0 ? void 0 : _h.avatarUrl;
-                if (!cssUrl) {
-                    var img = document.getElementById("avatar_".concat(entry.data.id));
-                    var url = img === null || img === void 0 ? void 0 : img.src;
-                    // ? Custom image : Bga Image
-                    //url = url.replace('_32', url.indexOf('data/avatar/defaults') > 0 ? '' : '_184');
-                    if (url) {
-                        cssUrl = "url('".concat(url, "')");
-                    }
-                }
-                if (cssUrl) {
-                    html += "<div class=\"bga-jump-to_avatar\" style=\"--avatar-url: ".concat(cssUrl, ";\"></div>");
-                }
-            }
-            html += "\n                <span class=\"bga-jump-to_label\">".concat(entry.label, "</span>\n            </div>");
-            //
-            document.getElementById("bga-jump-to_controls").insertAdjacentHTML('beforeend', html);
-            var entryDiv = document.getElementById("bga-jump-to_".concat(entry.targetId));
-            Object.getOwnPropertyNames((_j = entry.data) !== null && _j !== void 0 ? _j : []).forEach(function (key) {
-                entryDiv.dataset[key] = entry.data[key];
-                entryDiv.style.setProperty("--".concat(key), entry.data[key]);
-            });
-            entryDiv.addEventListener('click', function () { return _this.jumpTo(entry.targetId); });
-        });
-        var jumpDiv = document.getElementById("bga-jump-to_controls");
-        jumpDiv.style.marginTop = "-".concat(Math.round(jumpDiv.getBoundingClientRect().height / 2), "px");
-    };
-    JumpToManager.prototype.jumpToggle = function () {
-        var _a;
-        var jumpControls = document.getElementById('bga-jump-to_controls');
-        jumpControls.classList.toggle('folded');
-        if ((_a = this.settings) === null || _a === void 0 ? void 0 : _a.localStorageFoldedKey) {
-            localStorage.setItem(this.settings.localStorageFoldedKey, jumpControls.classList.contains('folded').toString());
-        }
-    };
-    JumpToManager.prototype.jumpTo = function (targetId) {
-        document.getElementById(targetId).scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-    };
-    JumpToManager.prototype.getOrderedPlayers = function (unorderedPlayers) {
-        var _this = this;
-        var players = unorderedPlayers.sort(function (a, b) { return Number(a.playerNo) - Number(b.playerNo); });
-        var playerIndex = players.findIndex(function (player) { return Number(player.id) === Number(_this.game.player_id); });
-        var orderedPlayers = playerIndex > 0 ? __spreadArray(__spreadArray([], players.slice(playerIndex), true), players.slice(0, playerIndex), true) : players;
-        return orderedPlayers;
-    };
-    JumpToManager.prototype.createEntries = function (players) {
-        var orderedPlayers = this.getOrderedPlayers(players);
-        return orderedPlayers.map(function (player) { return new JumpToEntry(player.name, "player-table-".concat(player.id), {
-            'color': '#' + player.color,
-            'colorback': player.color_back ? '#' + player.color_back : null,
-            'id': player.id,
-        }); });
-    };
-    return JumpToManager;
-}());
-var BgaAnimation = /** @class */ (function () {
-    function BgaAnimation(animationFunction, settings) {
-        this.animationFunction = animationFunction;
-        this.settings = settings;
-        this.played = null;
-        this.result = null;
-        this.playWhenNoAnimation = false;
-    }
-    return BgaAnimation;
-}());
 /**
  * Just use playSequence from animationManager
  *
@@ -659,29 +183,6 @@ var BgaSlideToAnimation = /** @class */ (function (_super) {
     }
     return BgaSlideToAnimation;
 }(BgaAnimation));
-/**
- * Just does nothing for the duration
- *
- * @param animationManager the animation manager
- * @param animation a `BgaAnimation` object
- * @returns a promise when animation ends
- */
-function pauseAnimation(animationManager, animation) {
-    var promise = new Promise(function (success) {
-        var _a;
-        var settings = animation.settings;
-        var duration = (_a = settings === null || settings === void 0 ? void 0 : settings.duration) !== null && _a !== void 0 ? _a : 500;
-        setTimeout(function () { return success(); }, duration);
-    });
-    return promise;
-}
-var BgaPauseAnimation = /** @class */ (function (_super) {
-    __extends(BgaPauseAnimation, _super);
-    function BgaPauseAnimation(settings) {
-        return _super.call(this, pauseAnimation, settings) || this;
-    }
-    return BgaPauseAnimation;
-}(BgaAnimation));
 function shouldAnimate(settings) {
     var _a;
     return document.visibilityState !== 'hidden' && !((_a = settings === null || settings === void 0 ? void 0 : settings.game) === null || _a === void 0 ? void 0 : _a.instantaneousMode);
@@ -777,6 +278,15 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 var AnimationManager = /** @class */ (function () {
     /**
      * @param game the BGA game class, usually it will be `this`
@@ -819,24 +329,24 @@ var AnimationManager = /** @class */ (function () {
      * @returns the animation promise.
      */
     AnimationManager.prototype.play = function (animation) {
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         return __awaiter(this, void 0, void 0, function () {
-            var settings, _a;
-            var _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
+            var settings, _m;
             return __generator(this, function (_o) {
                 switch (_o.label) {
                     case 0:
                         animation.played = animation.playWhenNoAnimation || this.animationsActive();
                         if (!animation.played) return [3 /*break*/, 2];
                         settings = animation.settings;
-                        (_b = settings.animationStart) === null || _b === void 0 ? void 0 : _b.call(settings, animation);
-                        (_c = settings.element) === null || _c === void 0 ? void 0 : _c.classList.add((_d = settings.animationClass) !== null && _d !== void 0 ? _d : 'bga-animations_animated');
-                        animation.settings = __assign(__assign({}, animation.settings), { duration: (_f = (_e = this.settings) === null || _e === void 0 ? void 0 : _e.duration) !== null && _f !== void 0 ? _f : 500, scale: (_h = (_g = this.zoomManager) === null || _g === void 0 ? void 0 : _g.zoom) !== null && _h !== void 0 ? _h : undefined });
-                        _a = animation;
+                        (_a = settings.animationStart) === null || _a === void 0 ? void 0 : _a.call(settings, animation);
+                        (_b = settings.element) === null || _b === void 0 ? void 0 : _b.classList.add((_c = settings.animationClass) !== null && _c !== void 0 ? _c : 'bga-animations_animated');
+                        animation.settings = __assign(__assign({}, animation.settings), { duration: (_e = (_d = this.settings) === null || _d === void 0 ? void 0 : _d.duration) !== null && _e !== void 0 ? _e : 500, scale: (_g = (_f = this.zoomManager) === null || _f === void 0 ? void 0 : _f.zoom) !== null && _g !== void 0 ? _g : undefined });
+                        _m = animation;
                         return [4 /*yield*/, animation.animationFunction(this, animation)];
                     case 1:
-                        _a.result = _o.sent();
-                        (_k = (_j = animation.settings).animationEnd) === null || _k === void 0 ? void 0 : _k.call(_j, animation);
-                        (_l = settings.element) === null || _l === void 0 ? void 0 : _l.classList.remove((_m = settings.animationClass) !== null && _m !== void 0 ? _m : 'bga-animations_animated');
+                        _m.result = _o.sent();
+                        (_j = (_h = animation.settings).animationEnd) === null || _j === void 0 ? void 0 : _j.call(_h, animation);
+                        (_k = settings.element) === null || _k === void 0 ? void 0 : _k.classList.remove((_l = settings.animationClass) !== null && _l !== void 0 ? _l : 'bga-animations_animated');
                         return [3 /*break*/, 3];
                     case 2: return [2 /*return*/, Promise.resolve(animation)];
                     case 3: return [2 /*return*/];
@@ -931,6 +441,39 @@ var AnimationManager = /** @class */ (function () {
     };
     return AnimationManager;
 }());
+function sortFunction() {
+    var sortedFields = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        sortedFields[_i] = arguments[_i];
+    }
+    return function (a, b) {
+        for (var i = 0; i < sortedFields.length; i++) {
+            var direction = 1;
+            var field = sortedFields[i];
+            if (field[0] == '-') {
+                direction = -1;
+                field = field.substring(1);
+            }
+            else if (field[0] == '+') {
+                field = field.substring(1);
+            }
+            var type = typeof a[field];
+            if (type === 'string') {
+                var compare = a[field].localeCompare(b[field]);
+                if (compare !== 0) {
+                    return compare;
+                }
+            }
+            else if (type === 'number') {
+                var compare = (a[field] - b[field]) * direction;
+                if (compare !== 0) {
+                    return compare * direction;
+                }
+            }
+        }
+        return 0;
+    };
+}
 /**
  * The abstract stock. It shouldn't be used directly, use stocks that extends it.
  */
@@ -1138,11 +681,11 @@ var CardStock = /** @class */ (function () {
      * @param settings a `AddCardSettings` object
      * @param shift if number, the number of milliseconds between each card. if true, chain animations
      */
-    CardStock.prototype.addCards = function (cards_1, animation_1, settings_1) {
-        return __awaiter(this, arguments, void 0, function (cards, animation, settings, shift) {
+    CardStock.prototype.addCards = function (cards, animation, settings, shift) {
+        if (shift === void 0) { shift = false; }
+        return __awaiter(this, void 0, void 0, function () {
             var promises, result, others, _loop_2, i, results;
             var _this = this;
-            if (shift === void 0) { shift = false; }
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -1391,9 +934,9 @@ var CardStock = /** @class */ (function () {
      * @param fromElement The HTMLElement to animate from.
      */
     CardStock.prototype.animationFromElement = function (element, fromRect, settings) {
+        var _a;
         return __awaiter(this, void 0, void 0, function () {
             var side, cardSides_1, animation, result;
-            var _a;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
@@ -1496,8 +1039,9 @@ var SlideAndBackAnimation = /** @class */ (function (_super) {
 var Deck = /** @class */ (function (_super) {
     __extends(Deck, _super);
     function Deck(manager, element, settings) {
+        var _this = this;
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-        var _this = _super.call(this, manager, element) || this;
+        _this = _super.call(this, manager, element) || this;
         _this.manager = manager;
         _this.element = element;
         element.classList.add('deck');
@@ -1613,11 +1157,11 @@ var Deck = /** @class */ (function (_super) {
      * @param fakeCardSetter a function to generate a fake card for animation. Required if the card id is not based on a numerci `id` field, or if you want to set custom card back
      * @returns promise when animation ends
      */
-    Deck.prototype.shuffle = function () {
-        return __awaiter(this, arguments, void 0, function (animatedCardsMax, fakeCardSetter) {
+    Deck.prototype.shuffle = function (animatedCardsMax, fakeCardSetter) {
+        if (animatedCardsMax === void 0) { animatedCardsMax = 10; }
+        return __awaiter(this, void 0, void 0, function () {
             var animatedCards, elements, i, newCard, newElement;
             var _this = this;
-            if (animatedCardsMax === void 0) { animatedCardsMax = 10; }
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -1662,8 +1206,9 @@ var LineStock = /** @class */ (function (_super) {
      * @param settings a `LineStockSettings` object
      */
     function LineStock(manager, element, settings) {
+        var _this = this;
         var _a, _b, _c, _d;
-        var _this = _super.call(this, manager, element, settings) || this;
+        _this = _super.call(this, manager, element, settings) || this;
         _this.manager = manager;
         _this.element = element;
         element.classList.add('line-stock');
@@ -1686,8 +1231,9 @@ var SlotStock = /** @class */ (function (_super) {
      * @param settings a `SlotStockSettings` object
      */
     function SlotStock(manager, element, settings) {
+        var _this = this;
         var _a, _b;
-        var _this = _super.call(this, manager, element, settings) || this;
+        _this = _super.call(this, manager, element, settings) || this;
         _this.manager = manager;
         _this.element = element;
         _this.slotsIds = [];
@@ -1802,6 +1348,127 @@ var SlotStock = /** @class */ (function (_super) {
     return SlotStock;
 }(LineStock));
 /**
+ * A stock with button to scroll left/right if content is bigger than available width
+ */
+var ScrollableStock = /** @class */ (function (_super) {
+    __extends(ScrollableStock, _super);
+    /**
+     * @param manager the card manager
+     * @param element the stock element (should be an empty HTML Element)
+     * @param settings a `SlotStockSettings` object
+     */
+    function ScrollableStock(manager, elementWrapper, settings) {
+        var _this = this;
+        var _a, _b, _c, _d, _e;
+        _this = _super.call(this, manager, elementWrapper, settings) || this;
+        _this.manager = manager;
+        elementWrapper.classList.add('scrollable-stock');
+        elementWrapper.dataset.center = ((_a = settings.center) !== null && _a !== void 0 ? _a : true).toString();
+        elementWrapper.style.setProperty('--button-gap', (_b = settings.buttonGap) !== null && _b !== void 0 ? _b : '0');
+        elementWrapper.style.setProperty('--gap', (_c = settings.gap) !== null && _c !== void 0 ? _c : '8px');
+        _this.scrollStep = (_d = settings.scrollStep) !== null && _d !== void 0 ? _d : 100;
+        elementWrapper.dataset.scrollbarVisible = ((_e = settings.scrollbarVisible) !== null && _e !== void 0 ? _e : true).toString();
+        elementWrapper.appendChild(_this.createButton('left', settings.leftButton));
+        _this.element = document.createElement('div');
+        _this.element.classList.add('scrollable-stock-inner');
+        elementWrapper.appendChild(_this.element);
+        elementWrapper.appendChild(_this.createButton('right', settings.rightButton));
+        return _this;
+    }
+    ScrollableStock.prototype.createButton = function (side, settings) {
+        var _a;
+        var _this = this;
+        var _b;
+        var button = document.createElement('button');
+        button.type = 'button';
+        (_a = button.classList).add.apply(_a, __spreadArray([side], ((_b = settings.classes) !== null && _b !== void 0 ? _b : []), false));
+        if (settings.html) {
+            button.innerHTML = settings.html;
+        }
+        button.addEventListener('click', function () { return _this.scroll(side); });
+        return button;
+    };
+    ScrollableStock.prototype.scroll = function (side) {
+        this.element.scrollBy({
+            left: this.scrollStep * (side === 'left' ? -1 : 1),
+            behavior: 'smooth'
+        });
+    };
+    return ScrollableStock;
+}(CardStock));
+var HandStock = /** @class */ (function (_super) {
+    __extends(HandStock, _super);
+    function HandStock(manager, element, settings) {
+        var _this = this;
+        var _a, _b, _c, _d;
+        _this = _super.call(this, manager, element, settings) || this;
+        _this.manager = manager;
+        _this.element = element;
+        element.classList.add('hand-stock');
+        element.style.setProperty('--card-overlap', (_a = settings.cardOverlap) !== null && _a !== void 0 ? _a : '60px');
+        element.style.setProperty('--card-shift', (_b = settings.cardShift) !== null && _b !== void 0 ? _b : '15px');
+        element.style.setProperty('--card-inclination', "".concat((_c = settings.inclination) !== null && _c !== void 0 ? _c : 12, "deg"));
+        _this.inclination = (_d = settings.inclination) !== null && _d !== void 0 ? _d : 4;
+        return _this;
+    }
+    HandStock.prototype.addCard = function (card, animation, settings) {
+        var promise = _super.prototype.addCard.call(this, card, animation, settings);
+        this.updateAngles();
+        return promise;
+    };
+    HandStock.prototype.cardRemoved = function (card) {
+        _super.prototype.cardRemoved.call(this, card);
+        this.updateAngles();
+    };
+    HandStock.prototype.updateAngles = function () {
+        var _this = this;
+        var middle = (this.cards.length - 1) / 2;
+        this.cards.forEach(function (card, index) {
+            var middleIndex = index - middle;
+            var cardElement = _this.getCardElement(card);
+            cardElement.style.setProperty('--hand-stock-middle-index', "".concat(middleIndex));
+            cardElement.style.setProperty('--hand-stock-middle-index-abs', "".concat(Math.abs(middleIndex)));
+        });
+    };
+    return HandStock;
+}(CardStock));
+/**
+ * A stock with manually placed cards
+ */
+var ManualPositionStock = /** @class */ (function (_super) {
+    __extends(ManualPositionStock, _super);
+    /**
+     * @param manager the card manager
+     * @param element the stock element (should be an empty HTML Element)
+     */
+    function ManualPositionStock(manager, element, settings, updateDisplay) {
+        var _this = _super.call(this, manager, element, settings) || this;
+        _this.manager = manager;
+        _this.element = element;
+        _this.updateDisplay = updateDisplay;
+        element.classList.add('manual-position-stock');
+        return _this;
+    }
+    /**
+     * Add a card to the stock.
+     *
+     * @param card the card to add
+     * @param animation a `CardAnimation` object
+     * @param settings a `AddCardSettings` object
+     * @returns the promise when the animation is done (true if it was animated, false if it wasn't)
+     */
+    ManualPositionStock.prototype.addCard = function (card, animation, settings) {
+        var promise = _super.prototype.addCard.call(this, card, animation, settings);
+        this.updateDisplay(this.element, this.getCards(), card, this);
+        return promise;
+    };
+    ManualPositionStock.prototype.cardRemoved = function (card) {
+        _super.prototype.cardRemoved.call(this, card);
+        this.updateDisplay(this.element, this.getCards(), card, this);
+    };
+    return ManualPositionStock;
+}(CardStock));
+/**
  * A stock to make cards disappear (to automatically remove discarded cards, or to represent a bag)
  */
 var VoidStock = /** @class */ (function (_super) {
@@ -1852,6 +1519,57 @@ var VoidStock = /** @class */ (function (_super) {
         }
     };
     return VoidStock;
+}(CardStock));
+var AllVisibleDeck = /** @class */ (function (_super) {
+    __extends(AllVisibleDeck, _super);
+    function AllVisibleDeck(manager, element, settings) {
+        var _this = this;
+        var _a;
+        _this = _super.call(this, manager, element, settings) || this;
+        _this.manager = manager;
+        _this.element = element;
+        element.classList.add('all-visible-deck');
+        var cardWidth = _this.manager.getCardWidth();
+        var cardHeight = _this.manager.getCardHeight();
+        if (cardWidth && cardHeight) {
+            _this.element.style.setProperty('--width', "".concat(cardWidth, "px"));
+            _this.element.style.setProperty('--height', "".concat(cardHeight, "px"));
+        }
+        else {
+            throw new Error("You need to set cardWidth and cardHeight in the card manager to use Deck.");
+        }
+        element.style.setProperty('--shift', (_a = settings.shift) !== null && _a !== void 0 ? _a : '3px');
+        return _this;
+    }
+    AllVisibleDeck.prototype.addCard = function (card, animation, settings) {
+        var promise;
+        var order = this.cards.length;
+        promise = _super.prototype.addCard.call(this, card, animation, settings);
+        var cardId = this.manager.getId(card);
+        var cardDiv = document.getElementById(cardId);
+        cardDiv.style.setProperty('--order', '' + order);
+        this.element.style.setProperty('--tile-count', '' + this.cards.length);
+        return promise;
+    };
+    /**
+     * Set opened state. If true, all cards will be entirely visible.
+     *
+     * @param opened indicate if deck must be always opened. If false, will open only on hover/touch
+     */
+    AllVisibleDeck.prototype.setOpened = function (opened) {
+        this.element.classList.toggle('opened', opened);
+    };
+    AllVisibleDeck.prototype.cardRemoved = function (card) {
+        var _this = this;
+        _super.prototype.cardRemoved.call(this, card);
+        this.cards.forEach(function (c, index) {
+            var cardId = _this.manager.getId(c);
+            var cardDiv = document.getElementById(cardId);
+            cardDiv.style.setProperty('--order', '' + index);
+        });
+        this.element.style.setProperty('--tile-count', '' + this.cards.length);
+    };
+    return AllVisibleDeck;
 }(CardStock));
 var CardManager = /** @class */ (function () {
     /**
@@ -2062,771 +1780,16 @@ var CardManager = /** @class */ (function () {
     };
     return CardManager;
 }());
-var CARD_WIDTH = 140;
-var CARD_HEIGHT = 280;
-var CardsManager = /** @class */ (function (_super) {
-    __extends(CardsManager, _super);
-    function CardsManager(game) {
-        var _this = _super.call(this, game, {
-            getId: function (card) { return "card-".concat(card.id); },
-            setupDiv: function (card, div) {
-                div.dataset.type = '' + card.type;
-            },
-            setupFrontDiv: function (card, div) {
-                div.dataset.typeArg = '' + card.typeArg;
-                if (card.typeArg) {
-                    _this.game.setTooltip(div.id, _this.getTooltip(card));
-                }
-            },
-            isCardVisible: function (card) { return Boolean(card.typeArg); },
-            animationManager: game.animationManager,
-            cardWidth: CARD_WIDTH,
-            cardHeight: CARD_HEIGHT,
-        }) || this;
-        _this.game = game;
-        return _this;
-    }
-    CardsManager.prototype.getColorName = function (color) {
-        switch (color) {
-            case 0: return _('Gray');
-            case 1: return _('Blue');
-            case 2: return _('Yellow');
-            case 3: return _('Red');
-            case 4: return _('Green');
-        }
-    };
-    CardsManager.prototype.getPower = function (power) {
-        switch (power) {
-            case 10:
-                return _('Turn the first card of either Trick pile face up. If both piles already have their first card face up, nothing happens.');
-            case 21:
-            case 22:
-                return _('Immediately replay the "Perform a trick" action (${number}x). If the new card played has an Effect, apply it immediately.').replace('${number}', power - 20);
-            case 31:
-            case 32:
-                return _('Add ${number} card to your hand from the Trick pile of your choice.').replace('${number}', power - 30);
-        }
-    };
-    CardsManager.prototype.getCondition = function (condition) {
-        switch (condition[1]) {
-            case 1: return _('${number} same colors in the sequence.').replace('${number}', condition[0]);
-            case 2: return _('${number} cards with the “Broken Board” icon in the sequence.').replace('${number}', condition[0]);
-            case 3: return _('1 green and 1 yellow card in the sequence.');
-            case 4: return _('${number} cards in the sequence.').replace('${number}', condition[0]);
-            case 5: return _('${number} different colors in the sequence.').replace('${number}', condition[0]);
-            case 6: return _('${number} red cards in the sequence.').replace('${number}', condition[0]);
-        }
-    };
-    CardsManager.prototype.getTooltip = function (card) {
-        var html = "\n            <div><strong>".concat(_('Color:'), "</strong> ").concat(this.getColorName(card.color), "</div>\n            <div><strong>").concat(_('Prestige Points:'), "</strong> ").concat(card.wheels, "</div>\n        ");
-        if (card.danger) {
-            html += "<div><strong style=\"color: darkred\">".concat(_('Broken Board'), "</strong></div>");
-        }
-        if (card.power) {
-            html += "\n                <div><strong>".concat(_('Power:'), "</strong> ").concat(this.getPower(card.power), "</div>\n            ");
-        }
-        if (card.condition) {
-            html += "\n                <div><strong>".concat(_('Condition:'), "</strong> ").concat(this.getCondition(card.condition), "</div>\n            ");
-        }
-        return html;
-    };
-    return CardsManager;
-}(CardManager));
-var isDebug = window.location.host == 'studio.boardgamearena.com' || window.location.hash.indexOf('debug') > -1;
-var log = isDebug ? console.log.bind(window.console) : function () { };
-var PlayerTable = /** @class */ (function () {
-    function PlayerTable(game, player, SENTENCES) {
-        var _this = this;
-        this.game = game;
-        this.playerId = Number(player.id);
-        this.currentPlayer = this.playerId == this.game.getPlayerId();
-        var html = "\n        <div id=\"player-table-".concat(this.playerId, "\" class=\"player-table\" style=\"--player-color: #").concat(player.color, ";\">\n            <div id=\"player-table-").concat(this.playerId, "-name\" class=\"name-wrapper\">").concat(player.name, "</div>\n            <div id=\"tease-").concat(this.playerId, "-wrapper\" class=\"tease-wrapper\">            \n                <div class=\"bubble-wrapper\">\n                    <div id=\"player-").concat(this.playerId, "-discussion-bubble\" class=\"discussion_bubble\" data-visible=\"false\"></div>\n                </div>\n            </div>\n            <div class=\"cards\">\n                <div class=\"block-with-text visible-cards\">\n                    <div class=\"block-label\">").concat(this.currentPlayer ? _('Your sequence') : _('${player_name}\'s sequence').replace('${player_name}', "<span style=\"color: #".concat(this.game.getPlayerColor(this.playerId), "\">").concat(this.game.getPlayerName(this.playerId), "</span>")), "</div>\n                    <div id=\"player-table-").concat(this.playerId, "-played\" class=\"cards\"></div>\n                </div>\n            </div>\n        </div>\n        ");
-        dojo.place(html, document.getElementById('tables'));
-        if (this.currentPlayer) {
-            var html_1 = "\n            <div class=\"hand-and-speak\">\n                <div class=\"block-with-text hand-wrapper cards\">\n                    <div class=\"block-label\">".concat(_('Your hand'), "</div>\n                    <div id=\"player-table-").concat(this.playerId, "-hand\" class=\"hand cards\"></div>\n                </div>\n                <div class=\"speak\">\n                    <div class=\"tease-icon\"></div>");
-            SENTENCES.forEach(function (sentence, index) {
-                html_1 += "<button id=\"tease-".concat(player.id, "-sentence-").concat(index, "\" class=\"bgabutton bgabutton_gray\">").concat(_(sentence), "</button>");
-            });
-            html_1 += "    </div>\n            </div>\n            ";
-            document.getElementById("table").insertAdjacentHTML('afterbegin', html_1);
-            SENTENCES.forEach(function (sentence, index) {
-                document.getElementById("tease-".concat(player.id, "-sentence-").concat(index)).addEventListener('click', function () {
-                    _this.game.tease(index);
-                });
-            });
-            var handDiv = document.getElementById("player-table-".concat(this.playerId, "-hand"));
-            this.hand = new LineStock(this.game.cardsManager, handDiv, {
-                sort: function (a, b) { return b.type - a.type; },
-            });
-            this.hand.onCardClick = function (card) { return _this.game.playCardFromHand(card.id); };
-            this.hand.addCards(player.hand);
-        }
-        this.voidStock = new VoidStock(this.game.cardsManager, document.getElementById("player-table-".concat(this.playerId, "-name")));
-        this.played = new LineStock(this.game.cardsManager, document.getElementById("player-table-".concat(this.playerId, "-played")), {
-            center: false,
-        });
-        this.played.addCards(player.played);
-        if (player.helmetCardId) {
-            this.addHelmet(this.played.getCards().find(function (card) { return card.id == player.helmetCardId; }));
-        }
-    }
-    PlayerTable.prototype.discardLegendCard = function (card) {
-        this.played.removeCard(card);
-    };
-    PlayerTable.prototype.fall = function (to) {
-        //this.played.removeAll();
-        to.addCards(this.played.getCards());
-    };
-    PlayerTable.prototype.closeSequence = function (to) {
-        //this.played.removeAll();
-        to.addCards(this.played.getCards());
-    };
-    PlayerTable.prototype.addHelmet = function (card) {
-        this.played.getCardElement(card).insertAdjacentHTML('beforeend', "<div class=\"helmet\"></div>");
-    };
-    PlayerTable.prototype.makeCardsSelectable = function (selectable) {
-        var _a;
-        (_a = this.hand) === null || _a === void 0 ? void 0 : _a.setSelectionMode(selectable ? 'single' : 'none');
-    };
-    PlayerTable.prototype.showTease = function (sentence) {
-        var _this = this;
-        if (this.teaseTimer) {
-            clearTimeout(this.teaseTimer);
-            this.teaseTimer = null;
-        }
-        var bubble = document.getElementById("player-".concat(this.playerId, "-discussion-bubble"));
-        bubble.innerHTML = _(sentence);
-        bubble.dataset.visible = 'true';
-        this.teaseTimer = setTimeout(function () {
-            bubble.dataset.visible = 'false';
-            _this.teaseTimer = null;
-        }, 2000);
-    };
-    return PlayerTable;
-}());
-var TableCenter = /** @class */ (function () {
-    function TableCenter(game, gamedatas) {
-        var _this = this;
-        this.game = game;
-        this.decks = [];
-        var _loop_3 = function (i) {
-            var deckDiv = document.getElementById("deck".concat(i));
-            this_1.decks[i] = new Deck(game.cardsManager, deckDiv, {
-                cardNumber: gamedatas.decks[i].count,
-                topCard: gamedatas.decks[i].top,
-            });
-            deckDiv.addEventListener('click', function () { return _this.game.onDeckClick(i); });
-        };
-        var this_1 = this;
-        for (var i = 1; i <= 2; i++) {
-            _loop_3(i);
-        }
-        this.legendDeck = new Deck(game.cardsManager, document.getElementById("rewards"), {
-            cardNumber: gamedatas.decks[0].count,
-            topCard: gamedatas.decks[0].top,
-        });
-    }
-    TableCenter.prototype.updateLegendDeck = function (newCard, newCount) {
-        this.legendDeck.setCardNumber(newCount, newCard);
-    };
-    TableCenter.prototype.makeDecksSelectable = function (selectable) {
-        for (var i = 1; i <= 2; i++) {
-            this.decks[i].setSelectionMode(selectable ? 'single' : 'none');
-        }
-    };
-    return TableCenter;
-}());
-var ANIMATION_MS = 500;
-var ACTION_TIMER_DURATION = 5;
-var LOCAL_STORAGE_ZOOM_KEY = 'SkateLegend-zoom';
-var LOCAL_STORAGE_JUMP_TO_FOLDED_KEY = 'SkateLegend-jump-to-folded';
-var SkateLegend = /** @class */ (function () {
-    function SkateLegend() {
-        this.playersTables = [];
-        this.handCounters = [];
-        this.playedCounters = [];
-        this.scoredCounters = [];
-        this.helmetCounters = [];
-        this.stopVoidStocks = [];
-        //private teaseTimers: number[] = [];
-        this.TOOLTIP_DELAY = document.body.classList.contains('touch-device') ? 1500 : undefined;
-        /*const zoomStr = localStorage.getItem(LOCAL_STORAGE_ZOOM_KEY);
-        if (zoomStr) {
-            this.zoom = Number(zoomStr);
-        }*/
-    }
-    /*
-        setup:
-
-        This method must set up the game user interface according to current game situation specified
-        in parameters.
-
-        The method is called each time the game interface is displayed to a player, ie:
-        _ when the game starts
-        _ when a player refreshes the game page (F5)
-
-        "gamedatas" argument contains all datas retrieved by your "getAllDatas" PHP method.
-    */
-    SkateLegend.prototype.setup = function (gamedatas) {
-        log("Starting game setup");
-        this.bga.gameArea.getElement().insertAdjacentHTML('beforeend', "\n            <div id=\"score\">\n                <div id=\"table-wrapper\">\n                    <table>\n                        <thead>\n                            <tr id=\"scoretr\"></tr>\n                        </thead>\n                        <tbody id=\"score-table-body\">\n                        </tbody>\n                    </table>\n                </div>\n            </div>\n\n            <div id=\"table\">\n                <div id=\"round-counter-row\">\n                    <div id=\"round-counter-block\"><span id=\"round-counter\"></span> / 4</div>\n                </div>\n                <div id=\"centered-table\">\n                    <div id=\"tables-and-center\">\n                        <div id=\"table-center\">\n                            <div id=\"decks\">\n                                <div id=\"deck1\"></div>\n                                <div id=\"deck2\"></div>\n                            </div>\n                            <div id=\"rewards\"></div>\n                        </div>\n                        <div id=\"tables\"></div>\n                    </div>\n                </div>\n            </div>\n        ");
-        this.gamedatas = gamedatas;
-        log('gamedatas', gamedatas);
-        var endGame = Number(gamedatas.gamestate.id) >= 90; // score or end
-        this.animationManager = new AnimationManager(this);
-        this.cardsManager = new CardsManager(this);
-        new JumpToManager(this, {
-            localStorageFoldedKey: LOCAL_STORAGE_JUMP_TO_FOLDED_KEY,
-            topEntries: [
-                new JumpToEntry(_('Decks & reward'), 'table-center', { color: 'black' })
-            ],
-            entryClasses: 'round-point',
-        });
-        this.tableCenter = new TableCenter(this, gamedatas);
-        this.createPlayerPanels(gamedatas, endGame);
-        this.createPlayerTables(gamedatas);
-        this.zoomManager = new ZoomManager({
-            element: document.getElementById('table'),
-            smooth: false,
-            localStorageZoomKey: LOCAL_STORAGE_ZOOM_KEY,
-            /*autoZoom: {
-                expectedWidth: this.factories.getWidth(),
-            },*/
-            // onDimensionsChange: (newZoom) => this.onTableCenterSizeChange(newZoom),
-        });
-        document.getElementById("round-counter").insertAdjacentHTML('beforebegin', _("Round number:") + ' ');
-        this.roundCounter = new ebg.counter();
-        this.roundCounter.create("round-counter");
-        this.roundCounter.setValue(gamedatas.roundNumber);
-        this.fallVoidStock = new VoidStock(this.cardsManager, document.getElementById('overall-footer'));
-        new HelpManager(this, {
-            buttons: [
-                new BgaHelpPopinButton({
-                    title: _("Card details").toUpperCase(),
-                    html: this.getHelpHtml(),
-                    buttonBackground: '#070407',
-                }),
-            ]
-        });
-        this.setupNotifications();
-        if (endGame) { // score or end
-            this.onEnteringShowScore(true);
-        }
-        log("Ending game setup");
-    };
-    ///////////////////////////////////////////////////
-    //// Game & client states
-    // onEnteringState: this method is called each time we are entering into a new game state.
-    //                  You can use this method to perform some user interface changes at this moment.
-    //
-    SkateLegend.prototype.onEnteringState = function (stateName, args) {
-        log('Entering state: ' + stateName, args.args);
-        switch (stateName) {
-            case 'playCard':
-                this.onEnteringPlayCard();
-                break;
-            case 'pickCard':
-            case 'revealDeckCard':
-                this.onEnteringRevealDeckCard();
-                break;
-            case 'endScore':
-                this.onEnteringShowScore();
-                break;
-        }
-    };
-    SkateLegend.prototype.onEnteringPlayCard = function () {
-        var _a;
-        if (this.isCurrentPlayerActive()) {
-            this.tableCenter.makeDecksSelectable(true);
-            (_a = this.getCurrentPlayerTable()) === null || _a === void 0 ? void 0 : _a.makeCardsSelectable(true);
-        }
-    };
-    SkateLegend.prototype.onEnteringRevealDeckCard = function () {
-        if (this.isCurrentPlayerActive()) {
-            this.tableCenter.makeDecksSelectable(true);
-        }
-    };
-    SkateLegend.prototype.onEnteringShowScore = function (fromReload) {
-        if (fromReload === void 0) { fromReload = false; }
-        document.getElementById('score').style.display = 'flex';
-        var headers = document.getElementById('scoretr');
-        if (!headers.childElementCount) {
-            var html_2 = "\n                <th></th>";
-            [1, 2, 3, 4].forEach(function (i) {
-                html_2 += "\n                    <th id=\"th-round".concat(i, "-score\" class=\"round-score\">").concat(_("Round ${number}").replace('${number}', i), "</th>\n                ");
-            });
-            html_2 += "\n                <th id=\"th-helmet-score\" class=\"helmet-score\">".concat(_("Helmet score"), "</th>\n                <th id=\"th-end-score\" class=\"end-score\">").concat(_("Final score"), "</th>\n            ");
-            dojo.place(html_2, headers);
-        }
-        var players = Object.values(this.gamedatas.players);
-        players.forEach(function (player) {
-            var _a, _b;
-            var html = "\n                <tr id=\"score".concat(player.id, "\">\n                <td class=\"player-name\" style=\"color: #").concat(player.color, "\">").concat(player.name, "</td>");
-            [1, 2, 3, 4].forEach(function (i) {
-                var _a, _b;
-                html += "\n                    <td id=\"round-score".concat(player.id, "\" class=\"round-score\">").concat((_b = (_a = player.allRoundsPoints) === null || _a === void 0 ? void 0 : _a[i - 1]) !== null && _b !== void 0 ? _b : '-', "</td>\n                ");
-            });
-            html += "\n                <td id=\"helmet-score".concat(player.id, "\" class=\"helmet-score\">").concat((_a = player.helmets * 2) !== null && _a !== void 0 ? _a : '', "</td>\n                <td id=\"end-score").concat(player.id, "\" class=\"total\">").concat((_b = player.score) !== null && _b !== void 0 ? _b : '', "</td>\n            </tr>\n            ");
-            dojo.place(html, 'score-table-body');
-        });
-    };
-    SkateLegend.prototype.onLeavingState = function (stateName) {
-        log('Leaving state: ' + stateName);
-        switch (stateName) {
-            case 'playCard':
-                this.onLeavingPlayCard();
-                break;
-            case 'pickCard':
-            case 'revealDeckCard':
-                this.onLeavingRevealDeckCard();
-                break;
-        }
-    };
-    SkateLegend.prototype.onLeavingPlayCard = function () {
-        var _a;
-        this.tableCenter.makeDecksSelectable(false);
-        (_a = this.getCurrentPlayerTable()) === null || _a === void 0 ? void 0 : _a.makeCardsSelectable(false);
-    };
-    SkateLegend.prototype.onLeavingRevealDeckCard = function () {
-        this.tableCenter.makeDecksSelectable(false);
-    };
-    // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
-    //                        action status bar (ie: the HTML links in the status bar).
-    //
-    SkateLegend.prototype.onUpdateActionButtons = function (stateName, args) {
-        var _this = this;
-        if (this.isCurrentPlayerActive()) {
-            switch (stateName) {
-                case 'chooseContinue':
-                    var chooseContinueArgs_1 = args;
-                    this.addActionButton("continue_button", _("Continue"), function () { return _this.continue(); });
-                    this.addActionButton("stop_button", _("Stop"), function () { return _this.stop(chooseContinueArgs_1.shouldNotStop); });
-                    if (!chooseContinueArgs_1.canStop) {
-                        document.getElementById("stop_button").classList.add('disabled');
-                    }
-                    break;
-                case 'playHelmet':
-                    this.addActionButton("playHelmet_button", _("Add helmet on last card"), function () { return _this.playHelmet(); });
-                    this.addActionButton("skipHelmet_button", _("Skip"), function () { return _this.skipHelmet(); });
-                    break;
-            }
-        }
-    };
-    ///////////////////////////////////////////////////
-    //// Utility methods
-    ///////////////////////////////////////////////////
-    SkateLegend.prototype.setTooltip = function (id, html) {
-        this.addTooltipHtml(id, html, this.TOOLTIP_DELAY);
-    };
-    SkateLegend.prototype.setTooltipToClass = function (className, html) {
-        this.addTooltipHtmlToClass(className, html, this.TOOLTIP_DELAY);
-    };
-    SkateLegend.prototype.getPlayerId = function () {
-        return Number(this.player_id);
-    };
-    SkateLegend.prototype.getPlayerName = function (playerId) {
-        return this.gamedatas.players[playerId].name;
-    };
-    SkateLegend.prototype.getPlayerColor = function (playerId) {
-        return this.gamedatas.players[playerId].color;
-    };
-    SkateLegend.prototype.getPlayerTable = function (playerId) {
-        return this.playersTables.find(function (playerTable) { return playerTable.playerId === playerId; });
-    };
-    SkateLegend.prototype.getCurrentPlayerTable = function () {
-        var _this = this;
-        return this.playersTables.find(function (playerTable) { return playerTable.playerId === _this.getPlayerId(); });
-    };
-    SkateLegend.prototype.getOrderedPlayers = function (gamedatas) {
-        var _this = this;
-        var players = Object.values(gamedatas.players).sort(function (a, b) { return a.playerNo - b.playerNo; });
-        var playerIndex = players.findIndex(function (player) { return Number(player.id) === Number(_this.player_id); });
-        var orderedPlayers = playerIndex > 0 ? __spreadArray(__spreadArray([], players.slice(playerIndex), true), players.slice(0, playerIndex), true) : players;
-        return orderedPlayers;
-    };
-    SkateLegend.prototype.createPlayerPanels = function (gamedatas, endGame) {
-        var _this = this;
-        Object.values(gamedatas.players).forEach(function (player) {
-            var playerId = Number(player.id);
-            // hand + scored cards counter + helmets counter
-            _this.bga.playerPanels.getElement(playerId).insertAdjacentHTML('beforeend', "<div class=\"counters\">\n                <div id=\"playerhand-counter-wrapper-".concat(player.id, "\" class=\"playerhand-counter\">\n                    <div class=\"player-hand-card\"></div> \n                    <span id=\"playerhand-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"played-counter-wrapper-").concat(player.id, "\" class=\"played-counter\">\n                    <div class=\"player-played-card\"></div> \n                    <span id=\"played-counter-").concat(player.id, "\"></span>\n                </div>\n                <div id=\"scored-counter-wrapper-").concat(player.id, "\" class=\"scored-counter\">\n                    <div class=\"player-scored-card\"></div> \n                    <span id=\"scored-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>\n            <div class=\"counters\">\n                <div id=\"player-helmets-counter-wrapper-").concat(player.id, "\" class=\"player-helmets-counter\">\n                    <div class=\"player-helmets\"></div> \n                    <span id=\"player-helmets-counter-").concat(player.id, "\"></span>\n                </div>\n            </div>\n            <div id=\"round-points-").concat(player.id, "\"></div>\n            "));
-            var handCounter = new ebg.counter();
-            handCounter.create("playerhand-counter-".concat(playerId));
-            handCounter.setValue(player.handCount);
-            _this.handCounters[playerId] = handCounter;
-            var playedCounter = new ebg.counter();
-            playedCounter.create("played-counter-".concat(playerId));
-            playedCounter.setValue(player.played.length);
-            _this.playedCounters[playerId] = playedCounter;
-            var scoredCounter = new ebg.counter();
-            scoredCounter.create("scored-counter-".concat(playerId));
-            scoredCounter.setValue(player.scoredCount);
-            _this.scoredCounters[playerId] = scoredCounter;
-            var helmetCounter = new ebg.counter();
-            helmetCounter.create("player-helmets-counter-".concat(playerId));
-            helmetCounter.setValue(player.helmets);
-            _this.helmetCounters[playerId] = helmetCounter;
-            if (!endGame) {
-                _this.setPlayerActive(playerId, player.active);
-            }
-            if (playerId == _this.getPlayerId()) {
-                /*document.getElementById(`tease-${player.id}-wrapper`).insertAdjacentHTML('beforeend', `
-                <div class="bubble-wrapper">
-                    <div id="player-${player.id}-action-bubble" class="discussion_bubble" data-visible="false"></div>
-                </div>
-                <button id="tease-${player.id}-button" class="bgabutton bgabutton_blue tease-button"><div class="tease-icon"></button>
-                `);
-                const actionBubble = document.getElementById(`player-${player.id}-action-bubble`);
-                document.getElementById(`tease-${player.id}-button`).addEventListener('click', () => {
-                    actionBubble.dataset.visible = actionBubble.dataset.visible == 'true' ? 'false' : 'true';
-                });
-
-                this.gamedatas.SENTENCES.forEach((sentence, index) => {
-                    actionBubble.insertAdjacentHTML('beforeend', `<button id="tease-${player.id}-sentence-${index}" class="bgabutton bgabutton_blue">${_(sentence)}</button>`);
-                    document.getElementById(`tease-${player.id}-sentence-${index}`).addEventListener('click', () => {
-                        this.tease(index);
-                        actionBubble.dataset.visible = 'false';
-                    });
-                });
-                actionBubble.insertAdjacentHTML('beforeend', `<button id="tease-${player.id}-sentence-cancel" class="bgabutton bgabutton_gray">${_('Cancel')}</button>`);
-                    document.getElementById(`tease-${player.id}-sentence-cancel`).addEventListener('click', () => {
-                        actionBubble.dataset.visible = 'false';
-                    });*/
-                if (player.roundPoints) {
-                    _this.setRoundPoints(playerId, player.roundPoints);
-                }
-            }
-            _this.stopVoidStocks[playerId] = new VoidStock(_this.cardsManager, document.getElementById("scored-counter-".concat(playerId)));
-        });
-        this.setTooltipToClass('playerhand-counter', _('Cards in hand'));
-        this.setTooltipToClass('played-counter', _('Size of the current sequence'));
-        this.setTooltipToClass('scored-counter', _('Number of scored cards'));
-        this.setTooltipToClass('player-helmets-counter', _('Number of helmets'));
-    };
-    /*public showTease(playerId: number, sentence: string) {
-        if (this.teaseTimers[playerId]) {
-            clearTimeout(this.teaseTimers[playerId]);
-            this.teaseTimers[playerId] = null;
-        }
-        const bubble = document.getElementById(`player-${playerId}-discussion-bubble`);
-        bubble.innerHTML = _(sentence);
-        bubble.dataset.visible = 'true';
-        this.teaseTimers[playerId] = setTimeout(() => {
-            bubble.dataset.visible = 'false';
-            this.teaseTimers[playerId] = null;
-        }, 2000);
-    }*/
-    SkateLegend.prototype.setPlayerActive = function (playerId, active) {
-        document.getElementById("overall_player_board_".concat(playerId)).classList.toggle('inactive', !active);
-    };
-    SkateLegend.prototype.createPlayerTables = function (gamedatas) {
-        var _this = this;
-        var orderedPlayers = this.getOrderedPlayers(gamedatas);
-        orderedPlayers.forEach(function (player) {
-            return _this.createPlayerTable(gamedatas, Number(player.id));
-        });
-    };
-    SkateLegend.prototype.createPlayerTable = function (gamedatas, playerId) {
-        var table = new PlayerTable(this, gamedatas.players[playerId], gamedatas.SENTENCES);
-        this.playersTables.push(table);
-    };
-    SkateLegend.prototype.getHelpHtml = function () {
-        var _this = this;
-        var html = "\n        <div id=\"help-popin\">\n\n        <h1>".concat(_("Card effect"), "</h1>\n        <div class=\"row help-card-effect\">");
-        [10, 21, 31].forEach(function (power) {
-            html += "       \n                <div class=\"help-icon\" data-power=\"".concat(power, "\"></div>\n                <div class=\"help-label\">").concat(_this.cardsManager.getPower(power), "</div>\n            ");
-        });
-        html += "    </div>  \n            <h1>".concat(_("Conditions of Legendary Tricks card"), "</h1>\n            <div class=\"row help-condition\">");
-        [[4, 4], [5, 4], [2, 2], [1, 3], [2, 6], [3, 5], [2, 1]].forEach(function (condition) {
-            html += "\n                <div class=\"help-icon\" data-condition=\"".concat(JSON.stringify(condition), "\"></div>\n                <div class=\"help-label\">").concat(_this.cardsManager.getCondition(condition), "</div>\n\n           ");
-        });
-        html += "    </div>  \n        </div>\n        ";
-        return html;
-    };
-    SkateLegend.prototype.onDeckClick = function (number) {
-        if (this.gamedatas.gamestate.name == 'pickCard') {
-            this.pickCard(number);
-        }
-        else if (this.gamedatas.gamestate.name == 'revealDeckCard') {
-            this.revealTopDeckCard(number);
-        }
-        else {
-            this.playCardFromDeck(number);
-        }
-    };
-    SkateLegend.prototype.continue = function () {
-        if (!this.checkAction('continue')) {
-            return;
-        }
-        this.takeAction('continue');
-    };
-    SkateLegend.prototype.stop = function (warning) {
-        var _this = this;
-        if (!this.checkAction('stop')) {
-            return;
-        }
-        if (warning) {
-            this.confirmationDialog(_("Are you sure you want to stop here? There is no risk if you continue the sequence."), function () { return _this.stop(false); });
-            return;
-        }
-        this.takeAction('stop');
-    };
-    SkateLegend.prototype.playCardFromHand = function (id) {
-        if (!this.checkAction('playCardFromHand')) {
-            return;
-        }
-        this.takeAction('playCardFromHand', {
-            id: id
-        });
-    };
-    SkateLegend.prototype.playCardFromDeck = function (number) {
-        if (!this.checkAction('playCardFromDeck')) {
-            return;
-        }
-        this.takeAction('playCardFromDeck', {
-            number: number
-        });
-    };
-    SkateLegend.prototype.pickCard = function (number) {
-        if (!this.checkAction('pickCard')) {
-            return;
-        }
-        this.takeAction('pickCard', {
-            number: number
-        });
-    };
-    SkateLegend.prototype.revealTopDeckCard = function (number) {
-        if (!this.checkAction('revealTopDeckCard')) {
-            return;
-        }
-        this.takeAction('revealTopDeckCard', {
-            number: number
-        });
-    };
-    SkateLegend.prototype.playHelmet = function () {
-        if (!this.checkAction('playHelmet')) {
-            return;
-        }
-        this.takeAction('playHelmet');
-    };
-    SkateLegend.prototype.skipHelmet = function () {
-        if (!this.checkAction('skipHelmet')) {
-            return;
-        }
-        this.takeAction('skipHelmet');
-    };
-    SkateLegend.prototype.tease = function (sentence) {
-        this.bga.actions.performAction('tease', {
-            sentence: sentence
-        }, { lock: false, checkAction: false });
-    };
-    SkateLegend.prototype.takeAction = function (action, data) {
-        data = data || {};
-        this.bga.actions.performAction(action, data, { checkAction: false });
-    };
-    ///////////////////////////////////////////////////
-    //// Reaction to cometD notifications
-    /*
-        setupNotifications:
-
-        In this method, you associate each of your game notifications with your local method to handle it.
-
-        Note: game notification names correspond to "notifyAllPlayers" and "notifyPlayer" calls in
-                your pylos.game.php file.
-
-    */
-    SkateLegend.prototype.setupNotifications = function () {
-        //log( 'notifications subscriptions setup' );
-        var _this = this;
-        var notifs = [
-            ['flipCard', ANIMATION_MS],
-            ['playCard', ANIMATION_MS],
-            ['discardedLegendCard', ANIMATION_MS],
-            ['fall', ANIMATION_MS * 4],
-            ['closeSequence', ANIMATION_MS],
-            ['newRound', ANIMATION_MS * 3],
-            ['addHelmet', ANIMATION_MS],
-            ['takeTrophyCard', ANIMATION_MS],
-            ['discardTrophyCard', ANIMATION_MS],
-            ['addCardToHand', ANIMATION_MS],
-            ['detailledScore', ANIMATION_MS],
-            ['splitDecks', ANIMATION_MS],
-            ['tease', 1],
-        ];
-        notifs.forEach(function (notif) {
-            dojo.subscribe(notif[0], _this, "notif_".concat(notif[0]));
-            _this.notifqueue.setSynchronous(notif[0], notif[1]);
-        });
-        this.notifqueue.setIgnoreNotificationCheck('addCardToHand', function (notif) {
-            return notif.args.playerId == _this.getPlayerId() && !_this.cardsManager.isCardVisible(notif.args.card);
-        });
-    };
-    SkateLegend.prototype.notif_flipCard = function (notif) {
-        this.cardsManager.updateCardInformations(notif.args.card);
-    };
-    SkateLegend.prototype.notif_playCard = function (notif) {
-        var playerId = notif.args.playerId;
-        var fromDeck = notif.args.fromDeck;
-        var playerTable = this.getPlayerTable(playerId);
-        var currentPlayer = this.getPlayerId() == playerId;
-        playerTable.played.addCard(notif.args.card, {
-            fromElement: currentPlayer || fromDeck ? undefined : document.getElementById("player-table-".concat(playerId, "-name"))
-        }, { updateInformations: true, });
-        if (fromDeck > 0) {
-            this.tableCenter.decks[fromDeck].setCardNumber(notif.args.deckCount, notif.args.deckTopCard);
-        }
-        else { // from hand
-            this.handCounters[playerId].incValue(-1);
-        }
-        this.playedCounters[playerId].incValue(1);
-    };
-    SkateLegend.prototype.notif_discardedLegendCard = function (notif) {
-        var playerId = notif.args.playerId;
-        this.getPlayerTable(playerId).discardLegendCard(notif.args.card);
-        this.playedCounters[playerId].incValue(-1);
-    };
-    SkateLegend.prototype.notif_fall = function (notif) {
-        var _this = this;
-        var playerId = notif.args.playerId;
-        var notice = document.createElement('div');
-        notice.classList.add('fall-notice');
-        notice.innerHTML = _('${player_name} falls!').replace('${player_name}', "<div style=\"color: #".concat(this.getPlayerColor(playerId), "\">").concat(this.getPlayerName(playerId), "</div>"));
-        this.animationManager.attachWithAnimation(new BgaSlideAnimation({
-            element: notice,
-            duration: ANIMATION_MS * 3,
-            fromElement: document.getElementById('page-title'),
-        }), document.getElementById("player-table-".concat(playerId, "-played"))).then(function () {
-            notice === null || notice === void 0 ? void 0 : notice.remove();
-            _this.getPlayerTable(playerId).fall(_this.fallVoidStock);
-            _this.helmetCounters[playerId].incValue(1);
-            _this.setPlayerActive(playerId, false);
-            _this.playedCounters[playerId].toValue(0);
-        });
-    };
-    SkateLegend.prototype.notif_closeSequence = function (notif) {
-        var playerId = notif.args.playerId;
-        this.getPlayerTable(playerId).closeSequence(this.stopVoidStocks[playerId]);
-        this.setPlayerActive(playerId, false);
-        this.playedCounters[playerId].toValue(0);
-        this.scoredCounters[playerId].incValue(notif.args.sequence.length);
-        if (playerId == this.getPlayerId()) {
-            this.setRoundPoints(playerId, notif.args.roundPoints);
-        }
-    };
-    SkateLegend.prototype.setRoundPoints = function (playerId, roundPoints) {
-        if (roundPoints === void 0) { roundPoints = null; }
-        document.getElementById("round-points-".concat(playerId)).innerHTML = roundPoints ? _('You scored ${points} points this round').replace('${points}', '' + roundPoints) : '';
-    };
-    SkateLegend.prototype.notif_newRound = function (notif) {
-        var _this = this;
-        this.roundCounter.toValue(notif.args.roundNumber);
-        Object.keys(this.gamedatas.players).forEach(function (id) {
-            var playerId = Number(id);
-            _this.setPlayerActive(playerId, true);
-        });
-        this.setRoundPoints(this.getPlayerId());
-    };
-    SkateLegend.prototype.notif_addHelmet = function (notif) {
-        var playerId = notif.args.playerId;
-        this.getPlayerTable(playerId).addHelmet(notif.args.card);
-        this.setPlayerActive(playerId, false);
-        this.helmetCounters[playerId].incValue(-1);
-    };
-    SkateLegend.prototype.notif_takeTrophyCard = function (notif) {
-        var playerId = notif.args.playerId;
-        var currentPlayer = this.getPlayerId() == playerId;
-        if (notif.args.perfectLanding) {
-            this.getPlayerTable(playerId).played.addCard(notif.args.card);
-        }
-        else if (currentPlayer) {
-            this.getPlayerTable(playerId).hand.addCard(notif.args.card);
-        }
-        else {
-            this.tableCenter.legendDeck.removeCard(notif.args.card);
-        }
-        this.tableCenter.updateLegendDeck(notif.args.newCard, notif.args.newCount);
-        this.handCounters[playerId].incValue(1);
-    };
-    SkateLegend.prototype.notif_discardTrophyCard = function (notif) {
-        this.tableCenter.legendDeck.removeCard(notif.args.card);
-        this.tableCenter.updateLegendDeck(notif.args.newCard, notif.args.newCount);
-    };
-    SkateLegend.prototype.notif_addCardToHand = function (notif) {
-        var playerId = notif.args.playerId;
-        var currentPlayer = this.getPlayerId() == playerId;
-        if (currentPlayer) {
-            this.getPlayerTable(playerId).hand.addCard(notif.args.card, {
-                fromElement: document.getElementById("deck".concat(notif.args.fromDeckNumber))
-            });
-        }
-        else {
-            this.stopVoidStocks[playerId].addCard(notif.args.card);
-        }
-        this.tableCenter.decks[notif.args.fromDeckNumber].setCardNumber(notif.args.deckCount, notif.args.deckTopCard);
-        this.handCounters[playerId].incValue(1);
-    };
-    SkateLegend.prototype.notif_splitDecks = function (notif) {
-        var _this = this;
-        [1, 2].forEach(function (deckId) {
-            if (notif.args.decks[deckId].top) {
-                _this.tableCenter.decks[deckId].addCard(notif.args.decks[deckId].top, {
-                    fromStock: notif.args.fromDeck != deckId ? _this.tableCenter.decks[notif.args.fromDeck] : undefined,
-                });
-            }
-            _this.tableCenter.decks[deckId].setCardNumber(notif.args.decks[deckId].count);
-        });
-    };
-    SkateLegend.prototype.notif_tease = function (notif) {
-        this.getPlayerTable(notif.args.playerId).showTease(notif.args.sentence);
-    };
-    SkateLegend.prototype.setScore = function (playerId, column, score) {
-        var cell = document.getElementById("score".concat(playerId)).getElementsByTagName('td')[column];
-        cell.innerHTML = "".concat(score !== null && score !== void 0 ? score : '-');
-    };
-    SkateLegend.prototype.notif_detailledScore = function (notif) {
-        var _this = this;
-        log('notif_detailledScore', notif.args);
-        Object.entries(notif.args.roundScores).forEach(function (entry) {
-            var playerId = Number(entry[0]);
-            entry[1].forEach(function (roundPoints, index) { return _this.setScore(playerId, index + 1, roundPoints); });
-            _this.setScore(playerId, 5, notif.args.helmetScores[playerId]);
-            var total = entry[1].filter(function (n) { return n !== null; }).reduce(function (a, b) { return a + b; }, 0);
-            total += notif.args.helmetScores[playerId];
-            _this.setScore(playerId, 6, total);
-            _this.bga.playerPanels.getScoreCounter(playerId).toValue(total);
-            _this.setPlayerActive(playerId, true);
-        });
-    };
-    /* This enable to inject translatable styled things to logs or action bar */
-    /* @Override */
-    SkateLegend.prototype.format_string_recursive = function (log, args) {
-        try {
-            if (log && args && !args.processed) {
-                if (args.announcement && args.announcement[0] != '<') {
-                    args.announcement = "<strong style=\"color: darkred;\">".concat(_(args.announcement), "</strong>");
-                }
-                if (args.call && args.call.length && args.call[0] != '<') {
-                    args.call = "<strong class=\"title-bar-call\">".concat(_(args.call), "</strong>");
-                }
-                ['discardNumber', 'roundPoints', 'cardsPoints', 'colorBonus', 'cardName', 'cardName1', 'cardName2', 'cardColor', 'cardColor1', 'cardColor2', 'points', 'result'].forEach(function (field) {
-                    if (args[field] !== null && args[field] !== undefined && args[field][0] != '<') {
-                        args[field] = "<strong>".concat(_(args[field]), "</strong>");
-                    }
-                });
-            }
-        }
-        catch (e) {
-            console.error(log, args, "Exception thrown", e.stack);
-        }
-        return this.inherited(arguments);
-    };
-    return SkateLegend;
-}());
-define([
-    "dojo", "dojo/_base/declare",
-    "ebg/core/gamegui",
-    "ebg/counter",
-    "ebg/stock"
-], function (dojo, declare) {
-    return declare("bgagame.skatelegend", ebg.core.gamegui, new SkateLegend());
+define({
+    CardManager: CardManager,
+    CardStock: CardStock,
+    Deck: Deck,
+    LineStock: LineStock,
+    SlotStock: SlotStock,
+    ScrollableStock: ScrollableStock,
+    HandStock: HandStock,
+    ManualPositionStock: ManualPositionStock,
+    VoidStock: VoidStock,
+    AllVisibleDeck: AllVisibleDeck,
+    sortFunction: sortFunction,
 });

@@ -1,14 +1,20 @@
+import { AnimationManager, BgaZoom, BgaJumpTo, HelpManager, BgaHelpPopinButton, VoidStock, BgaSlideAnimation } from './libs';
+import { CardsManager } from './cards';
+import { PlayerTable } from './player-table';
+import { TableCenter } from './table-center';
+import { log } from './log';
+
 const ANIMATION_MS = 500;
 const ACTION_TIMER_DURATION = 5;
 
 const LOCAL_STORAGE_ZOOM_KEY = 'SkateLegend-zoom';
 const LOCAL_STORAGE_JUMP_TO_FOLDED_KEY = 'SkateLegend-jump-to-folded';
 
-class SkateLegend implements SkateLegendGame {
+export class Game implements SkateLegendGame {
     public animationManager: AnimationManager;
     public cardsManager: CardsManager;
 
-    private zoomManager: ZoomManager;
+    private zoomManager: BgaZoom.Manager;
     private gamedatas: SkateLegendGamedatas;
     private tableCenter: TableCenter;
     private playersTables: PlayerTable[] = [];
@@ -23,9 +29,10 @@ class SkateLegend implements SkateLegendGame {
     
     private TOOLTIP_DELAY = document.body.classList.contains('touch-device') ? 1500 : undefined;
 
-    public bga: Bga;
+    public bga: Bga<SkateLegendPlayer, SkateLegendGamedatas>;
 
-    constructor() {
+    constructor(bga: Bga<SkateLegendPlayer, SkateLegendGamedatas>) {
+        this.bga = bga;
         /*const zoomStr = localStorage.getItem(LOCAL_STORAGE_ZOOM_KEY);
         if (zoomStr) {
             this.zoom = Number(zoomStr);
@@ -85,28 +92,39 @@ class SkateLegend implements SkateLegendGame {
 
         const endGame = Number(gamedatas.gamestate.id) >= 90; // score or end
 
-        this.animationManager = new AnimationManager(this);
+        this.animationManager = new AnimationManager(this.bga.gameui);
         this.cardsManager = new CardsManager(this);
-        new JumpToManager(this, {
+        const entries = [
+            new BgaJumpTo.Entry(_('Decks & reward'), 'table-center', {
+                color: 'black',
+                backgroundImage: `url('${this.bga.images.getImgUrl('cards.jpg')}')`,
+                // The card back is the first of twelve tiles; cover the shortcut with that tile.
+                backgroundSize: '1200% auto',
+                backgroundPosition: 'left center',
+            }),
+        ];
+        entries.push(...BgaJumpTo.BgaPlayerEntries(this.bga, {
+            playerOrder: this.getOrderedPlayers(gamedatas).map(player => Number(player.id)),
+            entrySettings: playerId => ({ id: `bga-jump-to_player-table-${playerId}` }),
+        }));
+        new BgaJumpTo.Manager({
             localStorageFoldedKey: LOCAL_STORAGE_JUMP_TO_FOLDED_KEY,
-            topEntries: [
-                new JumpToEntry(_('Decks & reward'), 'table-center', { color: 'black' })
-            ],
-            entryClasses: 'round-point',
+            entries,
         });
         this.tableCenter = new TableCenter(this, gamedatas);
         this.createPlayerPanels(gamedatas, endGame);
         this.createPlayerTables(gamedatas);
         
-        this.zoomManager = new ZoomManager({
+        this.zoomManager = new BgaZoom.Manager({
             element: document.getElementById('table'),
-            smooth: false,
             localStorageZoomKey: LOCAL_STORAGE_ZOOM_KEY,
             /*autoZoom: {
                 expectedWidth: this.factories.getWidth(),
             },*/
             // onDimensionsChange: (newZoom) => this.onTableCenterSizeChange(newZoom),
         });
+
+        this.animationManager.setZoomManager(this.zoomManager);
 
         document.getElementById(`round-counter`).insertAdjacentHTML('beforebegin', _("Round number:") + ' ');
         this.roundCounter = new ebg.counter();
@@ -115,7 +133,7 @@ class SkateLegend implements SkateLegendGame {
 
         this.fallVoidStock = new VoidStock<Card>(this.cardsManager, document.getElementById('overall-footer'));
 
-        new HelpManager(this, { 
+        new HelpManager(this.bga.gameui, { 
             buttons: [
                 new BgaHelpPopinButton({
                     title: _("Card details").toUpperCase(),
@@ -157,14 +175,14 @@ class SkateLegend implements SkateLegendGame {
     }
     
     private onEnteringPlayCard() {
-        if ((this as any).isCurrentPlayerActive()) {
+        if (this.bga.gameui.isCurrentPlayerActive()) {
             this.tableCenter.makeDecksSelectable(true);
             this.getCurrentPlayerTable()?.makeCardsSelectable(true);
         }
     }
     
     private onEnteringRevealDeckCard() {
-        if ((this as any).isCurrentPlayerActive()) {
+        if (this.bga.gameui.isCurrentPlayerActive()) {
             this.tableCenter.makeDecksSelectable(true);
         }
     }
@@ -178,14 +196,14 @@ class SkateLegend implements SkateLegendGame {
                 <th></th>`;
             [1, 2, 3, 4].forEach(i => {
                 html += `
-                    <th id="th-round${i}-score" class="round-score">${_("Round ${number}").replace('${number}', i)}</th>
+                    <th id="th-round${i}-score" class="round-score">${_("Round ${number}").replace('${number}', String(i))}</th>
                 `;
             });
             html += `
                 <th id="th-helmet-score" class="helmet-score">${_("Helmet score")}</th>
                 <th id="th-end-score" class="end-score">${_("Final score")}</th>
             `;
-            dojo.place(html, headers);
+            headers.insertAdjacentHTML('beforeend', html);
         }
 
         const players = Object.values(this.gamedatas.players);
@@ -200,11 +218,11 @@ class SkateLegend implements SkateLegendGame {
                 `;
             });
             html += `
-                <td id="helmet-score${player.id}" class="helmet-score">${player.helmets * 2 ?? ''}</td>
+                <td id="helmet-score${player.id}" class="helmet-score">${player.helmets * 2}</td>
                 <td id="end-score${player.id}" class="total">${player.score ?? ''}</td>
             </tr>
             `;
-            dojo.place(html, 'score-table-body');
+            document.getElementById('score-table-body').insertAdjacentHTML('beforeend', html);
         });
     }
 
@@ -235,19 +253,19 @@ class SkateLegend implements SkateLegendGame {
     //                        action status bar (ie: the HTML links in the status bar).
     //
     public onUpdateActionButtons(stateName: string, args: any) {
-        if ((this as any).isCurrentPlayerActive()) {
+        if (this.bga.gameui.isCurrentPlayerActive()) {
             switch (stateName) {
                 case 'chooseContinue':
                     const chooseContinueArgs = args as EnteringChooseContinueArgs;
-                    (this as any).addActionButton(`continue_button`, _("Continue"), () => this.continue());
-                    (this as any).addActionButton(`stop_button`, _("Stop"), () => this.stop(chooseContinueArgs.shouldNotStop));
+                    this.bga.gameui.addActionButton(`continue_button`, _("Continue"), () => this.continue());
+                    this.bga.gameui.addActionButton(`stop_button`, _("Stop"), () => this.stop(chooseContinueArgs.shouldNotStop));
                     if (!chooseContinueArgs.canStop) {
                         document.getElementById(`stop_button`).classList.add('disabled');
                     }
                     break;
                 case 'playHelmet':
-                    (this as any).addActionButton(`playHelmet_button`, _("Add helmet on last card"), () => this.playHelmet());
-                    (this as any).addActionButton(`skipHelmet_button`, _("Skip"), () => this.skipHelmet());
+                    this.bga.gameui.addActionButton(`playHelmet_button`, _("Add helmet on last card"), () => this.playHelmet());
+                    this.bga.gameui.addActionButton(`skipHelmet_button`, _("Skip"), () => this.skipHelmet());
                     break;
             }
         }
@@ -260,14 +278,14 @@ class SkateLegend implements SkateLegendGame {
     ///////////////////////////////////////////////////
 
     public setTooltip(id: string, html: string) {
-        (this as any).addTooltipHtml(id, html, this.TOOLTIP_DELAY);
+        this.bga.gameui.addTooltipHtml(id, html, this.TOOLTIP_DELAY);
     }
     public setTooltipToClass(className: string, html: string) {
-        (this as any).addTooltipHtmlToClass(className, html, this.TOOLTIP_DELAY);
+        this.bga.gameui.addTooltipHtmlToClass(className, html, this.TOOLTIP_DELAY);
     }
 
     public getPlayerId(): number {
-        return Number((this as any).player_id);
+        return Number(this.bga.gameui.player_id);
     }
 
     public getPlayerName(playerId: number): string {
@@ -288,7 +306,7 @@ class SkateLegend implements SkateLegendGame {
 
     private getOrderedPlayers(gamedatas: SkateLegendGamedatas) {
         const players = Object.values(gamedatas.players).sort((a, b) => a.playerNo - b.playerNo);
-        const playerIndex = players.findIndex(player => Number(player.id) === Number((this as any).player_id));
+        const playerIndex = players.findIndex(player => Number(player.id) === Number(this.bga.gameui.player_id));
         const orderedPlayers = playerIndex > 0 ? [...players.slice(playerIndex), ...players.slice(0, playerIndex)] : players;
         return orderedPlayers;
     }
@@ -457,94 +475,61 @@ class SkateLegend implements SkateLegendGame {
     }
 
     public continue() {
-        if(!(this as any).checkAction('continue')) {
-            return;
-        }
-
-        this.takeAction('continue');
+        this.bga.actions.performAction('actContinue');
     }
 
     public stop(warning: boolean) {
-        if(!(this as any).checkAction('stop')) {
-            return;
-        }
-
         if (warning) {
-            (this as any).confirmationDialog(
+            if (!this.bga.actions.checkAction('actStop')) {
+                return;
+            }
+
+            this.bga.gameui.confirmationDialog(
                 _("Are you sure you want to stop here? There is no risk if you continue the sequence."), 
                 () => this.stop(false)
             );
             return;
         }
 
-        this.takeAction('stop');
+        this.bga.actions.performAction('actStop');
     }
   	
     public playCardFromHand(id: number) {
-        if(!(this as any).checkAction('playCardFromHand')) {
-            return;
-        }
-
-        this.takeAction('playCardFromHand', {
+        this.bga.actions.performAction('actPlayCardFromHand', {
             id
         });
     }
   	
     public playCardFromDeck(number: number) {
-        if(!(this as any).checkAction('playCardFromDeck')) {
-            return;
-        }
-
-        this.takeAction('playCardFromDeck', {
+        this.bga.actions.performAction('actPlayCardFromDeck', {
             number
         });
     }
   	
     public pickCard(number: number) {
-        if(!(this as any).checkAction('pickCard')) {
-            return;
-        }
-
-        this.takeAction('pickCard', {
+        this.bga.actions.performAction('actPickCard', {
             number
         });
     }
   	
     public revealTopDeckCard(number: number) {
-        if(!(this as any).checkAction('revealTopDeckCard')) {
-            return;
-        }
-
-        this.takeAction('revealTopDeckCard', {
+        this.bga.actions.performAction('actRevealTopDeckCard', {
             number
         });
     }
 
     public playHelmet() {
-        if(!(this as any).checkAction('playHelmet')) {
-            return;
-        }
-
-        this.takeAction('playHelmet');
+        this.bga.actions.performAction('actPlayHelmet');
     }
 
     public skipHelmet() {
-        if(!(this as any).checkAction('skipHelmet')) {
-            return;
-        }
-
-        this.takeAction('skipHelmet');
+        this.bga.actions.performAction('actSkipHelmet');
     }
 
     public tease(sentence: number) {
-        this.bga.actions.performAction('tease', {
+        this.bga.actions.performAction('actTease', {
             sentence
         }, { lock: false, checkAction: false });
-    }
-
-    public takeAction(action: string, data?: any) {
-        data = data || {};
-        this.bga.actions.performAction(action, data, { checkAction: false});
     }
 
     ///////////////////////////////////////////////////
@@ -562,7 +547,7 @@ class SkateLegend implements SkateLegendGame {
     setupNotifications() {
         //log( 'notifications subscriptions setup' );
 
-        const notifs = [
+        const notifs: [string, number][] = [
             ['flipCard', ANIMATION_MS],
             ['playCard', ANIMATION_MS],
             ['discardedLegendCard', ANIMATION_MS],
@@ -579,11 +564,11 @@ class SkateLegend implements SkateLegendGame {
         ];
     
         notifs.forEach((notif) => {
-            dojo.subscribe(notif[0], this, `notif_${notif[0]}`);
-            (this as any).notifqueue.setSynchronous(notif[0], notif[1]);
+            dojo.subscribe(notif[0], (...args: any[]) => this[`notif_${notif[0]}`](...args));
+            this.bga.gameui.notifqueue.setSynchronous(notif[0], notif[1]);
         });
 
-        (this as any).notifqueue.setIgnoreNotificationCheck('addCardToHand', (notif: Notif<NotifAddCardToHandArgs>) => 
+        this.bga.gameui.notifqueue.setIgnoreNotificationCheck('addCardToHand', (notif: Notif<NotifAddCardToHandArgs>) => 
             notif.args.playerId == this.getPlayerId() && !this.cardsManager.isCardVisible(notif.args.card)
         );
     }
@@ -741,7 +726,7 @@ class SkateLegend implements SkateLegendGame {
 
     /* This enable to inject translatable styled things to logs or action bar */
     /* @Override */
-    public format_string_recursive(log: string, args: any) {
+    public bgaFormatText(log: string, args: any): { log: string; args: any } {
         try {
             if (log && args && !args.processed) {
                 if (args.announcement && args.announcement[0] != '<') {
@@ -761,6 +746,6 @@ class SkateLegend implements SkateLegendGame {
         } catch (e) {
             console.error(log,args,"Exception thrown", e.stack);
         }
-        return (this as any).inherited(arguments);
+        return { log, args };
     }
 }

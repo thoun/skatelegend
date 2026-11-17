@@ -8,7 +8,7 @@
   * See http://en.boardgamearena.com/#!doc/Studio for more information.
   * -----
   * 
-  * skatelegend.game.php
+  * Game.php
   *
   * This is the main file for your game logic.
   *
@@ -16,22 +16,21 @@
   *
   */
 
+declare(strict_types=1);
+
+namespace Bga\Games\Skatelegend;
+
+use Bga\Games\Skatelegend\Models\Card;
+use Bga\Games\Skatelegend\States\NewRound;
 use Bga\GameFramework\Components\Deck;
 use Bga\GameFramework\Table;
-use Bga\GameFramework\VisibleSystemException;
+use Bga\GameFramework\Actions\CheckAction;
+use Bga\GameFramework\Actions\Types\IntParam;
 
-require_once('modules/php/constants.inc.php');
-require_once('modules/php/utils.php');
-require_once('modules/php/actions.php');
-require_once('modules/php/states.php');
-require_once('modules/php/args.php');
-require_once('modules/php/debug-util.php');
+require_once __DIR__ . '/constants.inc.php';
 
-class SkateLegend extends Table {
+class Game extends Table {
     use UtilTrait;
-    use ActionTrait;
-    use StateTrait;
-    use ArgsTrait;
     use DebugUtilTrait;
 
     public Deck $cards;
@@ -39,20 +38,20 @@ class SkateLegend extends Table {
     public array $SENTENCES;
 
 	function __construct() {
+        require __DIR__ . '/material.inc.php';
+
         // Your global variables labels:
         //  Here, you can assign labels to global variables you are using for this game.
         //  You can use any number of global variables with IDs between 10 and 99.
-        //  If your game has options (variants), you also have to associate here a label to
-        //  the corresponding ID in gameoptions.inc.php.
         // Note: afterwards, you can get/set the global variables with getGameStateValue/setGameStateInitialValue/setGameStateValue
         parent::__construct();
         
-        self::initGameStateLabels([
+        $this->initGameStateLabels([
             PICK_CARDS => 10,
             PLAY_AGAIN => 11,
         ]);
 		
-        $this->cards = $this->deckFactory->createDeck("card");
+        $this->cards = $this->bga->deckFactory->createDeck("card");
         $this->cards->autoreshuffle = false;        
 	}	
 
@@ -67,21 +66,21 @@ class SkateLegend extends Table {
         // Set the colors of the players with HTML color code
         // The default below is red/green/blue/orange/brown
         // The number of colors defined here must correspond to the maximum number of players allowed for the gams
-        $gameinfos = self::getGameinfos();
+        $gameinfos = $this->getGameinfos();
         $default_colors = $gameinfos['player_colors'];
  
         // Create players
         // Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.
-        $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar, player_round_points) VALUES ";
+        $sql = "INSERT INTO player (player_id, player_color, player_name, player_round_points) VALUES ";
         $values = [];
         foreach( $players as $player_id => $player ) {
             $color = array_shift( $default_colors );
-            $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."', '[null, null, null, null]')";
+            $values[] = "('".$player_id."','$color','".addslashes( $player['player_name'] )."', '[null, null, null, null]')";
         }
         $sql .= implode(',', $values);
         self::DbQuery( $sql );
-        self::reattributeColorsBasedOnPreferences( $players, $gameinfos['player_colors'] );
-        self::reloadPlayersBasicInfos();
+        $this->reattributeColorsBasedOnPreferences( $players, $gameinfos['player_colors'] );
+        $this->reloadPlayersBasicInfos();
         
         /************ Start the game initialization *****/
 
@@ -90,9 +89,9 @@ class SkateLegend extends Table {
         $this->setGameStateInitialValue(PLAY_AGAIN, 0);
         
         // Init game statistics
-        // (note: statistics used in this file must be defined in your stats.inc.php file)
+        // (note: statistics used in this file must be defined in your stats.json file)
         // 10+ : rounds/turns        
-        $this->tableStats->init('roundNumber', 0);
+        $this->bga->tableStats->init('roundNumber', 0);
         /*foreach([
             // 10+ : rounds/turns        
             'roundsAsFirstPlayer', 'checkedMercenaries', 'numberOfZones', 'numberOfLines', 'figuresOver6',
@@ -121,7 +120,7 @@ class SkateLegend extends Table {
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
 
-        return \ST_NEW_ROUND;
+        return NewRound::class;
     }
 
     /*
@@ -136,14 +135,14 @@ class SkateLegend extends Table {
     protected function getAllDatas(): array {
         $result = [];
     
-        $currentPlayerId = self::getCurrentPlayerId();    // !! We must only return informations visible by this player !!
+        $currentPlayerId = $this->getCurrentPlayerId();    // !! We must only return informations visible by this player !!
     
         // Get information about players
         // Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
         $sql = "SELECT player_id id, player_score score, player_no playerNo, player_helmets helmets, player_active active, player_helmet_card_id helmetCardId, player_round_points allRoundsPoints FROM player ";
         $result['players'] = self::getCollectionFromDb($sql);
 
-        $roundNumber = intval($this->getStat('roundNumber'));
+        $roundNumber = intval($this->bga->tableStats->get('roundNumber'));
         $isEndScore = $this->gamestate->getCurrentMainStateId() >= ST_END_SCORE;
         
         foreach($result['players'] as $playerId => &$player) {
@@ -151,7 +150,7 @@ class SkateLegend extends Table {
             $player['playerNo'] = intval($player['playerNo']);
             $player['helmets'] = intval($player['helmets']);
             $player['active'] = boolval($player['active']);
-            $player['allRoundsPoints'] = json_decode($player['allRoundsPoints'], true);
+            $player['allRoundsPoints'] = $player['allRoundsPoints'] === null ? null : json_decode($player['allRoundsPoints'], true);
             $player['helmetCardId'] = intval($player['helmetCardId']) == -1 ? null : intval($player['helmetCardId']);
             
             $player['played'] = $this->getCardsByLocation('played'.$playerId);
@@ -202,53 +201,24 @@ class SkateLegend extends Table {
         100 (= the game is finished or almost finished).
     
         This method is called each time we are in a game state with the "updateGameProgression" property set to true 
-        (see states.inc.php)
+        (see modules/php/States)
     */
     function getGameProgression() {
-        return intval($this->getStat('roundNumber')) * 25;
+        return intval($this->bga->tableStats->get('roundNumber')) * 25;
     }
 
-//////////////////////////////////////////////////////////////////////////////
-//////////// Zombie
-////////////
+    #[CheckAction(false)]
+    public function actTease(#[IntParam(min: 0)] int $sentence, int $currentPlayerId) {
+        $sentence = $this->SENTENCES[$sentence];
 
-    /*
-        zombieTurn:
-        
-        This method is called each time it is the turn of a player who has quit the game (= "zombie" player).
-        You can do whatever you want in order to make sure the turn of this player ends appropriately
-        (ex: pass).
-        
-        Important: your zombie code will be called when the player leaves the game. This action is triggered
-        from the main site and propagated to the gameserver from a server, not from a browser.
-        As a consequence, there is no current player associated to this action. In your zombieTurn function,
-        you must _never_ use getCurrentPlayerId() or getCurrentPlayerName(), otherwise it will fail with a "Not logged" error message. 
-    */
-
-    function zombieTurn( $state, $active_player ) {
-    	$statename = $state['name'];
-    	
-        if ($state['type'] === "activeplayer") {
-            switch ($statename) {
-                default:
-                    self::DbQuery("update player set player_active = 0 WHERE player_id = $active_player");
-                    $this->gamestate->nextState( "zombiePass" );
-                	break;
-            }
-
-            return;
-        }
-
-        if ($state['type'] === "multipleactiveplayer") {
-            // Make sure player is in a non blocking status for role turn
-            $this->gamestate->setPlayerNonMultiactive( $active_player, '' );
-            
-            return;
-        }
-
-        throw new VisibleSystemException( "Zombie mode not supported at this game state: ".$statename );
+        $this->bga->notify->all('tease', clienttranslate('${player_name} says: ${sentence}'), [
+            'playerId' => $currentPlayerId,
+            'player_name' => $this->getPlayerName($currentPlayerId),
+            'sentence' => $sentence,
+            'i18n' => ['sentence'],
+        ]);
     }
-    
+
 ///////////////////////////////////////////////////////////////////////////////////:
 ////////// DB upgrade
 //////////
@@ -275,14 +245,14 @@ class SkateLegend extends Table {
 //            // ! important ! Use DBPREFIX_<table_name> for all tables
 //
 //            $sql = "ALTER TABLE DBPREFIX_xxxxxxx ....";
-//            self::applyDbUpgradeToAllDB( $sql );
+//            $this->applyDbUpgradeToAllDB( $sql );
 //        }
 //        if( $from_version <= 1405061421 )
 //        {
 //            // ! important ! Use DBPREFIX_<table_name> for all tables
 //
 //            $sql = "CREATE TABLE DBPREFIX_xxxxxxx ....";
-//            self::applyDbUpgradeToAllDB( $sql );
+//            $this->applyDbUpgradeToAllDB( $sql );
 //        }
 //        // Please add your future database scheme changes here
 //

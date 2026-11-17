@@ -1,46 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Bga\Games\Skatelegend;
+
+use Bga\Games\Skatelegend\Models\Card;
+use Bga\Games\Skatelegend\States\NextPlayer;
+use Bga\Games\Skatelegend\States\PickCard;
+use Bga\Games\Skatelegend\States\PlayCard;
+use Bga\Games\Skatelegend\States\RevealDeckCard;
+
 trait UtilTrait {
 
     //////////////////////////////////////////////////////////////////////////////
     //////////// Utility functions
     ////////////
-
-    function array_find(array $array, callable $fn) {
-        foreach ($array as $value) {
-            if($fn($value)) {
-                return $value;
-            }
-        }
-        return null;
-    }
-
-    function array_find_key(array $array, callable $fn) {
-        foreach ($array as $key => $value) {
-            if($fn($value)) {
-                return $key;
-            }
-        }
-        return null;
-    }
-
-    function array_some(array $array, callable $fn) {
-        foreach ($array as $value) {
-            if($fn($value)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    function array_every(array $array, callable $fn) {
-        foreach ($array as $value) {
-            if(!$fn($value)) {
-                return false;
-            }
-        }
-        return true;
-    }
 
     function array_identical(array $a1, array $a2) {
         if (count($a1) != count($a2)) {
@@ -100,22 +74,14 @@ trait UtilTrait {
         return 9 - intval(self::getUniqueValueFromDB("SELECT sum(player_helmets) FROM player"));
     }
 
-    function getPlayerScore(int $playerId) {
-        return $this->bga->playerScore->get($playerId);
-    }
-
-    function getPlayerActive(int $playerId) {
-        return boolval($this->getUniqueValueFromDB("SELECT player_active FROM player where `player_id` = $playerId"));
-    }
-
     function incPlayerScore(int $playerId, int $amount, $message = '', $args = []) {
         $this->bga->playerScore->inc($playerId, $amount, null);
             
         $logType = array_key_exists('scoreType', $args) && in_array($args['scoreType'], ['endControlTerritory']) ? $args['scoreType'] : 'score';
-        $this->notifyAllPlayers($logType, $message, [
+        $this->bga->notify->all($logType, $message, [
             'playerId' => $playerId,
             'player_name' => $this->getPlayerName($playerId),
-            'newScore' => $this->getPlayerScore($playerId),
+            'newScore' => $this->bga->playerScore->get($playerId),
             'incScore' => $amount,
         ] + $args);
     }
@@ -180,7 +146,7 @@ trait UtilTrait {
             $this->cards->pickCard('deck1', $playerId);
         }
 
-        $halfDeck = floor(intval($this->cards->countCardInLocation('deck1')) / 2);
+        $halfDeck = (int) floor(intval($this->cards->countCardInLocation('deck1')) / 2);
         $this->cards->pickCardsForLocation($halfDeck, 'deck1', 'deck2');
     } 
 
@@ -202,64 +168,6 @@ trait UtilTrait {
         ]);
     }
 
-    function playCard(int $playerId, Card $card, int $deckId) {
-        $this->cards->moveCard($card->id, 'played'.$playerId, intval($this->cards->countCardInLocation('played'.$playerId)));
-        
-        $message = $deckId > 0 ?
-            clienttranslate('${player_name} plays a ${card_color} card from deck ${deck_number}') :
-            clienttranslate('${player_name} plays a ${card_color} card from their hand');
-
-        $args = [
-            'playerId' => $playerId,
-            'player_name' => $this->getPlayerName($playerId),
-            'card' => $card,
-            'fromDeck' => $deckId,
-            'card_color' => $this->getCardColor($card->color), // for logs
-            'deck_number' => $deckId,
-            'i18n' => ['card_color'],
-        ];
-
-        if ($deckId > 0) {
-            $args['deckCount'] = intval($this->cards->countCardInLocation('deck'.$deckId));
-            $args['deckTopCard'] = Card::onlyId($this->getCardFromDb($this->cards->getCardOnTop('deck'.$deckId)));
-        }
-        
-        $this->bga->notify->all('playCard', $message, $args);
-
-        if ($deckId > 0) {
-            $this->cardPickedFromDeck($deckId);
-        }
-
-        $sequence = $this->getCardsByLocation('played'.$playerId);
-        $fall = $this->isFall($playerId, $sequence);
-        if ($fall > 0) {
-            $this->gamestate->nextState('fall');
-            return;
-        }
-
-        $helmets = $this->getPlayerHelmets($playerId);
-        if ($helmets > 0 && intval(self::getUniqueValueFromDB("SELECT player_helmet_card_id FROM player WHERE player_id = $playerId")) != -1) {
-            $helmets = 0; // can't play a helmet, already played one this round
-        }
-
-        if ($helmets > 0) {
-            $colors = $this->getSequenceCardsByColor($sequence);
-            if (count($colors[$card->color]) < 2) {
-                $helmets = 0; // don't ask if the player doesn't have 2 cards of this color
-            }
-        }
-
-        /*$this->incStat(1, 'playedCards');
-        $this->incStat(1, 'playedCards', $playerId);
-        $this->incStat(1, 'playedCards'.$card->cardType);
-        $this->incStat(1, 'playedCards'.$card->cardType, $playerId);*/
-
-        if ($helmets > 0) {
-            $this->gamestate->nextState('helmet');
-        } else {
-            $this->afterPlayHelmet($playerId, $card);
-        }
-    }
 
     function getSequenceCardsByColor(array $sequence) {
         $colors = [];
@@ -275,26 +183,10 @@ trait UtilTrait {
             return -1;
         }
 
-        $card = $this->array_find($sequence, fn($c) => $c->id == $cardId);
+        $card = \array_find($sequence, fn($c) => $c->id == $cardId);
         return $card->color;
     }
 
-    function isFall(int $playerId, array $sequence) {
-        if (count(array_filter($sequence, fn($card) => $card->danger)) >= 3) { 
-            return 1; // fall with danger symbol
-        }
-
-        $colorOfHelmet = $this->getColorOfHelmet($playerId, $sequence);
-
-        $colors = $this->getSequenceCardsByColor($sequence);
-        foreach($colors as $color => $colorCards) {
-            if ($color != $colorOfHelmet && count($colorCards) >= 3) {
-                return 2; // fall with color
-            }
-        }
-
-        return 0;
-    }
 
     function isConditionValidated(array $sequence, array $conditionArray) {
         $number = $conditionArray[0];
@@ -307,8 +199,8 @@ trait UtilTrait {
             case CONDITION_CARDS:
                 return count($sequence) >= $number;
             case CONDITION_YELLOW_GREEN:
-                $hasYellowCard = $this->array_some($sequence, fn($card) => $card->color == YELLOW);
-                $hasGreenCard = $this->array_some($sequence, fn($card) => $card->color == GREEN);
+                $hasYellowCard = \array_any($sequence, fn($card) => $card->color == YELLOW);
+                $hasGreenCard = \array_any($sequence, fn($card) => $card->color == GREEN);
                 return $hasYellowCard && $hasGreenCard;
             case CONDITION_RED:
                 $dangerCards = array_filter($sequence, fn($card) => $card->color == RED);
@@ -319,7 +211,7 @@ trait UtilTrait {
 
         switch ($condition) {
             case CONDITION_EQUAL:
-                return $this->array_some($colors, fn($colorCards) => count($colorCards) >= $number);
+                return \array_any($colors, fn($colorCards) => count($colorCards) >= $number);
             case CONDITION_DIFFERENT:
                 return count($colors) >= $number;
         }
@@ -348,10 +240,12 @@ trait UtilTrait {
         }
         $this->cards->moveCards(array_map(fn($card) => $card->id, $sequence), 'scored', $playerId);
 
-        $roundPoints = json_decode($this->getUniqueValueFromDB("SELECT `player_round_points` FROM `player` where player_id = $playerId"), true);
-        $roundPoints[intval($this->getStat('roundNumber'))] = $wheels;
+        $roundPointsJson = $this->getUniqueValueFromDB("SELECT `player_round_points` FROM `player` where player_id = $playerId");
+        $roundPoints = $roundPointsJson === null ? null : json_decode($roundPointsJson, true);
+        $roundPoints[intval($this->bga->tableStats->get('roundNumber'))] = $wheels;
 
-        self::DbQuery("update player set player_helmet_card_id = -1, player_active = 0, player_score = player_score + $wheels, player_round_points = '".json_encode($roundPoints)."' WHERE player_id = $playerId");
+        self::DbQuery("update player set player_helmet_card_id = -1, player_active = 0, player_round_points = '".json_encode($roundPoints)."' WHERE player_id = $playerId");
+        $this->bga->playerScore->inc($playerId, $wheels, null);
 
         $message = $manuallyTriggered ? 
             clienttranslate('${player_name} chooses to stop their sequence') :
@@ -378,17 +272,8 @@ trait UtilTrait {
         ]);
     }
 
-    function addHelmet(int $playerId, Card $card) {
-        self::DbQuery("update player set player_helmet_card_id = $card->id, player_helmets = player_helmets - 1 WHERE player_id = $playerId");
 
-        $this->bga->notify->all('addHelmet', clienttranslate('${player_name} adds a helmet on the last played card'), [
-            'playerId' => $playerId,
-            'player_name' => $this->getPlayerName($playerId),
-            'card' => $card,
-        ]);
-    }
-
-    function afterPlayHelmet(int $playerId, Card $card) {
+    function afterPlayHelmet(int $playerId, Card $card): string {
         if (in_array($card->power, [POWER_PICK_CARD, POWER_PICK_CARD_TWICE])) {
             $this->incGameStateValue(PICK_CARDS, $card->power == POWER_PICK_CARD_TWICE ? 2 : 1);
         } else 
@@ -396,8 +281,7 @@ trait UtilTrait {
             $visibleTopDecks = $this->getVisibleTopDecks();
 
             if (count($visibleTopDecks) == 0) {
-                $this->gamestate->nextState('revealCard');
-                return;
+                return RevealDeckCard::class;
             } else if (count($visibleTopDecks) == 1) {
                 $deckId = $visibleTopDecks[0] == 1 ? 2 : 1;
                 $this->makeTopDeckVisible($deckId, true);
@@ -406,22 +290,20 @@ trait UtilTrait {
             $this->incGameStateValue(PLAY_AGAIN, $card->power == POWER_PLAY_AGAIN_TWICE ? 2 : 1);
         }
 
-        $this->afterPlayPower();
+        return $this->afterPlayPower();
     }
 
-    function afterPlayPower() {
+    function afterPlayPower(): string {
         if (intval($this->getGameStateValue(PICK_CARDS)) > 0) {
             $this->incGameStateValue(PICK_CARDS, -1);
-            $this->gamestate->nextState('pickCard');
-            return;
+            return PickCard::class;
         }
 
         if (intval($this->getGameStateValue(PLAY_AGAIN)) > 0) {
             $this->incGameStateValue(PLAY_AGAIN, -1);
-            $this->gamestate->nextState('playAgain');
-            return;
+            return PlayCard::class;
         }
-        $this->gamestate->nextState('next');
+        return NextPlayer::class;
     }
 
     function getRemainingActivePlayersIds() {
@@ -469,7 +351,7 @@ trait UtilTrait {
 
             $cardsToMove = $this->getCardsFromDb($this->cards->getCardsInLocation($otherDeckLocation, null, 'location_arg'));
             $cardsIds = array_map(fn($card) => $card->id, $cardsToMove);
-            $cardsIds = array_slice($cardsIds, 0, ceil(count($cardsIds) / 2));
+            $cardsIds = array_slice($cardsIds, 0, (int) ceil(count($cardsIds) / 2));
             $this->cards->moveCards($cardsIds, $deckLocation);
 
             $decks = [];
@@ -489,13 +371,14 @@ trait UtilTrait {
     }
 
     function getCardColor(int $color) {
-        switch ($color) {
-            case GRAY: return clienttranslate("Gray");
-            case BLUE: return clienttranslate("Blue");
-            case YELLOW: return clienttranslate("Yellow");
-            case RED: return clienttranslate("Red");
-            case GREEN: return clienttranslate("Green");
-        }
+        return match ($color) {
+            GRAY => clienttranslate("Gray"),
+            BLUE => clienttranslate("Blue"),
+            YELLOW => clienttranslate("Yellow"),
+            RED => clienttranslate("Red"),
+            GREEN => clienttranslate("Green"),
+            default => null,
+        };
     }
     
 }

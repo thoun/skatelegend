@@ -1,4 +1,6 @@
-class TableCenter {
+import { Deck } from './libs';
+
+export class TableCenter {
     public decks: Deck<Card>[] = [];
     public legendDeck: Deck<Card>;
         

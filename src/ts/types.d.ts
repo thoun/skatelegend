@@ -45,9 +45,10 @@ interface SkateLegendGamedatas {
     SENTENCES: string[];
 }
 
-interface SkateLegendGame extends Game {
-    animationManager: AnimationManager;
-    cardsManager: CardsManager;
+interface SkateLegendGame {
+    bga: Bga<SkateLegendPlayer, SkateLegendGamedatas>;
+    animationManager: import('./libs').AnimationManager;
+    cardsManager: import('./cards').CardsManager;
 
     getPlayerId(): number;
     getPlayerName(playerId: number): string;
@@ -149,4 +150,9 @@ interface NotifSplitDecksArgs {
 interface NotifTeaseArgs {
     playerId: number;
     sentence: string;
+}
+
+// The queue is a documented gameui member omitted by the generated helper.
+interface GameGui<P extends Player = Player, G extends Gamedatas<P> = Gamedatas<P>> {
+    notifqueue: GameNotifQueue;
 }

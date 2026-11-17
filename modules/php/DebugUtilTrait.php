@@ -1,5 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Bga\Games\Skatelegend;
+
 trait DebugUtilTrait {
 
 //////////////////////////////////////////////////////////////////////////////
@@ -55,7 +59,7 @@ trait DebugUtilTrait {
 			++$sid;
 		}
 
-        self::reloadPlayersBasicInfos();
+        $this->reloadPlayersBasicInfos();
 	}
 
     function debug($debugData) {

@@ -1,22 +1,8 @@
 <?php
 
-class CardType {
-    public int $number;
-    public int $color;
-    public int $wheels;
-    public bool $danger = false;
-    public /* int | null*/ $power;
-    public /* array | null*/ $condition;
-  
-    public function __construct(int $number, int $color, int $wheels, bool $danger = false, /* int | null*/ $power = null, /* array | null*/ $condition = null) {
-        $this->number = $number;
-        $this->color = $color;
-        $this->wheels = $wheels;
-        $this->danger = $danger;
-        $this->power = $power;
-        $this->condition = $condition;
-    } 
-}
+declare(strict_types=1);
+
+namespace Bga\Games\Skatelegend\Models;
 
 class Card extends CardType {
     public int $id;
@@ -57,5 +43,3 @@ class Card extends CardType {
         return array_map(fn($card) => self::onlyId($card), $cards);
     }
 }
-
-?>

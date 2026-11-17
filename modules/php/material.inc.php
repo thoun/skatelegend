@@ -19,8 +19,9 @@
  *
  */
 
- require_once(__DIR__.'/modules/php/constants.inc.php');
- require_once(__DIR__.'/modules/php/objects/card.php');
+use Bga\Games\Skatelegend\Models\CardType;
+
+ require_once(__DIR__.'/constants.inc.php');
 
 // __construct(int $number, int $color, int $wheels, bool $danger = false, /* int | null*/ $power = null) { 
 $this->CARDS_TYPE = [
